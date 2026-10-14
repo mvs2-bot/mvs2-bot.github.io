@@ -1,6 +1,6 @@
 // Service Worker für das Dashboard (nur Root-Seite, Unterprojekte haben eigene SWs).
 // Bei Änderungen an index.html die Versionsnummer erhöhen.
-const CACHE = 'mvs2-dashboard-v2';
+const CACHE = 'mvs2-dashboard-v3';
 const ASSETS = ['./', './index.html', './manifest.json', './icon.svg'];
 
 self.addEventListener('install', e => {
