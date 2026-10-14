@@ -87,13 +87,21 @@
 
   .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
   .tile {
-    display: flex; gap: 14px; align-items: center;
-    padding: 14px; border-radius: 16px; text-decoration: none; color: inherit;
+    display: flex; gap: 10px; align-items: center;
+    padding: 14px; border-radius: 16px; color: inherit;
     background: var(--card); border: 1px solid var(--border); box-shadow: var(--shadow);
     transition: transform .12s ease, background .12s ease, border-color .12s ease;
   }
   .tile:hover { transform: translateY(-2px); background: var(--card-hover); border-color: var(--accent); }
   .tile:active { transform: translateY(0); }
+  .tile .main { flex: 1; min-width: 0; display: flex; gap: 14px; align-items: center; text-decoration: none; color: inherit; }
+  .tile .gh {
+    flex: 0 0 auto; display: grid; place-items: center; width: 38px; height: 38px;
+    border-radius: 10px; border: 1.5px solid var(--border); color: var(--muted); text-decoration: none;
+    transition: color .12s ease, border-color .12s ease, background .12s ease;
+  }
+  .tile .gh:hover { color: var(--text); border-color: var(--accent); background: var(--card); }
+  .tile .gh svg { width: 20px; height: 20px; }
   .tile .ico {
     flex: 0 0 52px; width: 52px; height: 52px; border-radius: 14px;
     display: grid; place-items: center; font-size: 1.7rem;
@@ -142,6 +150,7 @@
    Neues Projekt = neuen Eintrag ins passende Array kopieren.
    icon: Emoji ODER Schlüssel aus ICONS (unten)
    color: Hintergrundfarbe der Icon-Kachel
+   repo:  optional, GitHub-Repo-Name (Standard: aus url abgeleitet, z. B. '/TravelBase/' → TravelBase)
    ================================================================ */
 const SECTIONS = [
   {
@@ -159,6 +168,13 @@ const SECTIONS = [
     ]
   },
 ];
+
+const GITHUB_USER = 'mvs2-bot';
+const repoUrl = it => {
+  const name = it.repo || String(it.url).split('/').filter(Boolean)[0];
+  return name ? `https://github.com/${GITHUB_USER}/${name}` : '';
+};
+const GH_ICON = '<svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>';
 
 const ICONS = {
   globePin: '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.8 3.8 5.8 3.8 9s-1.3 6.2-3.8 9c-2.5-2.8-3.8-5.8-3.8-9S9.5 5.8 12 3z"/></svg>',
@@ -181,14 +197,18 @@ function render(filter = '') {
     html += `<h2 class="section">${esc(sec.title)}</h2><div class="grid">`;
     for (const it of items) {
       const ico = ICONS[it.icon] || esc(it.icon);
+      const gh = repoUrl(it);
       html += `
-        <a class="tile" href="${esc(it.url)}">
-          <span class="ico" style="background:${esc(it.color || '#334155')}">${ico}</span>
-          <span class="txt">
-            <span class="name">${esc(it.name)}${it.badge ? `<span class="badge">${esc(it.badge)}</span>` : ''}</span>
-            <span class="desc">${esc(it.desc)}</span>
-          </span>
-        </a>`;
+        <div class="tile">
+          <a class="main" href="${esc(it.url)}">
+            <span class="ico" style="background:${esc(it.color || '#334155')}">${ico}</span>
+            <span class="txt">
+              <span class="name">${esc(it.name)}${it.badge ? `<span class="badge">${esc(it.badge)}</span>` : ''}</span>
+              <span class="desc">${esc(it.desc)}</span>
+            </span>
+          </a>
+          ${gh ? `<a class="gh" href="${esc(gh)}" target="_blank" rel="noopener" aria-label="${esc(it.name)} auf GitHub" title="Repo auf GitHub">${GH_ICON}</a>` : ''}
+        </div>`;
     }
     html += `</div>`;
   }
