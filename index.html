@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>mvs2 · Dashboard</title>
+<meta name="description" content="Persönliches Dashboard mit allen Projekten">
+<meta name="theme-color" content="#0f172a">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="manifest" href="manifest.json">
+<script>
+  // Theme vor dem ersten Rendern setzen (kein Aufblitzen). Standard: dunkel.
+  (function () {
+    var t = 'dark';
+    try { t = localStorage.getItem('dash-theme') || 'dark'; } catch (e) {}
+    document.documentElement.setAttribute('data-theme', t);
+  })();
+</script>
+<style>
+  :root {
+    --bg: #f4f6fb;
+    --bg-grad: radial-gradient(1200px 600px at 10% -10%, #dbe7ff 0%, transparent 60%),
+               radial-gradient(900px 500px at 110% 10%, #e7f7ef 0%, transparent 55%);
+    --card: #ffffff;
+    --card-hover: #f8faff;
+    --border: #e2e8f0;
+    --text: #0f172a;
+    --muted: #64748b;
+    --accent: #2563eb;
+    --shadow: 0 1px 2px rgba(15,23,42,.06), 0 4px 16px rgba(15,23,42,.06);
+  }
+  [data-theme="dark"] {
+    --bg: #0b1120;
+    --bg-grad: radial-gradient(1200px 600px at 10% -10%, #1e293b 0%, transparent 60%),
+               radial-gradient(900px 500px at 110% 10%, #0f2a24 0%, transparent 55%);
+    --card: #111a2e;
+    --card-hover: #16213a;
+    --border: #1f2a44;
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+    --accent: #60a5fa;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 6px 20px rgba(0,0,0,.25);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    min-height: 100vh;
+    background: var(--bg-grad), var(--bg);
+    background-attachment: fixed;
+    color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 0 16px 48px; }
+
+  header {
+    position: sticky; top: 0; z-index: 10;
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    background: color-mix(in srgb, var(--bg) 78%, transparent);
+    border-bottom: 1px solid var(--border);
+  }
+  .bar { max-width: 880px; margin: 0 auto; padding: 12px 16px; display: flex; align-items: center; gap: 12px; }
+  .bar img { width: 32px; height: 32px; }
+  .bar .title { font-weight: 700; font-size: 1.05rem; letter-spacing: .2px; }
+  .bar .spacer { flex: 1; }
+  .icon-btn {
+    border: 1.5px solid var(--border); background: var(--card); color: var(--text);
+    border-radius: 10px; padding: 7px 10px; font-size: 1.2rem; line-height: 1; cursor: pointer;
+  }
+  .icon-btn:hover { background: var(--card-hover); }
+
+  .hero { padding: 28px 0 8px; }
+  .hero h1 { margin: 0 0 4px; font-size: clamp(1.5rem, 4vw, 2rem); }
+  .hero p { margin: 0; color: var(--muted); }
+
+  .search { margin: 20px 0 8px; position: relative; }
+  .search input {
+    width: 100%; padding: 12px 14px 12px 40px; font-size: 1rem;
+    border-radius: 12px; border: 1.5px solid var(--border);
+    background: var(--card); color: var(--text); outline: none;
+  }
+  .search input:focus { border-color: var(--accent); }
+  .search svg { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); width: 18px; height: 18px; color: var(--muted); }
+
+  h2.section { font-size: .8rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 26px 0 10px; font-weight: 600; }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
+  .tile {
+    display: flex; gap: 14px; align-items: center;
+    padding: 14px; border-radius: 16px; text-decoration: none; color: inherit;
+    background: var(--card); border: 1px solid var(--border); box-shadow: var(--shadow);
+    transition: transform .12s ease, background .12s ease, border-color .12s ease;
+  }
+  .tile:hover { transform: translateY(-2px); background: var(--card-hover); border-color: var(--accent); }
+  .tile:active { transform: translateY(0); }
+  .tile .ico {
+    flex: 0 0 52px; width: 52px; height: 52px; border-radius: 14px;
+    display: grid; place-items: center; font-size: 1.7rem;
+  }
+  .tile .ico svg { width: 30px; height: 30px; }
+  .tile .txt { min-width: 0; }
+  .tile .name { font-weight: 650; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .tile .desc { color: var(--muted); font-size: .88rem; margin-top: 2px; }
+  .badge { font-size: .68rem; font-weight: 600; padding: 2px 7px; border-radius: 999px; border: 1px solid var(--border); color: var(--muted); }
+
+  .empty { color: var(--muted); padding: 16px 0; display: none; }
+  footer { margin-top: 36px; color: var(--muted); font-size: .8rem; text-align: center; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="bar">
+    <img src="icon.svg" alt="">
+    <span class="title">mvs2</span>
+    <span class="spacer"></span>
+    <button class="icon-btn" id="themeBtn" aria-label="Hell/Dunkel umschalten" title="Hell/Dunkel">🌙</button>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="hero">
+    <h1 id="greeting">Hallo!</h1>
+    <p id="today"></p>
+  </section>
+
+  <div class="search">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+    <input id="q" type="search" placeholder="Projekt suchen …" autocomplete="off">
+  </div>
+
+  <div id="sections"></div>
+  <p class="empty" id="empty">Nichts gefunden.</p>
+
+  <footer>mvs2-bot.github.io</footer>
+</main>
+
+<script>
+/* ================================================================
+   PROJEKTE – hier pflegen.
+   Neues Projekt = neuen Eintrag ins passende Array kopieren.
+   icon: Emoji ODER Schlüssel aus ICONS (unten)
+   color: Hintergrundfarbe der Icon-Kachel
+   ================================================================ */
+const SECTIONS = [
+  {
+    title: 'Reisen',
+    items: [
+      { name: 'TravelBase',  desc: 'Alle Reiseplanungen an einem Ort', url: '/TravelBase/',  icon: 'globePin', color: '#2563eb', badge: 'Login' },
+      { name: 'Quick-Tools', desc: 'Währung, Phrasen, GPS & Notfall pro Land', url: '/QuickTools/', icon: 'tools', color: '#0d9488' },
+    ]
+  },
+  {
+    title: 'Projekte & Tools',
+    items: [
+      { name: 'Camper-Namenssuche', desc: 'Namen für den Bus vorschlagen & abstimmen', url: '/Spitznamensuche-Camper/', icon: 'camper', color: '#ea580c' },
+      { name: 'Münzwurf',           desc: 'Entscheidungshilfe: A oder B?',             url: '/Muenzwurf/',             icon: 'coin',   color: '#ca8a04' },
+    ]
+  },
+];
+
+const ICONS = {
+  globePin: '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.8 3.8 5.8 3.8 9s-1.3 6.2-3.8 9c-2.5-2.8-3.8-5.8-3.8-9S9.5 5.8 12 3z"/></svg>',
+  tools:    '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"/></svg>',
+  camper:   '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 6.5 9 4h6l4 2.5"/><path d="M3 16V9a2 2 0 0 1 2-2h11l4 4v5h-1"/><path d="M3 16h2m4 0h6"/><circle cx="7" cy="16.5" r="1.8"/><circle cx="17" cy="16.5" r="1.8"/><path d="M14 7v4h6"/></svg>',
+  coin:     '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="12" rx="8" ry="9"/><path d="M12 7.5v9M9.5 9.5c0-1 1.1-1.7 2.5-1.7s2.5.7 2.5 1.6c0 2.3-5 1.2-5 3.6 0 1 1.1 1.7 2.5 1.7s2.5-.7 2.5-1.7"/></svg>',
+};
+
+/* ---------------- Rendering ---------------- */
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+function render(filter = '') {
+  const f = filter.trim().toLowerCase();
+  const host = document.getElementById('sections');
+  let html = '', total = 0;
+  for (const sec of SECTIONS) {
+    const items = sec.items.filter(it => !f || (it.name + ' ' + it.desc).toLowerCase().includes(f));
+    if (!items.length) continue;
+    total += items.length;
+    html += `<h2 class="section">${esc(sec.title)}</h2><div class="grid">`;
+    for (const it of items) {
+      const ico = ICONS[it.icon] || esc(it.icon);
+      html += `
+        <a class="tile" href="${esc(it.url)}">
+          <span class="ico" style="background:${esc(it.color || '#334155')}">${ico}</span>
+          <span class="txt">
+            <span class="name">${esc(it.name)}${it.badge ? `<span class="badge">${esc(it.badge)}</span>` : ''}</span>
+            <span class="desc">${esc(it.desc)}</span>
+          </span>
+        </a>`;
+    }
+    html += `</div>`;
+  }
+  host.innerHTML = html;
+  document.getElementById('empty').style.display = total ? 'none' : 'block';
+}
+
+document.getElementById('q').addEventListener('input', e => render(e.target.value));
+render();
+
+/* ---------------- Begrüßung & Datum ---------------- */
+(function () {
+  const h = new Date().getHours();
+  const g = h < 5 ? 'Gute Nacht' : h < 11 ? 'Guten Morgen' : h < 17 ? 'Hallo' : h < 22 ? 'Guten Abend' : 'Gute Nacht';
+  document.getElementById('greeting').textContent = g + ' 👋';
+  document.getElementById('today').textContent =
+    new Date().toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+})();
+
+/* ---------------- Hell/Dunkel ---------------- */
+(function () {
+  const btn = document.getElementById('themeBtn');
+  const meta = document.querySelector('meta[name="theme-color"]');
+  function apply(t) {
+    document.documentElement.setAttribute('data-theme', t);
+    btn.textContent = t === 'dark' ? '☀️' : '🌙';
+    meta.setAttribute('content', t === 'dark' ? '#0b1120' : '#f4f6fb');
+  }
+  apply(document.documentElement.getAttribute('data-theme') || 'dark');
+  btn.addEventListener('click', () => {
+    const t = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    apply(t);
+    try { localStorage.setItem('dash-theme', t); } catch (e) {}
+  });
+})();
+
+/* ---------------- PWA ---------------- */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js', { scope: './' }).catch(() => {}));
+}
+</script>
+</body>
+</html>
