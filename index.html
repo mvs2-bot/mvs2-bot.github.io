@@ -73,20 +73,40 @@
   }
   .icon-btn:hover { background: var(--card-hover); }
 
-  .hero { padding: 28px 0 8px; }
-  .hero h1 { margin: 0 0 4px; font-size: clamp(1.5rem, 4vw, 2rem); }
+  .icon-btn svg { width: 1.2rem; height: 1.2rem; display: block; }
+
+  .hero { padding: 18px 0 2px; display: flex; align-items: flex-end; justify-content: space-between; gap: 12px 20px; flex-wrap: wrap; }
+  .hero h1 { margin: 0 0 2px; font-size: clamp(1.4rem, 4vw, 1.8rem); }
   .hero p { margin: 0; color: var(--muted); }
+  .clock { font-size: clamp(1.4rem, 4vw, 1.8rem); font-weight: 650; font-variant-numeric: tabular-nums; letter-spacing: .02em; line-height: 1.2; }
 
-  .search { margin: 20px 0 8px; position: relative; }
-  .search input {
-    width: 100%; padding: 12px 14px 12px 40px; font-size: 1rem;
-    border-radius: 12px; border: 1.5px solid var(--border);
-    background: var(--card); color: var(--text); outline: none;
+  /* Suchfenster */
+  .search-dlg {
+    width: min(560px, calc(100vw - 32px)); max-height: min(70vh, 560px);
+    margin: 10vh auto auto; padding: 0; border: 1px solid var(--border); border-radius: 16px;
+    background: var(--card); color: var(--text); box-shadow: 0 20px 60px rgba(0,0,0,.35); overflow: hidden;
   }
-  .search input:focus { border-color: var(--accent); }
-  .search svg { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); width: 18px; height: 18px; color: var(--muted); }
+  .search-dlg[open] { display: flex; flex-direction: column; }
+  .search-dlg::backdrop { background: rgba(2,6,23,.55); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); }
+  .search-dlg .field { position: relative; border-bottom: 1px solid var(--border); }
+  .search-dlg .field svg { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); width: 18px; height: 18px; color: var(--muted); }
+  .search-dlg input {
+    width: 100%; padding: 16px 16px 16px 44px; font-size: 1.05rem;
+    border: 0; background: transparent; color: var(--text); outline: none;
+  }
+  .search-dlg .results { overflow-y: auto; padding: 6px; }
+  .search-dlg .hit {
+    display: flex; gap: 12px; align-items: center; padding: 8px 10px; border-radius: 10px;
+    color: inherit; text-decoration: none;
+  }
+  .search-dlg .hit.sel, .search-dlg .hit:hover { background: var(--card-hover); outline: 1.5px solid var(--accent); }
+  .search-dlg .hit .ico { flex: 0 0 36px; width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; font-size: 1.2rem; }
+  .search-dlg .hit .ico svg { width: 22px; height: 22px; }
+  .search-dlg .hit .name { font-weight: 600; }
+  .search-dlg .hit .desc { color: var(--muted); font-size: .85rem; }
+  .search-dlg .none { color: var(--muted); padding: 12px 10px; }
 
-  h2.section { font-size: .8rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 26px 0 10px; font-weight: 600; }
+  h2.section { font-size: .8rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 20px 0 10px; font-weight: 600; }
 
   .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
   .tile {
@@ -115,7 +135,6 @@
   .tile .desc { color: var(--muted); font-size: .88rem; margin-top: 2px; hyphens: auto; overflow-wrap: anywhere; }
   .badge { font-size: .68rem; font-weight: 600; padding: 2px 7px; border-radius: 999px; border: 1px solid var(--border); color: var(--muted); }
 
-  .empty { color: var(--muted); padding: 16px 0; display: none; }
   footer { margin-top: 36px; color: var(--muted); font-size: .8rem; text-align: center; }
 </style>
 </head>
@@ -126,26 +145,32 @@
     <img src="icon.svg" alt="">
     <span class="title">mvs2</span>
     <span class="spacer"></span>
+    <button class="icon-btn" id="searchBtn" aria-label="Projekt suchen" title="Suchen (/)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></button>
     <button class="icon-btn" id="themeBtn" aria-label="Hell/Dunkel umschalten" title="Hell/Dunkel">🌙</button>
   </div>
 </header>
 
 <main class="wrap">
   <section class="hero">
-    <h1 id="greeting">Hallo!</h1>
-    <p id="today"></p>
+    <div>
+      <h1 id="greeting">Hallo!</h1>
+      <p id="today"></p>
+    </div>
+    <time class="clock" id="clock"></time>
   </section>
 
-  <div class="search">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-    <input id="q" type="search" placeholder="Projekt suchen …" autocomplete="off">
-  </div>
-
   <div id="sections"></div>
-  <p class="empty" id="empty">Nichts gefunden.</p>
 
   <footer>mvs2-bot.github.io</footer>
 </main>
+
+<dialog class="search-dlg" id="searchDlg" aria-label="Projekt suchen">
+  <div class="field">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+    <input id="q" type="search" placeholder="Projekt suchen …" autocomplete="off" enterkeyhint="go">
+  </div>
+  <div class="results" id="results"></div>
+</dialog>
 
 <script>
 /* ================================================================
@@ -192,17 +217,17 @@ const ICONS = {
 /* ---------------- Rendering ---------------- */
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
-function render(filter = '') {
-  const f = filter.trim().toLowerCase();
+const iconHtml = it => ICONS[it.icon] || esc(it.icon);
+
+function render() {
   const host = document.getElementById('sections');
-  let html = '', total = 0;
+  let html = '';
   for (const sec of SECTIONS) {
-    const items = sec.items.filter(it => !f || (it.name + ' ' + it.desc).toLowerCase().includes(f));
+    const items = sec.items;
     if (!items.length) continue;
-    total += items.length;
     html += `<h2 class="section">${esc(sec.title)}</h2><div class="grid">`;
     for (const it of items) {
-      const ico = ICONS[it.icon] || esc(it.icon);
+      const ico = iconHtml(it);
       const gh = repoUrl(it);
       html += `
         <div class="tile">
@@ -220,19 +245,70 @@ function render(filter = '') {
     html += `</div>`;
   }
   host.innerHTML = html;
-  document.getElementById('empty').style.display = total ? 'none' : 'block';
 }
 
-document.getElementById('q').addEventListener('input', e => render(e.target.value));
 render();
 
-/* ---------------- Begrüßung & Datum ---------------- */
+/* ---------------- Suche (Lupe / Taste „/“ / Strg+K) ---------------- */
 (function () {
-  const h = new Date().getHours();
-  const g = h < 5 ? 'Gute Nacht' : h < 11 ? 'Guten Morgen' : h < 17 ? 'Hallo' : h < 22 ? 'Guten Abend' : 'Gute Nacht';
-  document.getElementById('greeting').textContent = g + ' 👋';
-  document.getElementById('today').textContent =
-    new Date().toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  const dlg = document.getElementById('searchDlg');
+  const q = document.getElementById('q');
+  const box = document.getElementById('results');
+  const all = SECTIONS.flatMap(sec => sec.items.map(it => ({ ...it, section: sec.title })));
+  let hits = [], sel = 0;
+
+  function update() {
+    const f = q.value.trim().toLowerCase();
+    hits = all.filter(it => !f || (it.name + ' ' + it.desc + ' ' + it.section).toLowerCase().includes(f));
+    sel = Math.min(sel, Math.max(hits.length - 1, 0));
+    box.innerHTML = hits.length ? hits.map((it, i) => `
+      <a class="hit${i === sel ? ' sel' : ''}" href="${esc(it.url)}">
+        <span class="ico" style="background:${esc(it.color || '#334155')}">${iconHtml(it)}</span>
+        <span><span class="name">${esc(it.name)}</span><br><span class="desc">${esc(it.desc)}</span></span>
+      </a>`).join('') : '<div class="none">Nichts gefunden.</div>';
+    const cur = box.querySelector('.hit.sel');
+    if (cur) cur.scrollIntoView({ block: 'nearest' });
+  }
+
+  function open() {
+    if (dlg.open) return;
+    q.value = ''; sel = 0; update();
+    dlg.showModal();
+    q.focus();
+  }
+
+  document.getElementById('searchBtn').addEventListener('click', open);
+  q.addEventListener('input', () => { sel = 0; update(); });
+  q.addEventListener('keydown', e => {
+    if (e.key === 'ArrowDown' && hits.length) { sel = (sel + 1) % hits.length; update(); e.preventDefault(); }
+    else if (e.key === 'ArrowUp' && hits.length) { sel = (sel - 1 + hits.length) % hits.length; update(); e.preventDefault(); }
+    else if (e.key === 'Enter' && hits[sel]) { location.href = hits[sel].url; e.preventDefault(); }
+  });
+  // Klick auf den abgedunkelten Hintergrund schließt das Fenster
+  dlg.addEventListener('click', e => { if (e.target === dlg) dlg.close(); });
+  document.addEventListener('keydown', e => {
+    const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName);
+    if ((e.key === '/' && !typing) || (e.key.toLowerCase() === 'k' && (e.ctrlKey || e.metaKey))) { e.preventDefault(); open(); }
+  });
+})();
+
+/* ---------------- Begrüßung, Datum & Uhrzeit ---------------- */
+(function () {
+  const greet = document.getElementById('greeting');
+  const today = document.getElementById('today');
+  const clock = document.getElementById('clock');
+  function tick() {
+    const now = new Date();
+    const h = now.getHours();
+    const g = h < 5 ? 'Gute Nacht' : h < 11 ? 'Guten Morgen' : h < 17 ? 'Hallo' : h < 22 ? 'Guten Abend' : 'Gute Nacht';
+    greet.textContent = g + ' 👋';
+    today.textContent = now.toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    clock.textContent = now.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    clock.dateTime = now.toISOString();
+    // auf die nächste volle Sekunde ausrichten
+    setTimeout(tick, 1000 - now.getMilliseconds() + 5);
+  }
+  tick();
 })();
 
 /* ---------------- Hell/Dunkel ---------------- */
