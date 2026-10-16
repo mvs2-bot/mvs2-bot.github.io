@@ -110,7 +110,7 @@
 
   .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
   .tile {
-    display: flex; gap: 10px; align-items: center;
+    display: flex; flex-direction: column; gap: 10px;
     padding: 14px; border-radius: 16px; color: inherit;
     background: var(--card); border: 1px solid var(--border); box-shadow: var(--shadow);
     transition: transform .12s ease, background .12s ease, border-color .12s ease;
@@ -137,8 +137,11 @@
   }
   .tile .gh .dot.ok { background: #16a34a; }
   .tile .gh .dot.bad { background: #dc2626; }
-  .tile .meta { display: block; color: var(--muted); font-size: .75rem; margin-top: 3px; opacity: .85; }
-  .tile .meta:empty { display: none; }
+  /* Fußzeile: links „Geändert vor …“, rechts Stern / GitHub / Supabase – so behält der Text die volle Breite */
+  .tile .foot { display: flex; align-items: center; gap: 6px; padding-top: 10px; border-top: 1px solid var(--border); }
+  .tile .foot .gh { width: 34px; height: 34px; }
+  .tile .foot .gh svg { width: 18px; height: 18px; }
+  .tile .meta { flex: 1; min-width: 0; color: var(--muted); font-size: .75rem; opacity: .85; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .tile .ico {
     flex: 0 0 52px; width: 52px; height: 52px; border-radius: 14px;
     display: grid; place-items: center; font-size: 1.7rem;
@@ -261,12 +264,14 @@ function tileHtml(it) {
             <span class="txt">
               <span class="name">${esc(it.name)}${it.badge ? `<span class="badge">${esc(it.badge)}</span>` : ''}</span>
               <span class="desc">${esc(it.desc)}</span>
-              <span class="meta" data-repo="${esc(repoName(it))}"></span>
             </span>
           </a>
+          <div class="foot">
+          <span class="meta" data-repo="${esc(repoName(it))}"></span>
           <button class="gh fav${isFav(it) ? ' on' : ''}" type="button" data-fav="${esc(it.url)}" aria-pressed="${isFav(it)}" aria-label="${esc(it.name)} ${isFav(it) ? 'aus Favoriten entfernen' : 'zu Favoriten'}" title="${isFav(it) ? 'Aus Favoriten entfernen' : 'Als Favorit oben anheften'}">${STAR_ICON}</button>
           ${gh ? `<a class="gh" href="${esc(gh)}" target="_blank" rel="noopener" aria-label="${esc(it.name)} auf GitHub" title="Repo auf GitHub">${GH_ICON}</a>` : ''}
           ${it.supabase ? `<a class="gh" href="https://supabase.com/dashboard/project/${esc(it.supabase)}" target="_blank" rel="noopener" aria-label="${esc(it.name)} in Supabase" title="Supabase-Dashboard">${SB_ICON}${it.supabaseKey ? `<span class="dot" data-sb="${esc(it.supabase)}"></span>` : ''}</a>` : ''}
+          </div>
         </div>`;
 }
 
@@ -295,7 +300,7 @@ const PUSH_TTL = 15 * 60 * 1000;
 let pushed = {};
 try { pushed = (JSON.parse(localStorage.getItem(PUSH_KEY)) || {}).repos || {}; } catch (e) {}
 
-const rtf = new Intl.RelativeTimeFormat('de', { numeric: 'auto' });
+const rtf = new Intl.RelativeTimeFormat('de', { numeric: 'auto', style: 'short' });
 function ago(iso) {
   const sec = (new Date(iso) - Date.now()) / 1000;
   const steps = [[60, 'second'], [60, 'minute'], [24, 'hour'], [7, 'day'], [4.35, 'week'], [12, 'month'], [Infinity, 'year']];
