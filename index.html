@@ -126,6 +126,10 @@
   .tile .gh:hover { color: var(--text); border-color: var(--accent); background: var(--card); }
   .tile .gh svg { width: 20px; height: 20px; }
   .tile .gh { position: relative; }
+  .tile .fav { background: transparent; cursor: pointer; padding: 0; font: inherit; width: 30px; border-color: transparent; }
+  .tile .fav:hover { background: transparent; border-color: transparent; color: #f59e0b; }
+  .tile .fav.on { color: #f59e0b; }
+  .tile .fav.on svg { fill: currentColor; }
   /* Supabase-Status: grau = wird geprüft/offline, grün = erreichbar, rot = pausiert/nicht erreichbar */
   .tile .gh .dot {
     position: absolute; top: -4px; right: -4px; width: 11px; height: 11px; border-radius: 50%;
@@ -218,6 +222,8 @@ const repoUrl = it => {
 };
 const GH_ICON = '<svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>';
 
+const STAR_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="m12 3.5 2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/></svg>';
+
 const SB_ICON = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13.2 2.3c.5-.6 1.5-.3 1.5.5v7.7h6.4c.8 0 1.3 1 .8 1.6l-9.1 9.6c-.5.6-1.5.3-1.5-.5v-7.7H4.9c-.8 0-1.3-1-.8-1.6z"/></svg>';
 
 const ICONS = {
@@ -233,31 +239,16 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>'
 
 const iconHtml = it => ICONS[it.icon] || esc(it.icon);
 
-/* ---------------- Häufig benutzt (nur lokal auf diesem Gerät) ---------------- */
-const USAGE_KEY = 'dash-usage';
-const FAV_MAX = 3;
-function loadUsage() {
-  try { return JSON.parse(localStorage.getItem(USAGE_KEY)) || {}; } catch (e) { return {}; }
-}
-function recordUse(url) {
-  const u = loadUsage();
-  const e = u[url] || { n: 0, t: 0 };
-  u[url] = { n: e.n + 1, t: Date.now() };
-  try { localStorage.setItem(USAGE_KEY, JSON.stringify(u)); } catch (e) {}
-}
-// Punktzahl: Anzahl Aufrufe, Gewicht halbiert sich alle 14 Tage seit dem letzten Aufruf
-function favorites() {
-  const u = loadUsage();
-  const score = it => {
-    const e = u[it.url];
-    return e ? e.n * Math.pow(0.5, (Date.now() - e.t) / (14 * 864e5)) : 0;
-  };
-  return SECTIONS.flatMap(sec => sec.items)
-    .map(it => ({ it, s: score(it) }))
-    .filter(x => x.s > 0)
-    .sort((a, b) => b.s - a.s)
-    .slice(0, FAV_MAX)
-    .map(x => x.it);
+/* ---------------- Favoriten (Stern, nur lokal auf diesem Gerät) ---------------- */
+const FAV_KEY = 'dash-favs';
+try { localStorage.removeItem('dash-usage'); } catch (e) {} // Altlast von „Häufig benutzt“
+let favs = [];
+try { favs = JSON.parse(localStorage.getItem(FAV_KEY)) || []; } catch (e) {}
+const isFav = it => favs.includes(it.url);
+function toggleFav(url) {
+  favs = favs.includes(url) ? favs.filter(u => u !== url) : favs.concat(url);
+  try { localStorage.setItem(FAV_KEY, JSON.stringify(favs)); } catch (e) {}
+  render();
 }
 
 function tileHtml(it) {
@@ -265,7 +256,7 @@ function tileHtml(it) {
   const gh = repoUrl(it);
   return `
         <div class="tile">
-          <a class="main" href="${esc(it.url)}" data-use="${esc(it.url)}">
+          <a class="main" href="${esc(it.url)}">
             <span class="ico" style="background:${esc(it.color || '#334155')}">${ico}</span>
             <span class="txt">
               <span class="name">${esc(it.name)}${it.badge ? `<span class="badge">${esc(it.badge)}</span>` : ''}</span>
@@ -273,6 +264,7 @@ function tileHtml(it) {
               <span class="meta" data-repo="${esc(repoName(it))}"></span>
             </span>
           </a>
+          <button class="gh fav${isFav(it) ? ' on' : ''}" type="button" data-fav="${esc(it.url)}" aria-pressed="${isFav(it)}" aria-label="${esc(it.name)} ${isFav(it) ? 'aus Favoriten entfernen' : 'zu Favoriten'}" title="${isFav(it) ? 'Aus Favoriten entfernen' : 'Als Favorit oben anheften'}">${STAR_ICON}</button>
           ${gh ? `<a class="gh" href="${esc(gh)}" target="_blank" rel="noopener" aria-label="${esc(it.name)} auf GitHub" title="Repo auf GitHub">${GH_ICON}</a>` : ''}
           ${it.supabase ? `<a class="gh" href="https://supabase.com/dashboard/project/${esc(it.supabase)}" target="_blank" rel="noopener" aria-label="${esc(it.name)} in Supabase" title="Supabase-Dashboard">${SB_ICON}${it.supabaseKey ? `<span class="dot" data-sb="${esc(it.supabase)}"></span>` : ''}</a>` : ''}
         </div>`;
@@ -280,8 +272,11 @@ function tileHtml(it) {
 
 function render() {
   const host = document.getElementById('sections');
-  const favs = favorites();
-  const groups = (favs.length ? [{ title: 'Häufig benutzt', items: favs }] : []).concat(SECTIONS);
+  // Favoriten stehen oben (in der Reihenfolge, in der sie markiert wurden) und fehlen dafür in ihrer Gruppe
+  const all = SECTIONS.flatMap(sec => sec.items);
+  const top = favs.map(u => all.find(it => it.url === u)).filter(Boolean);
+  const groups = [{ title: 'Favoriten', items: top }]
+    .concat(SECTIONS.map(sec => ({ title: sec.title, items: sec.items.filter(it => !isFav(it)) })));
   let html = '';
   for (const sec of groups) {
     if (!sec.items.length) continue;
@@ -364,13 +359,13 @@ render();
 loadPushed();
 checkSupabase();
 
-// Aufrufe zählen (Kacheln und Suchergebnisse)
-document.addEventListener('click', e => {
-  const a = e.target.closest('a[data-use]');
-  if (a) recordUse(a.dataset.use);
+// Stern antippen = Favorit an/aus
+document.getElementById('sections').addEventListener('click', e => {
+  const b = e.target.closest('button[data-fav]');
+  if (b) toggleFav(b.dataset.fav);
 });
-// Zurück aus einem Projekt (bfcache) oder App wieder im Vordergrund: Reihenfolge, Zeiten & Status auffrischen
-window.addEventListener('pageshow', e => { if (e.persisted) { render(); loadPushed(); checkSupabase(); } });
+// Zurück aus einem Projekt (bfcache) oder App wieder im Vordergrund: Zeiten & Status auffrischen
+window.addEventListener('pageshow', e => { if (e.persisted) { loadPushed(); checkSupabase(); } });
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { paintPushed(); loadPushed(); checkSupabase(); } });
 
 /* ---------------- Suche (Lupe / Taste „/“ / Strg+K) ---------------- */
@@ -386,7 +381,7 @@ document.addEventListener('visibilitychange', () => { if (document.visibilitySta
     hits = all.filter(it => !f || (it.name + ' ' + it.desc + ' ' + it.section).toLowerCase().includes(f));
     sel = Math.min(sel, Math.max(hits.length - 1, 0));
     box.innerHTML = hits.length ? hits.map((it, i) => `
-      <a class="hit${i === sel ? ' sel' : ''}" href="${esc(it.url)}" data-use="${esc(it.url)}">
+      <a class="hit${i === sel ? ' sel' : ''}" href="${esc(it.url)}">
         <span class="ico" style="background:${esc(it.color || '#334155')}">${iconHtml(it)}</span>
         <span><span class="name">${esc(it.name)}</span><br><span class="desc">${esc(it.desc)}</span></span>
       </a>`).join('') : '<div class="none">Nichts gefunden.</div>';
@@ -406,7 +401,7 @@ document.addEventListener('visibilitychange', () => { if (document.visibilitySta
   q.addEventListener('keydown', e => {
     if (e.key === 'ArrowDown' && hits.length) { sel = (sel + 1) % hits.length; update(); e.preventDefault(); }
     else if (e.key === 'ArrowUp' && hits.length) { sel = (sel - 1 + hits.length) % hits.length; update(); e.preventDefault(); }
-    else if (e.key === 'Enter' && hits[sel]) { recordUse(hits[sel].url); location.href = hits[sel].url; e.preventDefault(); }
+    else if (e.key === 'Enter' && hits[sel]) { location.href = hits[sel].url; e.preventDefault(); }
   });
   // Klick auf den abgedunkelten Hintergrund schließt das Fenster
   dlg.addEventListener('click', e => { if (e.target === dlg) dlg.close(); });
