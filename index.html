@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>mvs2 · Dashboard</title>
 <meta name="description" content="Persönliches Dashboard mit allen Projekten">
-<meta name="theme-color" content="#0f172a">
+<meta name="theme-color" content="#f4f6fb">
 <link rel="icon" href="favicon.ico" sizes="16x16 32x32 48x48">
 <link rel="icon" href="icons/favicon-32.png" type="image/png" sizes="32x32">
 <link rel="icon" href="icons/icon-192.png" type="image/png" sizes="192x192">
@@ -13,10 +13,10 @@
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" sizes="180x180">
 <link rel="manifest" href="manifest.json">
 <script>
-  // Theme vor dem ersten Rendern setzen (kein Aufblitzen). Standard: dunkel.
+  // Theme vor dem ersten Rendern setzen (kein Aufblitzen). Standard: hell.
   (function () {
-    var t = 'dark';
-    try { t = localStorage.getItem('dash-theme') || 'dark'; } catch (e) {}
+    var t = 'light';
+    try { t = localStorage.getItem('dash-theme') || 'light'; } catch (e) {}
     document.documentElement.setAttribute('data-theme', t);
   })();
 </script>
@@ -33,17 +33,17 @@
     --accent: #2563eb;
     --shadow: 0 1px 2px rgba(15,23,42,.06), 0 4px 16px rgba(15,23,42,.06);
   }
+  /* Dunkel: für AMOLED optimiert – echtes Schwarz, keine Verläufe, Karten nur über dünne Ränder abgesetzt */
   [data-theme="dark"] {
-    --bg: #0b1120;
-    --bg-grad: radial-gradient(1200px 600px at 10% -10%, #1e293b 0%, transparent 60%),
-               radial-gradient(900px 500px at 110% 10%, #0f2a24 0%, transparent 55%);
-    --card: #111a2e;
-    --card-hover: #16213a;
-    --border: #1f2a44;
-    --text: #e2e8f0;
-    --muted: #94a3b8;
+    --bg: #000000;
+    --bg-grad: none;
+    --card: #000000;
+    --card-hover: #0d0d0d;
+    --border: #262626;
+    --text: #e5e5e5;
+    --muted: #8a8a8a;
     --accent: #60a5fa;
-    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 6px 20px rgba(0,0,0,.25);
+    --shadow: none;
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; }
@@ -320,9 +320,9 @@ render();
   function apply(t) {
     document.documentElement.setAttribute('data-theme', t);
     btn.textContent = t === 'dark' ? '☀️' : '🌙';
-    meta.setAttribute('content', t === 'dark' ? '#0b1120' : '#f4f6fb');
+    meta.setAttribute('content', t === 'dark' ? '#000000' : '#f4f6fb');
   }
-  apply(document.documentElement.getAttribute('data-theme') || 'dark');
+  apply(document.documentElement.getAttribute('data-theme') || 'light');
   btn.addEventListener('click', () => {
     const t = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
     apply(t);
