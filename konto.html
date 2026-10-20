@@ -110,6 +110,7 @@ const FROM = {
   dashboard:  { label: 'Dashboard',  url: './' },
   travelbase: { label: 'TravelBase', url: '/TravelBase/' },
   questlog:   { label: 'Quest Log',  url: '/RealWorld-Questlog/' },
+  matchboard: { label: 'MatchBoard', url: '/MatchBoard/' },
 };
 const from = FROM[new URLSearchParams(location.search).get('from')] || FROM.dashboard;
 $('backLink').textContent = '← ' + from.label;
