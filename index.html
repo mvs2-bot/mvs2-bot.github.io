@@ -350,29 +350,25 @@
 <script>
 /* ================================================================
    PROJEKTE – hier pflegen.
-   Neues Projekt = neuen Eintrag ins passende Array kopieren.
+   Neues Projekt = neuen Eintrag in PROJECTS kopieren; mit badge: 'Login' landet es unter „Mit Login“.
    icon: Emoji ODER Schlüssel aus ICONS (unten)
    color: Hintergrundfarbe der Icon-Kachel
    repo:  optional, GitHub-Repo-Name (Standard: aus url abgeleitet, z. B. '/TravelBase/' → TravelBase)
    supabase: optional, Supabase-Projekt-ID → zusätzlicher Button zum Supabase-Dashboard
    supabaseKey: optional, öffentlicher Publishable Key → Statuspunkt (erreichbar / pausiert)
    ================================================================ */
+const PROJECTS = [
+  { name: 'TravelBase',         desc: 'Alle Reiseplanungen an einem Ort',            url: '/TravelBase/',             icon: 'globePin', color: '#2563eb', badge: 'Login', supabase: 'syaonnedmidaipwjjmio', supabaseKey: 'sb_publishable_a3tggKZJmotlFtIqKKdSYg_cNsazRkX' },
+  { name: 'Quest Log',          desc: 'The Real World: 100 Quests, Level & Titel',   url: '/RealWorld-Questlog/',     icon: 'quest',    color: '#7c3aed', badge: 'Login', supabase: 'syaonnedmidaipwjjmio', supabaseKey: 'sb_publishable_a3tggKZJmotlFtIqKKdSYg_cNsazRkX' },
+  { name: 'Quick-Tools',        desc: 'Währung, Phrasen, GPS & Notfall pro Land',    url: '/QuickTools/',             icon: 'tools',    color: '#0d9488' },
+  { name: 'Camper-Namenssuche', desc: 'Namen für den Bus vorschlagen & abstimmen',   url: '/Spitznamensuche-Camper/', icon: 'camper',   color: '#ea580c' },
+  { name: 'Münzwurf',           desc: 'Entscheidungshilfe: A oder B?',               url: '/Muenzwurf/',              icon: 'coin',     color: '#ca8a04' },
+];
+
+// Gruppen ergeben sich aus dem Badge: badge: 'Login' → „Mit Login“, sonst „Ohne Login“
 const SECTIONS = [
-  {
-    title: 'Reisen',
-    items: [
-      { name: 'TravelBase',  desc: 'Alle Reiseplanungen an einem Ort', url: '/TravelBase/',  icon: 'globePin', color: '#2563eb', badge: 'Login', supabase: 'syaonnedmidaipwjjmio', supabaseKey: 'sb_publishable_a3tggKZJmotlFtIqKKdSYg_cNsazRkX' },
-      { name: 'Quick-Tools', desc: 'Währung, Phrasen, GPS & Notfall pro Land', url: '/QuickTools/', icon: 'tools', color: '#0d9488' },
-    ]
-  },
-  {
-    title: 'Projekte & Tools',
-    items: [
-      { name: 'Camper-Namenssuche', desc: 'Namen für den Bus vorschlagen & abstimmen', url: '/Spitznamensuche-Camper/', icon: 'camper', color: '#ea580c' },
-      { name: 'Münzwurf',           desc: 'Entscheidungshilfe: A oder B?',             url: '/Muenzwurf/',            icon: 'coin',   color: '#ca8a04' },
-      { name: 'Quest Log',          desc: 'The Real World: 100 Quests, Level & Titel',  url: '/RealWorld-Questlog/',    icon: 'quest',  color: '#7c3aed', badge: 'Login', supabase: 'syaonnedmidaipwjjmio', supabaseKey: 'sb_publishable_a3tggKZJmotlFtIqKKdSYg_cNsazRkX' },
-    ]
-  },
+  { title: 'Mit Login',  items: PROJECTS.filter(it => it.badge === 'Login') },
+  { title: 'Ohne Login', items: PROJECTS.filter(it => it.badge !== 'Login') },
 ];
 
 const GITHUB_USER = 'mvs2-bot';
