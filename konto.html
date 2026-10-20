@@ -105,12 +105,13 @@ function errText(e) {
 }
 const ROLE_LABEL = { admin: 'Admin', member: 'Mitglied', guest: 'Gast' };
 
-/* ---------------- Zurück-Link: ?from=travelbase|questlog|dashboard ---------------- */
+/* ---------------- Zurück-Link: ?from=travelbase|questlog|matchboard|pegeltracker|dashboard ---------------- */
 const FROM = {
   dashboard:  { label: 'Dashboard',  url: './' },
   travelbase: { label: 'TravelBase', url: '/TravelBase/' },
   questlog:   { label: 'Quest Log',  url: '/RealWorld-Questlog/' },
   matchboard: { label: 'MatchBoard', url: '/MatchBoard/' },
+  pegeltracker: { label: 'PegelTracker', url: '/PegelTracker/' },
   dailymind:  { label: 'DailyMind',  url: '/DailyMind/' },
 };
 const from = FROM[new URLSearchParams(location.search).get('from')] || FROM.dashboard;
