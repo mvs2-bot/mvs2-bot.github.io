@@ -154,6 +154,8 @@
     display: grid; place-items: center; font-size: 1.7rem;
   }
   .tile .ico svg { width: 30px; height: 30px; }
+  .tile .ico, .search-dlg .hit .ico { position: relative; overflow: hidden; }
+  .tile .ico img, .search-dlg .hit .ico img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
   .tile .txt { min-width: 0; }
   .tile .name { font-weight: 650; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
   .tile .desc { color: var(--muted); font-size: .88rem; margin-top: 2px; hyphens: auto; overflow-wrap: anywhere; }
@@ -358,11 +360,11 @@
    supabaseKey: optional, öffentlicher Publishable Key → Statuspunkt (erreichbar / pausiert)
    ================================================================ */
 const PROJECTS = [
-  { name: 'TravelBase',         desc: 'Alle Reiseplanungen an einem Ort',            url: '/TravelBase/',             icon: 'globePin', color: '#2563eb', badge: 'Login', supabase: 'syaonnedmidaipwjjmio', supabaseKey: 'sb_publishable_a3tggKZJmotlFtIqKKdSYg_cNsazRkX' },
-  { name: 'Quest Log',          desc: 'The Real World: 100 Quests, Level & Titel',   url: '/RealWorld-Questlog/',     icon: 'quest',    color: '#7c3aed', badge: 'Login', supabase: 'syaonnedmidaipwjjmio', supabaseKey: 'sb_publishable_a3tggKZJmotlFtIqKKdSYg_cNsazRkX' },
-  { name: 'Quick-Tools',        desc: 'Währung, Phrasen, GPS & Notfall pro Land',    url: '/QuickTools/',             icon: 'tools',    color: '#0d9488' },
-  { name: 'Camper-Namenssuche', desc: 'Namen für den Bus vorschlagen & abstimmen',   url: '/Spitznamensuche-Camper/', icon: 'camper',   color: '#ea580c' },
-  { name: 'Münzwurf',           desc: 'Entscheidungshilfe: A oder B?',               url: '/Muenzwurf/',              icon: 'coin',     color: '#ca8a04' },
+  { name: 'TravelBase',         desc: 'Alle Reiseplanungen an einem Ort',            url: '/TravelBase/', img: '/TravelBase/icons/apple-touch-icon.png',             icon: 'globePin', color: '#2563eb', badge: 'Login', supabase: 'syaonnedmidaipwjjmio', supabaseKey: 'sb_publishable_a3tggKZJmotlFtIqKKdSYg_cNsazRkX' },
+  { name: 'Quest Log',          desc: 'The Real World: 100 Quests, Level & Titel',   url: '/RealWorld-Questlog/', img: '/RealWorld-Questlog/icons/apple-touch-icon.png',     icon: 'quest',    color: '#7c3aed', badge: 'Login', supabase: 'syaonnedmidaipwjjmio', supabaseKey: 'sb_publishable_a3tggKZJmotlFtIqKKdSYg_cNsazRkX' },
+  { name: 'Quick-Tools',        desc: 'Währung, Phrasen, GPS & Notfall pro Land',    url: '/QuickTools/', img: '/QuickTools/icon.svg',             icon: 'tools',    color: '#0d9488' },
+  { name: 'Camper-Namenssuche', desc: 'Namen für den Bus vorschlagen & abstimmen',   url: '/Spitznamensuche-Camper/', img: '/Spitznamensuche-Camper/apple-touch-icon.png', icon: 'camper',   color: '#ea580c' },
+  { name: 'Münzwurf',           desc: 'Entscheidungshilfe: A oder B?',               url: '/Muenzwurf/', img: '/Muenzwurf/apple-touch-icon.png',              icon: 'coin',     color: '#ca8a04' },
 ];
 
 // Gruppen ergeben sich aus dem Badge: badge: 'Login' → „Mit Login“, sonst „Ohne Login“
@@ -394,7 +396,9 @@ const ICONS = {
 /* ---------------- Rendering ---------------- */
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
-const iconHtml = it => ICONS[it.icon] || esc(it.icon);
+// Echtes App-Icon der Seite über dem Symbol; lädt es nicht, entfernt es sich und das Symbol bleibt sichtbar.
+const iconHtml = it => (ICONS[it.icon] || esc(it.icon))
+  + (it.img ? `<img src="${esc(it.img)}" alt="" loading="lazy" onerror="this.remove()">` : '');
 
 /* ---------------- Favoriten (Stern, nur lokal auf diesem Gerät) ---------------- */
 const FAV_KEY = 'dash-favs';
