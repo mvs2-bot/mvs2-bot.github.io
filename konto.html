@@ -112,6 +112,7 @@ const FROM = {
   questlog:   { label: 'Quest Log',  url: '/RealWorld-Questlog/' },
   matchboard: { label: 'MatchBoard', url: '/MatchBoard/' },
   pegeltracker: { label: 'PegelTracker', url: '/PegelTracker/' },
+  dailymind:  { label: 'DailyMind',  url: '/DailyMind/' },
 };
 const from = FROM[new URLSearchParams(location.search).get('from')] || FROM.dashboard;
 $('backLink').textContent = '← ' + from.label;
