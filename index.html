@@ -531,7 +531,7 @@ function startDashboard() {
    Admin-Einstellungen nur für globale Admins; vorerst die Verwaltung in TravelBase. */
 const profileMenu = (() => {
   const btn = document.getElementById('profileBtn');
-  const ADMIN_URL = '/TravelBase/verwaltung.html';
+  const ADMIN_URL = 'admin.html?from=dashboard';
   const CACHE_KEY = 'dash-profile';
   let user = null, profile = {}, photo = null, menu = null, onLogout = () => {};
 
