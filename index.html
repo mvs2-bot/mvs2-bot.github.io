@@ -362,13 +362,9 @@
 const PROJECTS = [
   { name: 'TravelBase',         desc: 'Alle Reiseplanungen an einem Ort',            url: '/TravelBase/', img: '/TravelBase/icons/apple-touch-icon.png',             icon: 'globePin', color: '#2563eb', badge: 'Login', supabase: 'syaonnedmidaipwjjmio', supabaseKey: 'sb_publishable_a3tggKZJmotlFtIqKKdSYg_cNsazRkX' },
   { name: 'Quest Log',          desc: 'The Real World: 100 Quests, Level & Titel',   url: '/RealWorld-Questlog/', img: '/RealWorld-Questlog/icons/apple-touch-icon.png',     icon: 'quest',    color: '#7c3aed', badge: 'Login', supabase: 'syaonnedmidaipwjjmio', supabaseKey: 'sb_publishable_a3tggKZJmotlFtIqKKdSYg_cNsazRkX' },
-  { name: 'Matchboard',          desc: 'Lasset die Spiele beginnen!',   url: '/MatchBoard/', img: '/Matchboard/icon.png',     icon: 'M',    color: '#0000FF', badge: 'Login', supabase: 'syaonnedmidaipwjjmio', supabaseKey: 'sb_publishable_a3tggKZJmotlFtIqKKdSYg_cNsazRkX' },
-  { name: 'DailyMind',          desc: 'Dankbar sein',   url: '/DailyMind/', img: '/DailyMind/icon.png',     icon: 'D',    color: '#7C9A82', badge: 'Login', supabase: 'syaonnedmidaipwjjmio', supabaseKey: 'sb_publishable_a3tggKZJmotlFtIqKKdSYg_cNsazRkX' },
-  { name: 'PegelTracker',          desc: 'Alles nur zu Forschungszwecken',   url: '/PegelTracker/', img: '/PegelTracker/icon.svg',     icon: 'P',    color: '#0000FF', badge: 'Login', supabase: 'syaonnedmidaipwjjmio', supabaseKey: 'sb_publishable_a3tggKZJmotlFtIqKKdSYg_cNsazRkX' },
-
-
-
-  
+  { name: 'MatchBoard',         desc: 'Lasset die Spiele beginnen!',                 url: '/MatchBoard/',                                                         icon: 'trophy',   color: '#ea580c', badge: 'Login', supabase: 'syaonnedmidaipwjjmio', supabaseKey: 'sb_publishable_a3tggKZJmotlFtIqKKdSYg_cNsazRkX' },
+  { name: 'DailyMind',          desc: 'Dankbar sein',                                url: '/DailyMind/', img: '/DailyMind/icon.svg',                         icon: 'sunrise',  color: '#7c9a82', badge: 'Login', supabase: 'syaonnedmidaipwjjmio', supabaseKey: 'sb_publishable_a3tggKZJmotlFtIqKKdSYg_cNsazRkX' },
+  { name: 'PegelTracker',       desc: 'Alles nur zu Forschungszwecken',              url: '/PegelTracker/', img: '/PegelTracker/icon.svg',                   icon: 'glass',    color: '#d97706', badge: 'Login', supabase: 'syaonnedmidaipwjjmio', supabaseKey: 'sb_publishable_a3tggKZJmotlFtIqKKdSYg_cNsazRkX' },
   { name: 'Quick-Tools',        desc: 'Währung, Phrasen, GPS & Notfall pro Land',    url: '/QuickTools/', img: '/QuickTools/icon.svg',             icon: 'tools',    color: '#0d9488' },
   { name: 'Camper-Namenssuche', desc: 'Namen für den Bus vorschlagen & abstimmen',   url: '/Spitznamensuche-Camper/', img: '/Spitznamensuche-Camper/apple-touch-icon.png', icon: 'camper',   color: '#ea580c' },
   { name: 'Münzwurf',           desc: 'Entscheidungshilfe: A oder B?',               url: '/Muenzwurf/', img: '/Muenzwurf/apple-touch-icon.png',              icon: 'coin',     color: '#ca8a04' },
@@ -397,6 +393,9 @@ const ICONS = {
   tools:    '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"/></svg>',
   camper:   '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 6.5 9 4h6l4 2.5"/><path d="M3 16V9a2 2 0 0 1 2-2h11l4 4v5h-1"/><path d="M3 16h2m4 0h6"/><circle cx="7" cy="16.5" r="1.8"/><circle cx="17" cy="16.5" r="1.8"/><path d="M14 7v4h6"/></svg>',
   quest:    '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h11v13a3 3 0 0 1-3 3H7"/><path d="M8 4a2 2 0 0 0-2 2v11a3 3 0 0 1-3-3v-1h3"/><path d="m10 10 2 2 4-4M10 15h5"/></svg>',
+  trophy:   '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3M12 14v3M8 20h8M9.5 17h5l.5 3h-6z"/></svg>',
+  sunrise:  '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 15a5.5 5.5 0 0 1 11 0M3 15h18M7 19h10M12 5v2.5M5.6 8.1l1.6 1.6M18.4 8.1l-1.6 1.6"/></svg>',
+  glass:    '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4h12l-1.2 15.1a1.5 1.5 0 0 1-1.5 1.4H8.7a1.5 1.5 0 0 1-1.5-1.4z"/><path d="M6.6 10h10.8"/><circle cx="11" cy="14" r=".6"/><circle cx="13.5" cy="16.5" r=".6"/></svg>',
   coin:     '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="12" rx="8" ry="9"/><path d="M12 7.5v9M9.5 9.5c0-1 1.1-1.7 2.5-1.7s2.5.7 2.5 1.6c0 2.3-5 1.2-5 3.6 0 1 1.1 1.7 2.5 1.7s2.5-.7 2.5-1.7"/></svg>',
 };
 
