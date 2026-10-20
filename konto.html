@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>mvs2 · Kontoeinstellungen</title>
+<meta name="theme-color" content="#f4f6fb">
+<link rel="icon" href="favicon.ico" sizes="16x16 32x32 48x48">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png" sizes="180x180">
+<script>
+  // Darstellung gilt für alle Seiten (overall-theme), vor dem ersten Rendern setzen
+  (function () {
+    var t = 'light';
+    try { t = localStorage.getItem('overall-theme') || localStorage.getItem('dash-theme') || 'light'; } catch (e) {}
+    document.documentElement.setAttribute('data-theme', t);
+  })();
+</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="shared/overall-account.js"></script>
+<style>
+  /* Kontoeinstellungen für alle Apps (Dashboard, TravelBase, Quest Log).
+     Gleiche Farben wie das Dashboard; die Namen --line/--ink/--mute/--p1/--hover braucht das Konto-Modul. */
+  :root {
+    --bg: #f4f6fb; --card: #ffffff; --card-hover: #f8faff; --border: #e2e8f0; --text: #0f172a; --muted: #64748b; --accent: #2563eb;
+    --shadow: 0 1px 2px rgba(15,23,42,.06), 0 4px 16px rgba(15,23,42,.06);
+    --line: var(--border); --ink: var(--text); --mute: var(--muted); --p1: var(--accent); --hover: var(--card-hover); --danger: #dc2626;
+  }
+  [data-theme="dark"] {
+    --bg: #000000; --card: #000000; --card-hover: #0d0d0d; --border: #262626; --text: #e5e5e5; --muted: #8a8a8a; --accent: #60a5fa; --shadow: none;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  a { color: var(--accent); }
+  body { min-height: 100vh; background: var(--bg); color: var(--text); font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 0 16px 48px; }
+
+  header { position: sticky; top: 0; z-index: 10; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); background: color-mix(in srgb, var(--bg) 78%, transparent); border-bottom: 1px solid var(--border); }
+  .bar { max-width: 760px; margin: 0 auto; padding: 12px 16px; display: flex; align-items: center; gap: 12px; }
+  .bar .home { display: flex; align-items: center; gap: 10px; color: inherit; text-decoration: none; font-weight: 700; }
+  .bar .home img { width: 32px; height: 32px; }
+  .bar .spacer { flex: 1; }
+  .icon-btn, .back { border: 1.5px solid var(--border); background: var(--card); color: var(--text); border-radius: 10px; padding: 7px 10px; font: inherit; line-height: 1.2; cursor: pointer; text-decoration: none; }
+  .icon-btn { font-size: 1.2rem; line-height: 1; }
+  .back { font-size: .88rem; font-weight: 600; white-space: nowrap; }
+  .icon-btn:hover, .back:hover { background: var(--card-hover); border-color: var(--accent); }
+
+  h1 { margin: 22px 0 4px; font-size: clamp(1.4rem, 4vw, 1.8rem); }
+  .lead { margin: 0 0 6px; color: var(--muted); }
+  .jump { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0 4px; }
+  .jump a { padding: 6px 12px; border-radius: 999px; border: 1.5px solid var(--border); color: var(--text); text-decoration: none; font-size: .85rem; font-weight: 600; background: var(--card); }
+  .jump a:hover { border-color: var(--accent); }
+
+  .group { margin-top: 30px; scroll-margin-top: 70px; }
+  .group-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px 12px; flex-wrap: wrap; margin-bottom: 10px; }
+  .group-head h2 { margin: 0; font-size: 1.15rem; }
+  .group-head p { margin: 0; color: var(--muted); font-size: .85rem; }
+  .tag { display: inline-flex; align-items: center; gap: 6px; font-size: .72rem; font-weight: 700; padding: 3px 9px; border-radius: 999px; border: 1px solid var(--border); color: var(--muted); white-space: nowrap; }
+  .tag i { width: 8px; height: 8px; border-radius: 50%; background: var(--app, var(--accent)); }
+
+  .card { padding: 18px; border-radius: 16px; background: var(--card); border: 1px solid var(--border); box-shadow: var(--shadow); margin-bottom: 12px; scroll-margin-top: 70px; }
+  .card.app { border-left: 4px solid var(--app); }
+  .card h3 { margin: 0 0 4px; font-size: 1rem; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .card h3 .tag { margin-left: auto; }
+  .card > .note, .note { margin: 0 0 12px; color: var(--muted); font-size: .84rem; }
+  .card h4 { margin: 18px 0 8px; font-size: .9rem; }
+
+  .seg { display: inline-flex; border: 1.5px solid var(--border); border-radius: 10px; overflow: hidden; }
+  .seg button { border: 0; background: var(--card); color: var(--text); padding: 9px 16px; font: inherit; font-weight: 600; cursor: pointer; }
+  .seg button + button { border-left: 1.5px solid var(--border); }
+  .seg button[aria-pressed="true"] { background: var(--accent); color: #fff; }
+  [data-theme="dark"] .seg button[aria-pressed="true"] { color: #000; }
+  .row { display: flex; align-items: center; justify-content: space-between; gap: 10px 16px; flex-wrap: wrap; padding: 10px 0; }
+  .row + .row { border-top: 1px solid var(--border); }
+  .row b { display: block; font-size: .92rem; }
+  .row small { display: block; color: var(--muted); font-size: .8rem; }
+
+  label.field { display: flex; flex-direction: column; gap: 4px; font-size: .78rem; font-weight: 700; color: var(--muted); max-width: 360px; }
+  input[type=text], select { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; font: inherit; font-size: 16px; color: var(--text); width: 100%; }
+  .switch { display: flex; gap: 12px; align-items: flex-start; padding: 10px 0; cursor: pointer; }
+  .switch + .switch { border-top: 1px solid var(--border); }
+  .switch input { margin-top: 3px; width: 18px; height: 18px; accent-color: var(--accent); flex: 0 0 auto; }
+  .switch b { display: block; font-size: .92rem; }
+  .switch small { display: block; color: var(--muted); font-size: .8rem; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { font-size: .8rem; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--border); background: var(--card-hover); }
+  .btn { align-self: flex-start; background: var(--accent); color: #fff; border: 2px solid var(--accent); border-radius: 10px; padding: 9px 16px; font: inherit; font-weight: 700; font-size: .92rem; cursor: pointer; }
+  [data-theme="dark"] .btn { color: #000; }
+  .btn.ghost { background: var(--card); color: var(--text); border: 1.5px solid var(--border); }
+  .btn.ghost:hover { border-color: var(--accent); }
+  .btn:disabled { opacity: .6; cursor: wait; }
+  .msg { font-size: .84rem; font-weight: 600; border-radius: 8px; padding: 8px 12px; margin-top: 12px; background: #fee2e2; color: #b91c1c; }
+  .msg.ok { background: #dcfce7; color: #15803d; }
+  [data-theme="dark"] .msg { background: #3b0d0d; color: #fca5a5; }
+  [data-theme="dark"] .msg.ok { background: #14361f; color: #86efac; }
+  .msg[hidden] { display: none; }
+  ul.plain { list-style: none; margin: 0; padding: 0; }
+  ul.plain li { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; font-size: .9rem; }
+  ul.plain li + li { border-top: 1px solid var(--border); }
+  ul.plain li span { color: var(--muted); font-size: .82rem; white-space: nowrap; }
+  form.stack { display: flex; flex-direction: column; gap: 12px; }
+
+  #gate { max-width: 380px; margin: 12vh auto 0; }
+  #gate input { display: block; width: 100%; margin-top: 4px; padding: 10px 12px; font: inherit; font-size: 1rem; border: 1.5px solid var(--border); border-radius: 10px; background: var(--bg); color: var(--text); }
+  #gate label { display: block; font-size: .85rem; color: var(--muted); margin-bottom: 12px; }
+  #gate .btn { width: 100%; }
+  body:not(.ready) #page, body.ready #gate { display: none; }
+  footer { margin-top: 30px; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; color: var(--muted); font-size: .85rem; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="bar">
+    <a class="home" href="./"><img src="icon.svg" alt=""><span>mvs2</span></a>
+    <span class="spacer"></span>
+    <a class="back" id="backLink" href="./">← Dashboard</a>
+    <button class="icon-btn" id="themeBtn" type="button" aria-label="Hell/Dunkel umschalten" title="Hell/Dunkel">🌙</button>
+  </div>
+</header>
+
+<main class="wrap">
+  <section id="gate">
+    <div class="card" id="gateBusy"><p class="note" style="margin:0">Anmeldung wird geprüft …</p></div>
+    <form class="card" id="loginForm" hidden>
+      <h3>Anmelden</h3>
+      <p class="note">Mit deinem Konto für TravelBase, Quest Log und das Dashboard.</p>
+      <label>E-Mail<input type="email" id="loginEmail" autocomplete="username" required></label>
+      <label>Passwort<input type="password" id="loginPassword" autocomplete="current-password" required></label>
+      <button class="btn" type="submit">Anmelden</button>
+      <div class="msg" id="loginMsg" hidden></div>
+    </form>
+  </section>
+
+  <div id="page">
+    <h1>Kontoeinstellungen</h1>
+    <p class="lead" id="who"></p>
+    <nav class="jump" id="jump" aria-label="Bereiche"></nav>
+
+    <section class="group" id="global">
+      <div class="group-head">
+        <h2>🌐 Globale Kontoeinstellungen</h2>
+        <span class="tag"><i></i>gilt für alle Apps</span>
+      </div>
+      <div class="card" id="profil"><h3>👤 Profil</h3><div id="mountProfile"></div></div>
+      <div class="card" id="email"><h3>✉️ E-Mail-Adresse</h3><div id="mountEmail"></div></div>
+      <div class="card" id="passwort"><h3>🔑 Passwort</h3><div id="mountPassword"></div></div>
+      <div class="card" id="darstellung">
+        <h3>🎨 Darstellung &amp; Sprache</h3>
+        <p class="note">Gilt auf diesem Gerät für alle Seiten.</p>
+        <div class="row">
+          <div><b>Design</b><small>Hell oder dunkel (dunkel ist für AMOLED-Displays optimiert)</small></div>
+          <div class="seg" role="group" aria-label="Design">
+            <button type="button" data-theme-set="light">☀️ Hell</button>
+            <button type="button" data-theme-set="dark">🌙 Dunkel</button>
+          </div>
+        </div>
+        <div class="row">
+          <div><b>Sprache</b><small>Weitere Sprachen gibt es noch nicht.</small></div>
+          <select disabled aria-label="Sprache" style="width:auto"><option>Deutsch</option></select>
+        </div>
+      </div>
+    </section>
+
+    <section class="group" id="apps">
+      <div class="group-head">
+        <h2>🧩 Individuelle Kontoeinstellungen</h2>
+        <p>Persönliche Einstellungen, die nur in einer App gelten.</p>
+      </div>
+      <div id="appCards"><div class="card"><p class="note" style="margin:0">⏳ Lädt …</p></div></div>
+    </section>
+
+    <footer>
+      <span id="footWho"></span>
+      <button class="btn ghost" type="button" id="logoutBtn">🚪 Abmelden</button>
+    </footer>
+  </div>
+</main>
+
+<script>
+const CORE = { url: 'https://syaonnedmidaipwjjmio.supabase.co', key: 'sb_publishable_a3tggKZJmotlFtIqKKdSYg_cNsazRkX' };
+const sb = window.supabase ? window.supabase.createClient(CORE.url, CORE.key, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } }) : null;
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const check = ({ data, error }) => { if (error) throw error; return data; };
+function msg(el, text, ok) { el.textContent = text || ''; el.className = 'msg' + (ok ? ' ok' : ''); el.hidden = !text; }
+function errText(e) {
+  const m = String(e && (e.message || e));
+  if (/invalid login credentials/i.test(m)) return 'E-Mail oder Passwort ist falsch.';
+  if (/row-level security|permission denied/i.test(m)) return 'Keine Berechtigung für diese Aktion.';
+  if (!navigator.onLine || /fetch|network|load failed/i.test(m)) return 'Keine Verbindung zum Server. Bist du online?';
+  return m;
+}
+const ROLE_LABEL = { admin: 'Admin', member: 'Mitglied', guest: 'Gast' };
+
+/* ---------------- Zurück-Link: ?from=travelbase|questlog|dashboard ---------------- */
+const FROM = {
+  dashboard:  { label: 'Dashboard',  url: './' },
+  travelbase: { label: 'TravelBase', url: '/TravelBase/' },
+  questlog:   { label: 'Quest Log',  url: '/RealWorld-Questlog/' },
+};
+const from = FROM[new URLSearchParams(location.search).get('from')] || FROM.dashboard;
+$('backLink').textContent = '← ' + from.label;
+$('backLink').href = from.url;
+
+/* ---------------- Darstellung (global, alle Seiten auf dieser Domain) ---------------- */
+function applyTheme(t, save) {
+  document.documentElement.setAttribute('data-theme', t);
+  $('themeBtn').textContent = t === 'dark' ? '☀️' : '🌙';
+  document.querySelector('meta[name="theme-color"]').setAttribute('content', t === 'dark' ? '#000000' : '#f4f6fb');
+  document.querySelectorAll('[data-theme-set]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.themeSet === t)));
+  if (save) { try { localStorage.setItem('overall-theme', t); } catch (e) {} }
+}
+applyTheme(document.documentElement.getAttribute('data-theme') || 'light', false);
+$('themeBtn').addEventListener('click', () => applyTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark', true));
+document.querySelectorAll('[data-theme-set]').forEach(b => b.addEventListener('click', () => applyTheme(b.dataset.themeSet, true)));
+// Umschalten in einem anderen Tab gilt sofort auch hier
+window.addEventListener('storage', e => { if (e.key === 'overall-theme' && e.newValue) applyTheme(e.newValue, false); });
+
+/* ---------------- Individuelle Einstellungen je App ----------------
+   Jede App bekommt eine Karte, wenn man Zugang hat (overall_app_role). Neue Apps: Eintrag in APP_CARDS. */
+const APP_CARDS = {
+  questlog:   { icon: '📜', color: '#7c3aed', render: questlogCard },
+  travelbase: { icon: '🌍', color: '#2563eb', render: travelbaseCard },
+  dashboard:  { icon: '🏠', color: '#0d9488', render: dashboardCard },
+};
+
+function appCard(app, role, body) {
+  const meta = APP_CARDS[app.id] || { icon: '🧩', color: '#64748b' };
+  return `
+    <div class="card app" id="app-${esc(app.id)}" style="--app:${meta.color}">
+      <h3>${meta.icon} ${esc(app.name)}<span class="tag"><i></i>nur ${esc(app.name)}</span></h3>
+      <p class="note">Deine Rolle: <b>${esc(ROLE_LABEL[role] || role)}</b>${app.url ? ` · <a href="${esc(app.url)}">App öffnen</a>` : ''}</p>
+      ${body}
+    </div>`;
+}
+
+async function questlogCard(card, user) {
+  const p = check(await sb.from('questlog_players').select('player_name, starthilfe, hardcore, game_started_at, show_avatar, visible, share_questlog').eq('id', user.id).maybeSingle());
+  const box = card.querySelector('.app-body');
+  if (!p || !p.game_started_at) { box.innerHTML = '<p class="note" style="margin:0">Du hast im Quest Log noch kein Spiel begonnen. Die Einstellungen erscheinen nach dem Spielstart.</p>'; return; }
+  const fmt = d => new Date(d).toLocaleDateString('de-DE');
+  box.innerHTML = `
+    <form class="stack" id="qlNameForm">
+      <label class="field">Spielername<input type="text" id="qlName" maxlength="40" required value="${esc(p.player_name)}"></label>
+      <button class="btn" type="submit">Speichern</button>
+    </form>
+    <h4>🔒 Privatsphäre</h4>
+    <label class="switch"><input type="checkbox" data-ql="visible"${p.visible !== false ? ' checked' : ''}>
+      <span><b>Für Mitspieler sichtbar</b><small>Du erscheinst bei den anderen im Dashboard, im Scoreboard und in der Aktivität.</small></span></label>
+    <label class="switch"><input type="checkbox" data-ql="show_avatar"${p.show_avatar !== false ? ' checked' : ''}>
+      <span><b>Profilbild für Mitspieler sichtbar</b><small>Ausgeschaltet sehen die anderen nur deine Initialen.</small></span></label>
+    <label class="switch"><input type="checkbox" data-ql="share_questlog"${p.share_questlog ? ' checked' : ''}>
+      <span><b>Questlog für Mitspieler freigeben</b><small>Mitspieler können dein Questlog ansehen, aber nichts ändern.</small></span></label>
+    <h4>🎮 Grundregeln</h4>
+    <p class="note">Seit Spielbeginn festgelegt.</p>
+    <div class="chips">
+      <span class="chip">🗓️ Spielbeginn ${fmt(p.game_started_at)}</span>
+      <span class="chip">🤝 Starthilfe: ${p.starthilfe ? 'Ja' : 'Nein'}</span>
+      <span class="chip">💀 Hardcore Mode: ${p.hardcore ? 'Ja' : 'Nein'}</span>
+    </div>
+    <div class="msg" hidden></div>`;
+  const out = box.querySelector('.msg');
+  const save = fields => sb.from('questlog_players').update(fields).eq('id', user.id).then(check);
+  box.querySelector('#qlNameForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const b = e.target.querySelector('.btn'); b.disabled = true; msg(out, '');
+    try { await save({ player_name: box.querySelector('#qlName').value.trim() }); msg(out, '✅ Gespeichert.', true); }
+    catch (err) { msg(out, errText(err)); }
+    finally { b.disabled = false; }
+  });
+  box.querySelectorAll('[data-ql]').forEach(cb => cb.addEventListener('change', async () => {
+    msg(out, '');
+    try { await save({ [cb.dataset.ql]: cb.checked }); msg(out, '✅ Gespeichert.', true); }
+    catch (err) { cb.checked = !cb.checked; msg(out, errText(err)); }
+  }));
+}
+
+async function travelbaseCard(card) {
+  const trips = check(await sb.rpc('travelbase_my_trips')) || [];
+  card.querySelector('.app-body').innerHTML = `
+    <h4>🧳 Meine Reisen</h4>
+    ${trips.length ? `<ul class="plain">${trips.map(t => `<li><a href="/TravelBase/${esc(t.slug)}/">${esc((t.flags || []).join(' '))} ${esc(t.title)}</a><span>${esc(ROLE_LABEL[t.role] || t.role)}</span></li>`).join('')}</ul>`
+      : '<p class="note" style="margin:0">Du bist noch bei keiner Reise eingetragen.</p>'}
+    <p class="note" style="margin:12px 0 0">Wer welche Reise sieht, legen Admins fest. Eigene TravelBase-Einstellungen gibt es noch nicht.</p>`;
+}
+
+async function dashboardCard(card) {
+  const box = card.querySelector('.app-body');
+  const favs = () => { try { return JSON.parse(localStorage.getItem('dash-favs')) || []; } catch (e) { return []; } };
+  const paint = () => {
+    const n = favs().length;
+    box.innerHTML = `
+      <div class="row">
+        <div><b>Favoriten</b><small>${n ? `${n} angeheftet` : 'Keine angeheftet'} · nur auf diesem Gerät gespeichert</small></div>
+        <button class="btn ghost" type="button"${n ? '' : ' disabled'}>Zurücksetzen</button>
+      </div>`;
+    box.querySelector('button').addEventListener('click', () => {
+      if (!confirm('Alle Favoriten im Dashboard entfernen?')) return;
+      try { localStorage.removeItem('dash-favs'); } catch (e) {}
+      paint();
+    });
+  };
+  paint();
+}
+
+async function renderApps(user) {
+  const host = $('appCards');
+  try {
+    const apps = check(await sb.from('overall_apps').select('id, name, url, is_active').order('created_at')).filter(a => a.is_active);
+    const roles = await Promise.all(apps.map(a => sb.rpc('overall_app_role', { p_app: a.id }).then(check).catch(() => null)));
+    const mine = apps.map((a, i) => ({ app: a, role: roles[i] })).filter(x => x.role);
+    // Reihenfolge: App, von der man kommt, zuerst
+    const fromId = new URLSearchParams(location.search).get('from');
+    mine.sort((a, b) => (b.app.id === fromId) - (a.app.id === fromId));
+    if (!mine.length) { host.innerHTML = '<div class="card"><p class="note" style="margin:0">Du hast noch keinen Zugang zu einer App.</p></div>'; return mine; }
+    host.innerHTML = mine.map(x => appCard(x.app, x.role, '<div class="app-body"><p class="note" style="margin:0">⏳ Lädt …</p></div>')).join('');
+    await Promise.all(mine.map(async x => {
+      const card = $('app-' + x.app.id), meta = APP_CARDS[x.app.id];
+      try {
+        if (meta && meta.render) await meta.render(card, user);
+        else card.querySelector('.app-body').innerHTML = '<p class="note" style="margin:0">Für diese App gibt es noch keine eigenen Einstellungen.</p>';
+      } catch (e) { card.querySelector('.app-body').innerHTML = `<p class="note" style="margin:0">${esc(errText(e))}</p>`; }
+    }));
+    return mine;
+  } catch (e) { host.innerHTML = `<div class="card"><p class="note" style="margin:0">${esc(errText(e))}</p></div>`; return []; }
+}
+
+/* ---------------- Seite aufbauen ---------------- */
+let shown = null;
+async function start() {
+  if (!sb) { $('gateBusy').hidden = true; $('loginForm').hidden = false; msg($('loginMsg'), 'Keine Verbindung zum Server. Bist du online?'); return; }
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) { shown = null; document.body.classList.remove('ready'); $('gateBusy').hidden = true; $('loginForm').hidden = false; return; }
+  if (shown === session.user.id) return;
+  shown = session.user.id;
+  const user = { id: session.user.id, email: session.user.email };
+  document.body.classList.add('ready');
+  $('who').textContent = 'Angemeldet als ' + user.email;
+  $('footWho').textContent = user.email;
+
+  const redirectTo = location.origin + '/TravelBase/';
+  OverallAccount.mountSettings($('mountProfile'), { sb });
+  OverallAccount.mountEmail($('mountEmail'), { sb, redirectTo });
+  OverallAccount.mountPassword($('mountPassword'), { sb, redirectTo });
+
+  const mine = await renderApps(user);
+  $('jump').innerHTML = '<a href="#global">🌐 Global</a>' + mine.map(x => `<a href="#app-${esc(x.app.id)}">${(APP_CARDS[x.app.id] || { icon: '🧩' }).icon} ${esc(x.app.name)}</a>`).join('');
+  if (location.hash) { const t = document.querySelector(location.hash.replace(/[^#\w-]/g, '')); if (t) t.scrollIntoView(); }
+}
+
+$('loginForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const b = e.target.querySelector('.btn'); b.disabled = true; msg($('loginMsg'), '');
+  try {
+    check(await sb.auth.signInWithPassword({ email: $('loginEmail').value.trim(), password: $('loginPassword').value }));
+    $('loginPassword').value = '';
+    await start();
+  } catch (err) { msg($('loginMsg'), errText(err)); }
+  finally { b.disabled = false; }
+});
+$('logoutBtn').addEventListener('click', async () => {
+  try { localStorage.removeItem('dash-access'); } catch (e) {}
+  await sb.auth.signOut().catch(() => {});
+  location.href = from.url;
+});
+if (sb) sb.auth.onAuthStateChange(ev => { if (ev === 'SIGNED_OUT') { shown = null; setTimeout(start, 0); } });
+start();
+</script>
+</body>
+</html>

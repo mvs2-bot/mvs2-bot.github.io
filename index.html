@@ -16,9 +16,10 @@
 <script src="shared/overall-account.js"></script>
 <script>
   // Theme vor dem ersten Rendern setzen (kein Aufblitzen). Standard: hell.
+  // overall-theme gilt für alle Seiten (Kontoeinstellungen → Darstellung), dash-theme ist der alte Schlüssel.
   (function () {
     var t = 'light';
-    try { t = localStorage.getItem('dash-theme') || 'light'; } catch (e) {}
+    try { t = localStorage.getItem('overall-theme') || localStorage.getItem('dash-theme') || 'light'; } catch (e) {}
     document.documentElement.setAttribute('data-theme', t);
   })();
 </script>
@@ -526,7 +527,7 @@ function startDashboard() {
 }
 
 /* ---------------- Profilbild oben rechts + Menü ----------------
-   Bild und Name aus overall_profiles (gilt für alle Apps), Dialoge aus shared/overall-account.js.
+   Bild und Name aus overall_profiles (gilt für alle Apps), Kontoeinstellungen auf konto.html (für alle Apps).
    Admin-Einstellungen nur für globale Admins; vorerst die Verwaltung in TravelBase. */
 const profileMenu = (() => {
   const btn = document.getElementById('profileBtn');
@@ -554,8 +555,7 @@ const profileMenu = (() => {
         <span class="pm-ava">${avatarHtml()}</span>
         <div><b>${esc(shownName())}</b><small>${esc(user.email)}</small></div>
       </div>
-      <button class="pm-item" type="button" role="menuitem" data-act="settings">⚙️ Kontoeinstellungen</button>
-      <button class="pm-item" type="button" role="menuitem" data-act="password">🔑 Passwort ändern</button>
+      <a class="pm-item" role="menuitem" href="konto.html?from=dashboard">⚙️ Kontoeinstellungen</a>
       ${profile.role === 'admin' ? '<a class="pm-item" role="menuitem" href="' + ADMIN_URL + '">🛡️ Admin-Einstellungen<small>nur Admins</small></a>' : ''}
       <div class="pm-sep"></div>
       <button class="pm-item danger" type="button" role="menuitem" data-act="logout">🚪 Abmelden</button>`;
@@ -569,12 +569,7 @@ const profileMenu = (() => {
       menu.addEventListener('click', e => {
         const b = e.target.closest('[data-act]'); if (!b) return;
         close();
-        if (b.dataset.act === 'settings') OverallAccount.openSettings({ sb, onChange: p => {
-          const { photo: pic, ...row } = p;
-          profile = { ...profile, ...row }; photo = pic || null; save(); paint();
-        } });
-        else if (b.dataset.act === 'password') OverallAccount.openPassword({ sb, redirectTo: location.origin + '/TravelBase/' });
-        else if (b.dataset.act === 'logout') onLogout();
+        if (b.dataset.act === 'logout') onLogout();
       });
       document.body.appendChild(menu);
     }
@@ -785,7 +780,7 @@ document.addEventListener('visibilitychange', () => { if (document.visibilitySta
   btn.addEventListener('click', () => {
     const t = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
     apply(t);
-    try { localStorage.setItem('dash-theme', t); } catch (e) {}
+    try { localStorage.setItem('overall-theme', t); } catch (e) {}
   });
 })();
 
