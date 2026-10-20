@@ -164,19 +164,18 @@
   /* Fußzeile & Schnellstart-Leiste */
   footer { margin-top: 36px; color: var(--muted); font-size: .8rem; text-align: center; }
   .footer-links {
-    display: flex;
+    display: grid;
+    grid-template-columns: repeat(6, 60px);
     justify-content: center;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-bottom: 14px;
+    gap: 12px;
+    margin-bottom: 18px;
   }
   .quick-btn {
     display: grid;
     place-items: center;
-    width: 36px;
-    height: 36px;
-    border-radius: 10px;
+    width: 60px;
+    height: 60px;
+    border-radius: 16px;
     border: 1.5px solid var(--border);
     background: var(--card);
     color: var(--text); /* nur für einfarbige Logos (GitHub) – bleibt im Dunkelmodus lesbar */
@@ -190,9 +189,15 @@
     transform: translateY(-2px);
   }
   .quick-btn svg {
-    width: 20px;
-    height: 20px;
+    width: 32px;
+    height: 32px;
     fill: currentColor;
+  }
+  /* Handy: 4 × 3 statt 6 × 2, damit die Buttons groß bleiben und sauber in Reihen stehen */
+  @media (max-width: 480px) {
+    .footer-links { grid-template-columns: repeat(4, 64px); gap: 14px; }
+    .quick-btn { width: 64px; height: 64px; }
+    .quick-btn svg { width: 34px; height: 34px; }
   }
 
   /* Login-Pflicht: bis die Anmeldung geprüft ist, sieht man nur die Anmeldekarte */
