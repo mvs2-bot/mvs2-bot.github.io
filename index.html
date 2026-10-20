@@ -12,6 +12,7 @@
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" sizes="180x180">
 <link rel="manifest" href="manifest.json">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
   // Theme vor dem ersten Rendern setzen (kein Aufblitzen). Standard: hell.
   (function () {
@@ -185,6 +186,29 @@
     height: 18px;
     fill: currentColor;
   }
+
+  /* Login-Pflicht: bis die Anmeldung geprüft ist, sieht man nur die Anmeldekarte */
+  body:not(.unlocked) main.wrap, body:not(.unlocked) #searchBtn, body:not(.signed-in) #logoutBtn { display: none; }
+  body.unlocked #gate { display: none; }
+  #gate { max-width: 380px; margin: 12vh auto 0; padding: 0 16px; }
+  .gate-card { padding: 22px; border-radius: 16px; background: var(--card); border: 1px solid var(--border); box-shadow: var(--shadow); }
+  .gate-card h1 { margin: 0 0 4px; font-size: 1.3rem; }
+  .gate-card p { margin: 0 0 16px; color: var(--muted); font-size: .92rem; }
+  .gate-card label { display: block; font-size: .85rem; color: var(--muted); margin-bottom: 12px; }
+  .gate-card input {
+    display: block; width: 100%; margin-top: 4px; padding: 10px 12px; font: inherit; font-size: 1rem;
+    border: 1.5px solid var(--border); border-radius: 10px; background: var(--bg); color: var(--text);
+  }
+  .gate-card input:focus { outline: none; border-color: var(--accent); }
+  .gate-card .btn {
+    width: 100%; padding: 11px; font: inherit; font-weight: 600; border: 0; border-radius: 10px;
+    background: var(--accent); color: #fff; cursor: pointer;
+  }
+  .gate-card .btn:disabled { opacity: .6; cursor: default; }
+  .gate-card .btn.ghost { background: transparent; color: var(--text); border: 1.5px solid var(--border); }
+  .gate-card .link { display: inline-block; margin-top: 12px; padding: 0; border: 0; background: none; font: inherit; font-size: .85rem; color: var(--accent); cursor: pointer; }
+  .gate-msg { margin: 12px 0 0; font-size: .88rem; color: #dc2626; }
+  .gate-msg.ok { color: #16a34a; }
 </style>
 </head>
 <body>
@@ -196,8 +220,29 @@
     <span class="spacer"></span>
     <button class="icon-btn" id="searchBtn" aria-label="Projekt suchen" title="Suchen (/)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></button>
     <button class="icon-btn" id="themeBtn" aria-label="Hell/Dunkel umschalten" title="Hell/Dunkel">🌙</button>
+    <button class="icon-btn" id="logoutBtn" aria-label="Abmelden" title="Abmelden"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h3"/><path d="M14 17l5-5-5-5M19 12H8"/></svg></button>
   </div>
 </header>
+
+<section id="gate" aria-live="polite">
+  <div class="gate-card" id="gateBusy">
+    <p style="margin:0">Anmeldung wird geprüft …</p>
+  </div>
+  <form class="gate-card" id="loginForm" hidden>
+    <h1>Anmelden</h1>
+    <p>Das Dashboard ist nur mit Konto erreichbar (dasselbe wie bei TravelBase und Quest Log).</p>
+    <label>E-Mail<input type="email" id="loginEmail" autocomplete="username" required></label>
+    <label>Passwort<input type="password" id="loginPassword" autocomplete="current-password" required></label>
+    <button class="btn" type="submit">Anmelden</button>
+    <button class="link" type="button" id="resetBtn">Passwort vergessen?</button>
+    <p class="gate-msg" id="loginMsg" hidden></p>
+  </form>
+  <div class="gate-card" id="noAccess" hidden>
+    <h1>Kein Zugang</h1>
+    <p>Dein Konto <b id="noAccessEmail"></b> hat keinen Zugang zum Dashboard. Ein Admin kann ihn in der Verwaltung freischalten.</p>
+    <button class="btn ghost" type="button" id="noAccessLogout">Abmelden</button>
+  </div>
+</section>
 
 <main class="wrap">
   <section class="hero">
@@ -288,7 +333,7 @@ const SECTIONS = [
     items: [
       { name: 'Camper-Namenssuche', desc: 'Namen für den Bus vorschlagen & abstimmen', url: '/Spitznamensuche-Camper/', icon: 'camper', color: '#ea580c' },
       { name: 'Münzwurf',           desc: 'Entscheidungshilfe: A oder B?',             url: '/Muenzwurf/',            icon: 'coin',   color: '#ca8a04' },
-      { name: 'Quest Log',          desc: 'The Real World: 100 Quests, Level & Titel',  url: '/RealWorld-Questlog/',    icon: 'quest',  color: '#7c3aed', badge: 'Login', supabase: 'jijuxxjhbjrpyunzznec', supabaseKey: 'sb_publishable_T4DRbZ4jRwRqNWUcjxM0TA_wA2ZfvQ3' },
+      { name: 'Quest Log',          desc: 'The Real World: 100 Quests, Level & Titel',  url: '/RealWorld-Questlog/',    icon: 'quest',  color: '#7c3aed', badge: 'Login', supabase: 'syaonnedmidaipwjjmio', supabaseKey: 'sb_publishable_a3tggKZJmotlFtIqKKdSYg_cNsazRkX' },
     ]
   },
 ];
@@ -436,9 +481,105 @@ async function checkSupabase() {
   paintStatus();
 }
 
-render();
-loadPushed();
-checkSupabase();
+/* ---------------- Login-Pflicht (Supabase-Core-Projekt, gemeinsame Konten aller Apps) ----------------
+   Hinein darf, wer im Core-Projekt globaler Admin ist oder für die App "dashboard" mindestens
+   die Rolle member hat (overall_app_access, vergeben in der Verwaltung). Gäste bleiben draußen.
+   Gleiche Domain wie TravelBase und Quest Log: wer dort angemeldet ist, ist es hier auch. */
+const CORE = { url: 'https://syaonnedmidaipwjjmio.supabase.co', key: 'sb_publishable_a3tggKZJmotlFtIqKKdSYg_cNsazRkX' };
+const ACCESS_KEY = 'dash-access'; // User-ID der letzten erfolgreichen Prüfung, damit das Dashboard offline aufgeht
+const sb = window.supabase ? window.supabase.createClient(CORE.url, CORE.key, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } }) : null;
+let started = false;
+
+function startDashboard() {
+  document.body.classList.add('unlocked');
+  if (started) return;
+  started = true;
+  render();
+  loadPushed();
+  checkSupabase();
+}
+
+const gate = (() => {
+  const $ = id => document.getElementById(id);
+  const msg = (text, ok) => { const el = $('loginMsg'); el.textContent = text || ''; el.className = 'gate-msg' + (ok ? ' ok' : ''); el.hidden = !text; };
+  function show(view) {
+    document.body.classList.remove('unlocked');
+    ['gateBusy', 'loginForm', 'noAccess'].forEach(id => { $(id).hidden = id !== view; });
+  }
+  function errText(e) {
+    const m = String(e && (e.message || e));
+    if (/invalid login credentials/i.test(m)) return 'E-Mail oder Passwort ist falsch.';
+    if (/email not confirmed/i.test(m)) return 'Die E-Mail-Adresse ist noch nicht bestätigt.';
+    if (/rate limit|too many/i.test(m)) return 'Zu viele Versuche, bitte kurz warten.';
+    if (!navigator.onLine || /fetch|network|load failed/i.test(m)) return 'Keine Verbindung zum Server. Bist du online?';
+    return m;
+  }
+  const remember = id => { try { id ? localStorage.setItem(ACCESS_KEY, id) : localStorage.removeItem(ACCESS_KEY); } catch (e) {} };
+  const remembered = () => { try { return localStorage.getItem(ACCESS_KEY); } catch (e) { return null; } };
+
+  async function check() {
+    if (!sb) {
+      // supabase-js nicht geladen (offline ohne Cache): nur wer schon einmal geprüft wurde, kommt hinein
+      if (remembered()) return startDashboard();
+      show('loginForm'); msg('Keine Verbindung zum Server. Bist du online?'); return;
+    }
+    const { data: { session } } = await sb.auth.getSession();
+    document.body.classList.toggle('signed-in', !!session);
+    if (!session) { remember(null); show('loginForm'); return; }
+    try {
+      const { data, error } = await sb.rpc('overall_has_app_role', { p_app: 'dashboard', p_min_role: 'member' });
+      if (error) throw error;
+      if (data) { remember(session.user.id); return startDashboard(); }
+      remember(null);
+      $('noAccessEmail').textContent = session.user.email;
+      show('noAccess');
+    } catch (e) {
+      if (!navigator.onLine && remembered() === session.user.id) return startDashboard();
+      show('loginForm'); msg(errText(e));
+    }
+  }
+
+  async function logout() {
+    remember(null);
+    if (sb) await sb.auth.signOut().catch(() => {});
+    document.body.classList.remove('signed-in');
+    show('loginForm'); msg('');
+  }
+
+  $('loginForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    if (!sb) return msg('Keine Verbindung zum Server. Bist du online?');
+    const btn = e.target.querySelector('button[type="submit"]');
+    btn.disabled = true; msg('');
+    try {
+      const { error } = await sb.auth.signInWithPassword({ email: $('loginEmail').value.trim(), password: $('loginPassword').value });
+      if (error) throw error;
+      $('loginPassword').value = '';
+      show('gateBusy');
+      await check();
+    } catch (err) { msg(errText(err)); }
+    finally { btn.disabled = false; }
+  });
+  // Der Link führt zu TravelBase: dort ist das Setzen des neuen Passworts schon eingebaut
+  $('resetBtn').addEventListener('click', async () => {
+    const email = $('loginEmail').value.trim();
+    if (!email) { msg('Bitte zuerst die E-Mail-Adresse eintragen.'); $('loginEmail').focus(); return; }
+    if (!sb) return msg('Keine Verbindung zum Server. Bist du online?');
+    try {
+      const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + '/TravelBase/' });
+      if (error) throw error;
+      msg('📧 Falls die Adresse bekannt ist, kommt gleich eine E-Mail mit einem Link.', true);
+    } catch (err) { msg(errText(err)); }
+  });
+  $('logoutBtn').addEventListener('click', logout);
+  $('noAccessLogout').addEventListener('click', logout);
+  // Ab- oder Anmeldung in einem anderen Tab (auch in TravelBase/Quest Log) gilt sofort auch hier
+  if (sb) sb.auth.onAuthStateChange(ev => { if (ev === 'SIGNED_OUT' || ev === 'SIGNED_IN') setTimeout(check, 0); });
+
+  return { check };
+})();
+
+gate.check();
 
 // Stern antippen = Favorit an/aus
 document.getElementById('sections').addEventListener('click', e => {
@@ -487,6 +628,7 @@ document.addEventListener('visibilitychange', () => { if (document.visibilitySta
   // Klick auf den abgedunkelten Hintergrund schließt das Fenster
   dlg.addEventListener('click', e => { if (e.target === dlg) dlg.close(); });
   document.addEventListener('keydown', e => {
+    if (!document.body.classList.contains('unlocked')) return;
     const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName);
     if ((e.key === '/' && !typing) || (e.key.toLowerCase() === 'k' && (e.ctrlKey || e.metaKey))) { e.preventDefault(); open(); }
   });
