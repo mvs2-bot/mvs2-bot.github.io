@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>mvs2 · Admin-Einstellungen</title>
+<meta name="theme-color" content="#f4f6fb">
+<link rel="icon" href="favicon.ico" sizes="16x16 32x32 48x48">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png" sizes="180x180">
+<script>
+  (function () {
+    var t = 'light';
+    try { t = localStorage.getItem('overall-theme') || localStorage.getItem('dash-theme') || 'light'; } catch (e) {}
+    document.documentElement.setAttribute('data-theme', t);
+  })();
+</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<link rel="stylesheet" href="shared/hub.css">
+<style>
+  .wrap, .bar { max-width: 960px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+  .grid label, .acc label, .add label { display: flex; flex-direction: column; gap: 4px; font-size: .78rem; font-weight: 700; color: var(--muted); min-width: 0; }
+  input[type=email], input[type=password], input[type=date], input[type=search] { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; font: inherit; font-size: 16px; color: var(--text); width: 100%; min-width: 0; }
+  select { min-width: 0; }
+  .acc { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; margin-top: 12px; }
+  .acc label.off select { color: var(--muted); }
+  .actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 12px; }
+  .btn.small, .btn.ghost.small { padding: 6px 12px; font-size: .84rem; }
+  .btn.danger { background: var(--card); color: #dc2626; border: 1.5px solid var(--border); }
+  .btn.danger:hover { border-color: #dc2626; }
+
+  .list { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
+  .item { border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; background: var(--bg); }
+  .item.is-admin { border-left: 4px solid var(--accent); }
+  .item-head { display: flex; gap: 12px; align-items: center; }
+  .ini { width: 38px; height: 38px; flex: 0 0 auto; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: .85rem; background: var(--card); border: 1px solid var(--border); }
+  .who { flex: 1 1 auto; min-width: 0; }
+  .who b { display: block; font-size: .95rem; }
+  .who small { display: block; color: var(--muted); font-size: .78rem; overflow-wrap: anywhere; }
+  .pill { font-size: .7rem; font-weight: 700; border-radius: 999px; padding: 2px 8px; border: 1px solid var(--border); color: var(--muted); white-space: nowrap; }
+  .pill.strong { background: var(--accent); border-color: var(--accent); color: #fff; }
+  [data-theme="dark"] .pill.strong { color: #000; }
+  details.item > summary { list-style: none; cursor: pointer; }
+  details.item > summary::-webkit-details-marker { display: none; }
+  details.item[open] > summary { margin-bottom: 10px; }
+  .edit { padding-top: 12px; margin-top: 12px; border-top: 1px dashed var(--border); }
+  .facts { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 6px 14px; font-size: .8rem; margin-bottom: 12px; }
+  .facts span { display: block; color: var(--muted); }
+
+  .trip { border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; margin-top: 10px; }
+  .trip h4 { margin: 0 0 6px; font-size: .95rem; }
+  .trip h4 small { color: var(--muted); font-weight: 500; margin-left: 6px; }
+  .member { display: flex; align-items: center; gap: 10px; padding: 6px 0; flex-wrap: wrap; }
+  .member + .member { border-top: 1px solid var(--border); }
+  .member .who b { font-size: .88rem; }
+  .member select { width: auto; padding: 6px 10px; font-size: .9rem; }
+  .add { display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border); }
+  .add label { flex: 0 1 150px; }
+  .add select { width: 100%; padding: 8px 10px; font-size: .9rem; }
+  .switchrow { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; }
+  .switchrow + .switchrow { border-top: 1px solid var(--border); }
+  .switchrow input { width: 20px; height: 20px; accent-color: var(--accent); }
+  #denied { max-width: 460px; margin: 12vh auto 0; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="bar">
+    <a class="home" href="./"><img src="icon.svg" alt=""><span>mvs2</span></a>
+    <span class="spacer"></span>
+    <a class="back" id="backLink" href="./">← Dashboard</a>
+    <button class="icon-btn" id="themeBtn" type="button" aria-label="Hell/Dunkel umschalten" title="Hell/Dunkel">🌙</button>
+  </div>
+</header>
+
+<main class="wrap">
+  <section id="gate">
+    <div class="card" id="gateBusy"><p class="note" style="margin:0">Anmeldung wird geprüft …</p></div>
+    <form class="card" id="loginForm" hidden>
+      <h3>Anmelden</h3>
+      <p class="note">Der Admin-Bereich ist für Admins aller Apps.</p>
+      <label>E-Mail<input type="email" id="loginEmail" autocomplete="username" required></label>
+      <label>Passwort<input type="password" id="loginPassword" autocomplete="current-password" required></label>
+      <button class="btn" type="submit">Anmelden</button>
+      <div class="msg" id="loginMsg" hidden></div>
+    </form>
+    <div class="card" id="denied" hidden>
+      <h3>⛔ Kein Zugang</h3>
+      <p class="note" id="deniedText">Dieser Bereich ist nur für Admins.</p>
+      <a class="btn ghost" href="konto.html">Zu den Kontoeinstellungen</a>
+    </div>
+  </section>
+
+  <div id="page">
+    <h1>Admin-Einstellungen</h1>
+    <p class="lead" id="who"></p>
+    <nav class="jump" id="jump" aria-label="Bereiche"></nav>
+
+    <section class="group" id="global">
+      <div class="group-head">
+        <h2>🌐 Globale Admin-Einstellungen</h2>
+        <span class="tag"><i></i>gilt für alle Apps · nur globale Admins</span>
+      </div>
+      <div id="globalBody"></div>
+    </section>
+
+    <section class="group" id="apps">
+      <div class="group-head">
+        <h2>🧩 Individuelle Admin-Einstellungen</h2>
+        <p>Einstellungen, die nur innerhalb einer App gelten.</p>
+      </div>
+      <div id="appCards"></div>
+    </section>
+  </div>
+</main>
+
+<script>
+const CORE = { url: 'https://syaonnedmidaipwjjmio.supabase.co', key: 'sb_publishable_a3tggKZJmotlFtIqKKdSYg_cNsazRkX' };
+const sb = window.supabase ? window.supabase.createClient(CORE.url, CORE.key, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } }) : null;
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const check = ({ data, error }) => { if (error) throw error; return data; };
+function msg(el, text, ok) { el.textContent = text || ''; el.className = 'msg' + (ok ? ' ok' : ''); el.hidden = !text; }
+function errText(e) {
+  const m = String(e && (e.message || e));
+  if (/invalid login credentials/i.test(m)) return 'E-Mail oder Passwort ist falsch.';
+  if (/row-level security|permission denied/i.test(m)) return 'Keine Berechtigung für diese Aktion.';
+  if (!navigator.onLine || /failed to fetch|network|load failed/i.test(m)) return 'Keine Verbindung zum Server. Bist du online?';
+  return m;
+}
+const fmtDate = iso => iso ? new Date(iso).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '–';
+const initials = s => (String(s || '?').trim().split(/\s+/).map(w => w[0]).join('').slice(0, 2) || '?').toUpperCase();
+const ROLE_LABEL = { admin: 'Admin', member: 'Mitglied', guest: 'Gast' };
+const roleOptions = (sel, none, roles = ['admin', 'member', 'guest']) =>
+  (none ? `<option value=""${sel ? '' : ' selected'}>${esc(none)}</option>` : '') +
+  roles.map(r => `<option value="${r}"${r === sel ? ' selected' : ''}>${ROLE_LABEL[r] || r}</option>`).join('');
+// Formular-Elemente einer Karte sperren, solange gespeichert wird
+async function busy(el, fn) {
+  const els = [...el.querySelectorAll('button, select, input')].filter(x => !x.disabled);
+  els.forEach(x => { x.disabled = true; });
+  try { return await fn(); } finally { els.forEach(x => { x.disabled = false; }); }
+}
+
+/* Edge Functions (prüfen die Rechte selbst, der geheime Schlüssel bleibt in Supabase) */
+async function fn(name, action, body = {}) {
+  const { data, error } = await sb.functions.invoke(name, { body: { action, ...body } });
+  if (!error) return data;
+  let text = error.message;
+  try { const j = await error.context.json(); if (j && j.error) text = j.error; } catch (e) {}
+  throw new Error(text);
+}
+
+/* ---------------- Zurück-Link & Darstellung (wie Kontoeinstellungen) ---------------- */
+const FROM = {
+  dashboard:  { label: 'Dashboard',  url: './' },
+  travelbase: { label: 'TravelBase', url: '/TravelBase/' },
+  questlog:   { label: 'Quest Log',  url: '/RealWorld-Questlog/' },
+};
+const fromId = new URLSearchParams(location.search).get('from');
+const from = FROM[fromId] || FROM.dashboard;
+$('backLink').textContent = '← ' + from.label;
+$('backLink').href = from.url;
+function applyTheme(t, save) {
+  document.documentElement.setAttribute('data-theme', t);
+  $('themeBtn').textContent = t === 'dark' ? '☀️' : '🌙';
+  document.querySelector('meta[name="theme-color"]').setAttribute('content', t === 'dark' ? '#000000' : '#f4f6fb');
+  if (save) { try { localStorage.setItem('overall-theme', t); } catch (e) {} }
+}
+applyTheme(document.documentElement.getAttribute('data-theme') || 'light', false);
+$('themeBtn').addEventListener('click', () => applyTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark', true));
+window.addEventListener('storage', e => { if (e.key === 'overall-theme' && e.newValue) applyTheme(e.newValue, false); });
+
+/* =====================================================================
+   GLOBAL: Apps und Konten (Edge Function overall-admin, nur globale Admins)
+   ===================================================================== */
+const G = { state: null, openEdit: new Set() };   // state = { me, roles, apps, users }
+
+function renderGlobal() {
+  $('globalBody').innerHTML = `
+    <div class="card" id="g-apps">
+      <h3>🧩 Apps</h3>
+      <p class="note">Deaktivierte Apps sind nur noch für globale Admins erreichbar.</p>
+      <div id="appsList"></div>
+      <div class="msg" hidden></div>
+    </div>
+    <div class="card" id="g-create">
+      <h3>➕ Neues Konto</h3>
+      <p class="note">Gibt es die E-Mail schon (z. B. aus einer anderen App), bekommt das bestehende Konto nur die gewählten Zugänge. Das Passwort teilst du der Person selbst mit.</p>
+      <form id="createForm">
+        <div class="grid">
+          <label>E-Mail<input type="email" name="email" autocomplete="off" required></label>
+          <label>Anzeigename<input type="text" name="display_name" maxlength="80" autocomplete="off"></label>
+          <label>Passwort (mind. 8 Zeichen)<input type="text" name="password" minlength="8" autocomplete="off"></label>
+          <label>Globale Rolle<select name="role"></select></label>
+        </div>
+        <div class="acc" id="createAccess"></div>
+        <div class="actions"><button class="btn" type="submit">Konto anlegen</button></div>
+      </form>
+      <div class="msg" id="createMsg" hidden></div>
+    </div>
+    <div class="card" id="g-users">
+      <h3>👥 Konten, Rollen &amp; App-Zugänge</h3>
+      <p class="note">Globale Admins dürfen in jeder App alles. Für alle anderen gilt der Zugang pro App; ohne Zugang ist die App gesperrt. Was jemand innerhalb einer App sieht (z. B. welche Reisen), steht unten bei der App.</p>
+      <input type="search" id="search" placeholder="Suchen (Name oder E-Mail)">
+      <div class="msg" id="listMsg" hidden></div>
+      <div class="list" id="users"></div>
+    </div>`;
+  const appName = a => a.name + (a.is_active ? '' : ' (deaktiviert)');
+  const s = G.state;
+
+  $('appsList').innerHTML = s.apps.map(a => `
+    <label class="switchrow"><span><b>${esc(a.name)}</b><br><small class="note" style="margin:0">${esc(a.url || '')}</small></span>
+      <input type="checkbox" data-app-active="${esc(a.id)}"${a.is_active ? ' checked' : ''}></label>`).join('');
+
+  $('createForm').role.innerHTML = roleOptions('guest');
+  $('createAccess').innerHTML = s.apps.map(a => `<label>${esc(appName(a))}<select data-app="${esc(a.id)}">${roleOptions('', 'kein Zugang')}</select></label>`).join('');
+
+  const paintUsers = () => {
+    const q = $('search').value.trim().toLowerCase();
+    const list = s.users.filter(u => !q || (u.display_name || '').toLowerCase().includes(q) || (u.email || '').toLowerCase().includes(q));
+    $('users').innerHTML = list.map(u => {
+      const admin = u.role === 'admin', me = u.id === s.me;
+      const access = s.apps.map(a => admin
+        ? `<label>${esc(appName(a))}<select disabled><option>Admin (global)</option></select></label>`
+        : `<label class="${u.access[a.id] ? '' : 'off'}">${esc(appName(a))}<select data-act="access" data-app="${esc(a.id)}">${roleOptions(u.access[a.id] || '', 'kein Zugang')}</select></label>`).join('');
+      return `
+        <article class="item${admin ? ' is-admin' : ''}" data-id="${esc(u.id)}">
+          <div class="item-head">
+            <span class="ini">${esc(initials(u.display_name || u.email))}</span>
+            <div class="who"><b>${esc(u.display_name || u.email)}${me ? ' <span class="pill">Du</span>' : ''}</b>
+              <small>${esc(u.email)} · angelegt ${fmtDate(u.created_at)} · ${u.last_sign_in_at ? 'zuletzt angemeldet ' + fmtDate(u.last_sign_in_at) : 'noch nie angemeldet'}</small></div>
+          </div>
+          <div class="acc">
+            <label>Globale Rolle<select data-act="role"${me ? ' disabled title="Die eigene Rolle kann man nicht ändern."' : ''}>${roleOptions(u.role)}</select></label>
+            ${access}
+          </div>
+          <div class="actions">
+            <button class="btn ghost small" type="button" data-act="edit">✏️ Name, E-Mail, Passwort</button>
+            ${me ? '' : '<button class="btn danger small" type="button" data-act="delete">🗑️ Konto löschen</button>'}
+          </div>
+          <form class="edit" data-act="save"${G.openEdit.has(u.id) ? '' : ' hidden'}>
+            <div class="grid">
+              <label>Anzeigename<input type="text" name="display_name" maxlength="80" value="${esc(u.display_name || '')}"></label>
+              <label>E-Mail<input type="email" name="email" value="${esc(u.email || '')}" required></label>
+              <label>Neues Passwort (leer = unverändert)<input type="text" name="password" minlength="8" autocomplete="off"></label>
+            </div>
+            <div class="actions"><button class="btn small" type="submit">Speichern</button></div>
+          </form>
+          <div class="msg" hidden></div>
+        </article>`;
+    }).join('') || '<p class="note">Keine Konten gefunden.</p>';
+  };
+  G.paintUsers = paintUsers;
+  paintUsers();
+}
+
+async function loadGlobal() { G.state = await fn('overall-admin', 'list'); renderGlobal(); }
+
+// Nach jeder Änderung neu laden und die Meldung am betroffenen Konto anzeigen
+async function runUser(card, action, okText) {
+  const id = card.dataset.id;
+  try {
+    await busy(card, action);
+    await loadGlobal();
+    const fresh = document.querySelector(`#users .item[data-id="${id}"]`);
+    if (fresh && okText) msg(fresh.querySelector(':scope > .msg'), okText, true);
+    return true;
+  } catch (e) {
+    G.paintUsers();
+    const fresh = document.querySelector(`#users .item[data-id="${id}"]`);
+    if (fresh) msg(fresh.querySelector(':scope > .msg'), errText(e));
+    return false;
+  }
+}
+
+function wireGlobal() {
+  const host = $('globalBody');
+  host.addEventListener('input', e => { if (e.target.id === 'search' && G.state) G.paintUsers(); });
+  host.addEventListener('change', async e => {
+    const t = e.target;
+    if (t.dataset.appActive) {
+      const out = $('g-apps').querySelector('.msg'); msg(out, '');
+      try {
+        await busy($('g-apps'), () => sb.from('overall_apps').update({ is_active: t.checked }).eq('id', t.dataset.appActive).select('id').single().then(check));
+        await loadGlobal();
+        msg($('g-apps').querySelector('.msg'), t.checked ? '✅ App aktiviert.' : '✅ App deaktiviert.', true);
+      } catch (err) { t.checked = !t.checked; msg(out, errText(err)); }
+      return;
+    }
+    const sel = t.closest('#users select[data-act]'); if (!sel) return;
+    const card = sel.closest('.item'), id = card.dataset.id, u = G.state.users.find(x => x.id === id);
+    if (sel.dataset.act === 'role') {
+      if (sel.value === 'admin' && !confirm(`${u.display_name || u.email} zum globalen Admin machen? Admins dürfen in jeder App alles, auch Konten verwalten.`)) { sel.value = u.role; return; }
+      runUser(card, () => fn('overall-admin', 'update', { id, role: sel.value }), '✅ Globale Rolle gespeichert.');
+    } else {
+      runUser(card, () => fn('overall-admin', 'access', { id, app: sel.dataset.app, role: sel.value || null }), sel.value ? '✅ Zugang gespeichert.' : '✅ Zugang entzogen.');
+    }
+  });
+  host.addEventListener('click', e => {
+    const b = e.target.closest('#users button[data-act]'); if (!b) return;
+    const card = b.closest('.item'), id = card.dataset.id, u = G.state.users.find(x => x.id === id);
+    if (b.dataset.act === 'edit') {
+      const f = card.querySelector('form.edit');
+      f.hidden = !f.hidden;
+      f.hidden ? G.openEdit.delete(id) : G.openEdit.add(id);
+    } else if (b.dataset.act === 'delete') {
+      const answer = prompt(`Konto ${u.email} endgültig löschen? Profil, Profilbild, alle App-Zugänge und App-Daten (z. B. Questlog-Spielstand) gehen verloren. Das lässt sich nicht rückgängig machen.\n\nZum Bestätigen die E-Mail-Adresse eintippen:`);
+      if (answer === null) return;
+      if (answer.trim().toLowerCase() !== (u.email || '').toLowerCase()) { msg(card.querySelector(':scope > .msg'), 'Die E-Mail stimmt nicht überein, nichts gelöscht.'); return; }
+      runUser(card, () => fn('overall-admin', 'delete', { id }), null).then(ok => ok && msg($('listMsg'), `🗑️ ${u.email} wurde gelöscht.`, true));
+    }
+  });
+  host.addEventListener('submit', async e => {
+    e.preventDefault();
+    const f = e.target;
+    if (f.id === 'createForm') {
+      const access = {};
+      f.querySelectorAll('#createAccess select').forEach(s => { if (s.value) access[s.dataset.app] = s.value; });
+      msg($('createMsg'), '');
+      try {
+        const res = await busy(f, () => fn('overall-admin', 'create', { email: f.email.value.trim(), display_name: f.display_name.value.trim(), password: f.password.value, role: f.role.value, access }));
+        await loadGlobal(); await renderApps();
+        msg($('createMsg'), res.existed ? '✅ Das Konto gab es schon; die Zugänge sind gesetzt (Name, Passwort und Rolle blieben unverändert).' : '✅ Konto angelegt.', true);
+      } catch (err) { msg($('createMsg'), errText(err)); }
+      return;
+    }
+    const card = f.closest('#users .item'); if (!card) return;
+    const id = card.dataset.id, u = G.state.users.find(x => x.id === id), body = { id };
+    const name = f.display_name.value.trim(), email = f.email.value.trim().toLowerCase(), pw = f.password.value;
+    if (name !== (u.display_name || '')) body.display_name = name;
+    if (email !== (u.email || '').toLowerCase()) body.email = email;
+    if (pw) body.password = pw;
+    if (Object.keys(body).length === 1) { msg(card.querySelector(':scope > .msg'), 'Nichts geändert.', true); return; }
+    runUser(card, async () => { await fn('overall-admin', 'update', body); G.openEdit.delete(id); }, pw ? '✅ Gespeichert. Das neue Passwort bitte der Person mitteilen.' : '✅ Gespeichert.');
+  });
+}
+
+/* =====================================================================
+   JE APP: eine Karte pro App, in der man Admin ist. Neue Apps: Eintrag in APP_ADMIN.
+   ===================================================================== */
+const APP_ADMIN = {
+  travelbase: { icon: '🌍', color: '#2563eb', title: 'Reise-Freigaben', render: travelbaseAdmin },
+  questlog:   { icon: '📜', color: '#7c3aed', title: 'Spieler:innen & Gamemaster', render: questlogAdmin },
+  dashboard:  { icon: '🏠', color: '#0d9488', title: 'Zugang', render: dashboardAdmin },
+};
+
+/* ---------- TravelBase: wer sieht welche Reise in welcher Rolle ---------- */
+async function travelbaseAdmin(box) {
+  const d = check(await sb.rpc('travelbase_admin_overview'));
+  const users = new Map(d.users.map(u => [u.id, u]));
+  const name = u => u ? (u.display_name || u.email) : 'Unbekanntes Konto';
+  const fmt = t => [t.start_date, t.end_date].filter(Boolean).map(fmtDate).join(' – ');
+  box.innerHTML = `
+    <p class="note">Globale Admins und TravelBase-Admins sehen jede Reise. Für alle anderen gilt die Freigabe pro Reise: <b>Gast</b> sieht Karte und Zeitraum, <b>Mitglied</b> den Plan, <b>Admin</b> zusätzlich Kosten und darf bearbeiten.</p>
+    ${d.trips.map(t => {
+      const members = d.members.filter(m => m.trip_id === t.id).sort((a, b) => name(users.get(a.user_id)).localeCompare(name(users.get(b.user_id))));
+      const free = d.users.filter(u => u.app_role !== 'admin' && !members.some(m => m.user_id === u.id));
+      return `
+      <div class="trip" data-trip="${esc(t.id)}">
+        <h4>${esc((t.flags || []).join(' '))} ${esc(t.title)}<small>${esc(fmt(t))}</small></h4>
+        ${members.map(m => {
+          const u = users.get(m.user_id);
+          return `<div class="member" data-user="${esc(m.user_id)}">
+            <div class="who"><b>${esc(name(u))}</b><small>${esc(u && u.display_name ? u.email : '')}${u && u.app_role === 'admin' ? ' · sieht als TravelBase-Admin ohnehin alles' : ''}</small></div>
+            <select data-tb-role>${roleOptions(m.role, 'Freigabe entziehen')}</select></div>`;
+        }).join('') || '<p class="note" style="margin:0">Noch niemand freigegeben.</p>'}
+        ${free.length ? `<form class="add" data-tb-add>
+          <label style="flex:1 1 180px">Person freigeben<select name="user" required><option value="">Konto wählen …</option>${free.map(u => `<option value="${esc(u.id)}">${esc(name(u))}</option>`).join('')}</select></label>
+          <label>Rolle<select name="role" class="role">${roleOptions('member')}</select></label>
+          <button class="btn small" type="submit">Freigeben</button></form>` : ''}
+      </div>`;
+    }).join('') || '<p class="note">Noch keine Reisen angelegt.</p>'}
+    <p class="note" style="margin:12px 0 0">Wer hier fehlt, braucht zuerst Zugang zu TravelBase (globale Admin-Einstellungen → Konten).</p>
+    <div class="msg" hidden></div>`;
+  const out = () => box.querySelector(':scope > .msg');
+  const set = async (trip, user, role, okText) => {
+    try { await busy(box, () => sb.rpc('travelbase_admin_set_member', { p_trip: trip, p_user: user, p_role: role }).then(check)); await travelbaseAdmin(box); msg(out(), okText, true); }
+    catch (e) { await travelbaseAdmin(box).catch(() => {}); msg(out(), errText(e)); }
+  };
+  box.querySelectorAll('[data-tb-role]').forEach(sel => sel.addEventListener('change', () => {
+    const trip = sel.closest('.trip').dataset.trip, user = sel.closest('.member').dataset.user;
+    set(trip, user, sel.value || null, sel.value ? '✅ Rolle gespeichert.' : '✅ Freigabe entzogen.');
+  }));
+  box.querySelectorAll('[data-tb-add]').forEach(f => f.addEventListener('submit', e => {
+    e.preventDefault();
+    set(f.closest('.trip').dataset.trip, f.user.value, f.role.value, '✅ Reise freigegeben.');
+  }));
+}
+
+/* ---------- Quest Log: Spieler:innen verwalten (Edge Function gamemaster) ---------- */
+const QL_ROLE = { gamemaster: '🛡️ Gamemaster', spieler: '🎮 Spieler:in' };
+function genPassword() {
+  const c = 'bdfghkmnprstvz', v = 'aeiou', r = n => crypto.getRandomValues(new Uint32Array(1))[0] % n;
+  let p = '';
+  for (let i = 0; i < 4; i++) p += c[r(c.length)] + v[r(v.length)];
+  return p[0].toUpperCase() + p.slice(1) + (10 + r(90)) + '!?#'[r(3)];
+}
+async function questlogAdmin(box, ctx) {
+  const open = new Set([...box.querySelectorAll('details.item[open]')].map(d => d.dataset.id));
+  const res = await fn('gamemaster', 'list');
+  const today = new Date().toISOString().slice(0, 10);
+  box.innerHTML = `
+    <form class="add" data-ql-create style="margin-top:0;padding-top:0;border-top:0">
+      <label style="flex:1 1 200px">E-Mail<input type="email" name="email" required autocomplete="off"></label>
+      <label style="flex:1 1 140px">Anzeigename<input type="text" name="display_name" maxlength="40" autocomplete="off"></label>
+      <label style="flex:1 1 160px">Passwort (neues Konto)<input type="text" name="password" minlength="8" autocomplete="off"></label>
+      <label>Rolle<select name="role" class="role">${Object.entries(QL_ROLE).map(([k, t]) => `<option value="${k}"${k === 'spieler' ? ' selected' : ''}>${t}</option>`).join('')}</select></label>
+      <button class="btn ghost small" type="button" data-gen title="Passwort erzeugen">🎲</button>
+      <button class="btn small" type="submit">Hinzufügen</button>
+    </form>
+    <p class="note" style="margin:8px 0 0">Gibt es die E-Mail schon (z. B. aus TravelBase), bekommt das Konto nur den Questlog-Zugang.</p>
+    <div class="msg" data-ql-msg hidden></div>
+    <div class="list">${res.users.map(u => {
+      const self = u.id === res.me;
+      return `<details class="item${u.role === 'gamemaster' ? ' is-admin' : ''}" data-id="${esc(u.id)}"${open.has(u.id) ? ' open' : ''}>
+        <summary class="item-head">
+          <span class="ini">${esc(initials(u.display_name || u.player_name || u.email))}</span>
+          <div class="who"><b>${esc(u.display_name || u.player_name || u.email)}${self ? ' <span class="pill">Du</span>' : ''}</b><small>${esc(u.email)}</small></div>
+          <span class="pill${u.role === 'gamemaster' ? ' strong' : ''}">${QL_ROLE[u.role] || esc(u.role)}</span>
+          <span class="pill">Level ${u.level}</span>
+        </summary>
+        <div class="facts">
+          <div><span>Spielbeginn</span>${u.game_started_at ? fmtDate(u.game_started_at) : 'noch nicht gestartet'}</div>
+          <div><span>Grundregeln</span>${u.game_started_at ? `Starthilfe ${u.starthilfe ? 'Ja' : 'Nein'} · Hardcore ${u.hardcore ? 'Ja' : 'Nein'}` : '–'}</div>
+          <div><span>Für Mitspieler sichtbar</span>${u.visible === false ? '👻 Nein' : 'Ja'}</div>
+          <div><span>Questlog freigegeben</span>${u.share_questlog ? 'Ja' : 'Nein'}</div>
+          <div><span>Letzte Anmeldung</span>${fmtDate(u.last_sign_in_at)}</div>
+        </div>
+        <form data-ql-edit>
+          <div class="grid">
+            <label>Anzeigename<input type="text" name="display_name" maxlength="40" value="${esc(u.display_name)}"></label>
+            <label>Spielername<input type="text" name="player_name" maxlength="40" value="${esc(u.player_name)}"></label>
+            <label>Geburtsdatum<input type="date" name="birthday" min="1900-01-01" max="${today}" value="${esc(u.birthday || '')}"></label>
+            ${ctx.globalAdmin || self ? `<label>E-Mail<input type="email" name="email" required value="${esc(u.email)}"></label>
+            <label>Neues Passwort (leer = unverändert)<input type="text" name="password" minlength="8" autocomplete="off"></label>` : ''}
+            <label>Rolle<select name="role"${self || u.global_admin ? ' disabled' : ''}>${Object.entries(QL_ROLE).map(([k, t]) => `<option value="${k}"${u.role === k ? ' selected' : ''}>${t}</option>`).join('')}</select></label>
+          </div>
+          <div class="actions">
+            <button class="btn small" type="submit">Speichern</button>
+            <a class="btn ghost small" href="/RealWorld-Questlog/#questlog/${esc(u.id)}">📜 Questlog öffnen</a>
+            ${self || u.global_admin ? '' : '<button class="btn danger small" type="button" data-ql-del>🗑️ Aus dem Questlog entfernen</button>'}
+          </div>
+          <div class="msg" hidden></div>
+        </form>
+      </details>`;
+    }).join('')}</div>`;
+
+  const reload = async (id, text) => {
+    await questlogAdmin(box, ctx);
+    const target = id ? box.querySelector(`details.item[data-id="${id}"] form .msg`) : box.querySelector('[data-ql-msg]');
+    if (target) msg(target, text, true);
+  };
+  box.querySelector('[data-gen]').addEventListener('click', () => { const f = box.querySelector('[data-ql-create]'); f.password.value = genPassword(); f.password.focus(); });
+  box.querySelector('[data-ql-create]').addEventListener('submit', async e => {
+    e.preventDefault();
+    const f = e.target, out = box.querySelector('[data-ql-msg]'), email = f.email.value.trim(), password = f.password.value;
+    msg(out, '');
+    try {
+      await busy(f, () => fn('gamemaster', 'create', { email, password, display_name: f.display_name.value.trim(), role: f.role.value }));
+      await reload(null, password ? `✅ Hinzugefügt: ${email} · Passwort: ${password}` : `✅ ${email} hat jetzt Zugang zum Questlog.`);
+    } catch (err) { msg(out, errText(err)); }
+  });
+  box.querySelectorAll('[data-ql-edit]').forEach(f => {
+    const u = res.users.find(x => x.id === f.closest('details').dataset.id), out = f.querySelector('.msg');
+    f.addEventListener('submit', async e => {
+      e.preventDefault();
+      const val = n => f.elements[n] ? f.elements[n].value.trim() : undefined, change = { id: u.id };
+      if (val('display_name') !== (u.display_name || '')) change.display_name = val('display_name');
+      if (val('player_name') !== (u.player_name || '')) change.player_name = val('player_name');
+      if (val('birthday') !== (u.birthday || '')) change.birthday = val('birthday') || null;
+      if (f.elements.email && val('email').toLowerCase() !== u.email) change.email = val('email');
+      if (f.elements.password && f.elements.password.value) change.password = f.elements.password.value;
+      if (!f.elements.role.disabled && f.elements.role.value !== u.role) change.role = f.elements.role.value;
+      if (Object.keys(change).length === 1) return msg(out, 'Nichts geändert.', true);
+      msg(out, '');
+      try { await busy(f, () => fn('gamemaster', 'update', change)); await reload(u.id, change.password ? `✅ Gespeichert. Neues Passwort: ${change.password}` : '✅ Gespeichert.'); }
+      catch (err) { msg(out, errText(err)); }
+    });
+    const del = f.querySelector('[data-ql-del]');
+    if (del) del.addEventListener('click', async () => {
+      if (!confirm(`${u.email} wirklich aus dem Questlog entfernen?\n\nDer gesamte Spielstand geht dabei verloren. Das Konto selbst bleibt für die anderen Apps bestehen.`)) return;
+      try { await busy(f, () => fn('gamemaster', 'delete', { id: u.id })); await reload(null, `🗑️ ${u.email} wurde aus dem Questlog entfernt.`); }
+      catch (err) { msg(out, errText(err)); }
+    });
+  });
+}
+
+/* ---------- Dashboard ---------- */
+async function dashboardAdmin(box, ctx) {
+  box.innerHTML = `<p class="note" style="margin:0">Ins Dashboard kommen globale Admins und Konten mit mindestens der Rolle <b>Mitglied</b> für das Dashboard; Gäste nicht.
+    ${ctx.globalAdmin ? 'Zugänge vergibst du oben unter <a href="#g-users">Konten, Rollen &amp; App-Zugänge</a>.' : 'Zugänge vergeben globale Admins.'}</p>`;
+}
+
+let CTX = null;   // { user, globalAdmin, apps: [{ app, role }] }
+async function renderApps() {
+  const host = $('appCards');
+  const mine = CTX.apps.filter(x => x.role === 'admin' && APP_ADMIN[x.app.id]);
+  mine.sort((a, b) => (b.app.id === fromId) - (a.app.id === fromId));
+  if (!mine.length) { host.innerHTML = '<div class="card"><p class="note" style="margin:0">Du bist in keiner App Admin.</p></div>'; return; }
+  host.innerHTML = mine.map(({ app }) => {
+    const m = APP_ADMIN[app.id];
+    return `<div class="card app" id="app-${esc(app.id)}" style="--app:${m.color}">
+      <h3>${m.icon} ${esc(app.name)} · ${esc(m.title)}<span class="tag"><i></i>nur ${esc(app.name)}</span></h3>
+      <div class="app-body"><p class="note" style="margin:0">⏳ Lädt …</p></div></div>`;
+  }).join('');
+  await Promise.all(mine.map(async ({ app }) => {
+    const body = $('app-' + app.id).querySelector('.app-body');
+    try { await APP_ADMIN[app.id].render(body, CTX); }
+    catch (e) { body.innerHTML = `<p class="note" style="margin:0">${esc(errText(e))}</p>`; }
+  }));
+}
+
+/* ---------------- Start ---------------- */
+let shown = null;
+function show(view) {
+  document.body.classList.toggle('ready', view === 'page');
+  $('gateBusy').hidden = view !== 'busy'; $('loginForm').hidden = view !== 'login'; $('denied').hidden = view !== 'denied';
+}
+async function start() {
+  if (!sb) { show('login'); msg($('loginMsg'), 'Keine Verbindung zum Server. Bist du online?'); return; }
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) { shown = null; show('login'); return; }
+  if (shown === session.user.id) return;
+  shown = session.user.id;
+  show('busy');
+  try {
+    const [globalAdmin, apps] = await Promise.all([
+      sb.rpc('overall_is_admin').then(check),
+      sb.from('overall_apps').select('id, name, url, is_active').order('created_at').then(check),
+    ]);
+    const roles = await Promise.all(apps.map(a => sb.rpc('overall_app_role', { p_app: a.id }).then(check).catch(() => null)));
+    CTX = { user: session.user, globalAdmin, apps: apps.map((a, i) => ({ app: a, role: roles[i] })) };
+  } catch (e) { shown = null; show('denied'); $('deniedText').textContent = errText(e); return; }
+  if (!CTX.globalAdmin && !CTX.apps.some(x => x.role === 'admin' && APP_ADMIN[x.app.id])) {
+    show('denied'); $('deniedText').textContent = `Dein Konto ${session.user.email} ist in keiner App Admin.`; return;
+  }
+  show('page');
+  $('who').textContent = 'Angemeldet als ' + session.user.email + (CTX.globalAdmin ? ' · globaler Admin' : '');
+  const adminApps = CTX.apps.filter(x => x.role === 'admin' && APP_ADMIN[x.app.id]);
+  $('jump').innerHTML = (CTX.globalAdmin ? '<a href="#global">🌐 Global</a>' : '') + adminApps.map(x => `<a href="#app-${esc(x.app.id)}">${APP_ADMIN[x.app.id].icon} ${esc(x.app.name)}</a>`).join('');
+  $('global').hidden = !CTX.globalAdmin;
+  const jobs = [renderApps()];
+  if (CTX.globalAdmin) jobs.push(loadGlobal().catch(e => { $('globalBody').innerHTML = `<div class="card"><p class="note" style="margin:0">${esc(errText(e))}</p></div>`; }));
+  await Promise.all(jobs);
+  if (location.hash) { const t = document.querySelector(location.hash.replace(/[^#\w-]/g, '')); if (t) t.scrollIntoView(); }
+}
+
+wireGlobal();
+$('loginForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const b = e.target.querySelector('.btn'); b.disabled = true; msg($('loginMsg'), '');
+  try {
+    check(await sb.auth.signInWithPassword({ email: $('loginEmail').value.trim(), password: $('loginPassword').value }));
+    $('loginPassword').value = '';
+    await start();
+  } catch (err) { msg($('loginMsg'), errText(err)); }
+  finally { b.disabled = false; }
+});
+if (sb) sb.auth.onAuthStateChange(ev => { if (ev === 'SIGNED_OUT') { shown = null; setTimeout(start, 0); } });
+start();
+</script>
+</body>
+</html>
