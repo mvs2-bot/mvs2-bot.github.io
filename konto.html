@@ -111,6 +111,7 @@ const FROM = {
   travelbase: { label: 'TravelBase', url: '/TravelBase/' },
   questlog:   { label: 'Quest Log',  url: '/RealWorld-Questlog/' },
   matchboard: { label: 'MatchBoard', url: '/MatchBoard/' },
+  dailymind:  { label: 'DailyMind',  url: '/DailyMind/' },
 };
 const from = FROM[new URLSearchParams(location.search).get('from')] || FROM.dashboard;
 $('backLink').textContent = '← ' + from.label;
