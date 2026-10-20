@@ -13,6 +13,7 @@
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" sizes="180x180">
 <link rel="manifest" href="manifest.json">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="shared/overall-account.js"></script>
 <script>
   // Theme vor dem ersten Rendern setzen (kein Aufblitzen). Standard: hell.
   (function () {
@@ -33,6 +34,8 @@
     --muted: #64748b;
     --accent: #2563eb;
     --shadow: 0 1px 2px rgba(15,23,42,.06), 0 4px 16px rgba(15,23,42,.06);
+    /* Namen, die das gemeinsame Konto-Modul (shared/overall-account.js) erwartet */
+    --line: var(--border); --ink: var(--text); --mute: var(--muted); --p1: var(--accent); --hover: var(--card-hover); --danger: #dc2626;
   }
   /* Dunkel: für AMOLED optimiert – echtes Schwarz, keine Verläufe, Karten nur über dünne Ränder abgesetzt */
   [data-theme="dark"] {
@@ -188,7 +191,7 @@
   }
 
   /* Login-Pflicht: bis die Anmeldung geprüft ist, sieht man nur die Anmeldekarte */
-  body:not(.unlocked) main.wrap, body:not(.unlocked) #searchBtn, body:not(.signed-in) #logoutBtn { display: none; }
+  body:not(.unlocked) main.wrap, body:not(.unlocked) #searchBtn, body:not(.signed-in) #profileBtn { display: none; }
   body.unlocked #gate { display: none; }
   #gate { max-width: 380px; margin: 12vh auto 0; padding: 0 16px; }
   .gate-card { padding: 22px; border-radius: 16px; background: var(--card); border: 1px solid var(--border); box-shadow: var(--shadow); }
@@ -209,6 +212,29 @@
   .gate-card .link { display: inline-block; margin-top: 12px; padding: 0; border: 0; background: none; font: inherit; font-size: .85rem; color: var(--accent); cursor: pointer; }
   .gate-msg { margin: 12px 0 0; font-size: .88rem; color: #dc2626; }
   .gate-msg.ok { color: #16a34a; }
+
+  /* Profilbild oben rechts + Menü */
+  #profileBtn { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 38px; padding: 0; overflow: hidden; font-size: 1.15rem; }
+  #profileBtn.has-photo { border-radius: 50%; width: 38px; }
+  #profileBtn img, .pm-ava img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .pm-menu {
+    position: fixed; z-index: 30; min-width: 250px; max-width: calc(100vw - 20px); padding: 6px;
+    background: var(--card); color: var(--text); border: 1px solid var(--border); border-radius: 14px;
+    box-shadow: 0 12px 32px rgba(15,23,42,.22);
+  }
+  .pm-menu[hidden] { display: none; }
+  .pm-head { display: flex; gap: 10px; align-items: center; padding: 8px 10px 12px; margin-bottom: 4px; border-bottom: 1px solid var(--border); }
+  .pm-head b { display: block; font-size: .95rem; }
+  .pm-head small { display: block; color: var(--muted); font-size: .78rem; word-break: break-all; }
+  .pm-ava { flex: 0 0 42px; width: 42px; height: 42px; border-radius: 50%; overflow: hidden; display: grid; place-items: center; font-size: 1.3rem; background: var(--card-hover); border: 1px solid var(--border); }
+  .pm-item {
+    display: flex; width: 100%; align-items: center; gap: 10px; padding: 10px 12px; border: 0; border-radius: 8px;
+    background: none; color: var(--text); font: inherit; font-size: .92rem; font-weight: 600; text-align: left; text-decoration: none; cursor: pointer;
+  }
+  .pm-item:hover, .pm-item:focus-visible { background: var(--card-hover); outline: none; }
+  .pm-item small { margin-left: auto; color: var(--muted); font-weight: 500; font-size: .72rem; }
+  .pm-item.danger { color: #dc2626; }
+  .pm-sep { height: 1px; margin: 4px 6px; background: var(--border); }
 </style>
 </head>
 <body>
@@ -220,7 +246,7 @@
     <span class="spacer"></span>
     <button class="icon-btn" id="searchBtn" aria-label="Projekt suchen" title="Suchen (/)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></button>
     <button class="icon-btn" id="themeBtn" aria-label="Hell/Dunkel umschalten" title="Hell/Dunkel">🌙</button>
-    <button class="icon-btn" id="logoutBtn" aria-label="Abmelden" title="Abmelden"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h3"/><path d="M14 17l5-5-5-5M19 12H8"/></svg></button>
+    <button class="icon-btn" id="profileBtn" type="button" aria-label="Konto-Menü öffnen" aria-haspopup="menu" aria-expanded="false">👤</button>
   </div>
 </header>
 
@@ -499,6 +525,97 @@ function startDashboard() {
   checkSupabase();
 }
 
+/* ---------------- Profilbild oben rechts + Menü ----------------
+   Bild und Name aus overall_profiles (gilt für alle Apps), Dialoge aus shared/overall-account.js.
+   Admin-Einstellungen nur für globale Admins; vorerst die Verwaltung in TravelBase. */
+const profileMenu = (() => {
+  const btn = document.getElementById('profileBtn');
+  const ADMIN_URL = '/TravelBase/verwaltung.html';
+  const CACHE_KEY = 'dash-profile';
+  let user = null, profile = {}, photo = null, menu = null, onLogout = () => {};
+
+  const shownName = () => (profile.display_name || '').trim() || (user && user.email) || '';
+  const avatarHtml = () => photo ? `<img src="${photo}" alt="">` : '👤';
+  const save = () => { try { localStorage.setItem(CACHE_KEY, JSON.stringify({ id: user.id, profile, photo })); } catch (e) {} };
+  const load = id => { try { const c = JSON.parse(localStorage.getItem(CACHE_KEY)); return c && c.id === id ? c : null; } catch (e) { return null; } };
+
+  function paint() {
+    btn.innerHTML = avatarHtml();
+    btn.classList.toggle('has-photo', !!photo);
+    btn.title = shownName();
+    // Begrüßung mit Vornamen (die Uhr aktualisiert sie jede Sekunde)
+    window.dashUserName = (profile.display_name || '').trim().split(/\s+/)[0] || '';
+    if (menu && !menu.hidden) renderMenu();
+  }
+
+  function renderMenu() {
+    menu.innerHTML = `
+      <div class="pm-head">
+        <span class="pm-ava">${avatarHtml()}</span>
+        <div><b>${esc(shownName())}</b><small>${esc(user.email)}</small></div>
+      </div>
+      <button class="pm-item" type="button" role="menuitem" data-act="settings">⚙️ Kontoeinstellungen</button>
+      <button class="pm-item" type="button" role="menuitem" data-act="password">🔑 Passwort ändern</button>
+      ${profile.role === 'admin' ? '<a class="pm-item" role="menuitem" href="' + ADMIN_URL + '">🛡️ Admin-Einstellungen<small>nur Admins</small></a>' : ''}
+      <div class="pm-sep"></div>
+      <button class="pm-item danger" type="button" role="menuitem" data-act="logout">🚪 Abmelden</button>`;
+  }
+
+  function open() {
+    if (!user) return;
+    if (!menu) {
+      menu = document.createElement('div');
+      menu.className = 'pm-menu'; menu.setAttribute('role', 'menu'); menu.hidden = true;
+      menu.addEventListener('click', e => {
+        const b = e.target.closest('[data-act]'); if (!b) return;
+        close();
+        if (b.dataset.act === 'settings') OverallAccount.openSettings({ sb, onChange: p => {
+          const { photo: pic, ...row } = p;
+          profile = { ...profile, ...row }; photo = pic || null; save(); paint();
+        } });
+        else if (b.dataset.act === 'password') OverallAccount.openPassword({ sb, redirectTo: location.origin + '/TravelBase/' });
+        else if (b.dataset.act === 'logout') onLogout();
+      });
+      document.body.appendChild(menu);
+    }
+    renderMenu();
+    const r = btn.getBoundingClientRect();
+    menu.style.top = (r.bottom + 8) + 'px';
+    menu.style.right = Math.max(10, window.innerWidth - r.right) + 'px';
+    menu.hidden = false;
+    btn.setAttribute('aria-expanded', 'true');
+    const first = menu.querySelector('.pm-item'); if (first) first.focus();
+  }
+  function close() {
+    if (menu) menu.hidden = true;
+    btn.setAttribute('aria-expanded', 'false');
+  }
+
+  btn.addEventListener('click', e => { e.stopPropagation(); (menu && !menu.hidden) ? close() : open(); });
+  document.addEventListener('click', e => { if (menu && !menu.hidden && !menu.contains(e.target)) close(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+  window.addEventListener('resize', close);
+
+  // Mit dem gespeicherten Stand sofort anzeigen, dann aus der Datenbank nachladen
+  async function refresh(session) {
+    user = session ? { id: session.user.id, email: session.user.email } : null;
+    if (!user) { profile = {}; photo = null; close(); if (window.OverallAccount) OverallAccount.close(); paint(); return; }
+    const c = load(user.id);
+    profile = (c && c.profile) || {}; photo = (c && c.photo) || null;
+    paint();
+    try {
+      const { data, error } = await sb.from('overall_profiles').select('display_name, avatar_path, role').eq('id', user.id).maybeSingle();
+      if (error) throw error;
+      const path = data && data.avatar_path;
+      if (path !== profile.avatar_path || !photo) photo = path ? await OverallAccount.loadPhoto(sb, path) : null;
+      profile = data || {};
+      save(); paint();
+    } catch (e) { if (navigator.onLine) console.warn('Profil laden', e); }
+  }
+
+  return { refresh, setLogout: fn => { onLogout = fn; } };
+})();
+
 const gate = (() => {
   const $ = id => document.getElementById(id);
   const msg = (text, ok) => { const el = $('loginMsg'); el.textContent = text || ''; el.className = 'gate-msg' + (ok ? ' ok' : ''); el.hidden = !text; };
@@ -525,6 +642,7 @@ const gate = (() => {
     }
     const { data: { session } } = await sb.auth.getSession();
     document.body.classList.toggle('signed-in', !!session);
+    profileMenu.refresh(session);
     if (!session) { remember(null); show('loginForm'); return; }
     try {
       const { data, error } = await sb.rpc('overall_has_app_role', { p_app: 'dashboard', p_min_role: 'member' });
@@ -543,6 +661,7 @@ const gate = (() => {
     remember(null);
     if (sb) await sb.auth.signOut().catch(() => {});
     document.body.classList.remove('signed-in');
+    profileMenu.refresh(null);
     show('loginForm'); msg('');
   }
 
@@ -571,7 +690,7 @@ const gate = (() => {
       msg('📧 Falls die Adresse bekannt ist, kommt gleich eine E-Mail mit einem Link.', true);
     } catch (err) { msg(errText(err)); }
   });
-  $('logoutBtn').addEventListener('click', logout);
+  profileMenu.setLogout(logout);
   $('noAccessLogout').addEventListener('click', logout);
   // Ab- oder Anmeldung in einem anderen Tab (auch in TravelBase/Quest Log) gilt sofort auch hier
   if (sb) sb.auth.onAuthStateChange(ev => { if (ev === 'SIGNED_OUT' || ev === 'SIGNED_IN') setTimeout(check, 0); });
@@ -643,7 +762,7 @@ document.addEventListener('visibilitychange', () => { if (document.visibilitySta
     const now = new Date();
     const h = now.getHours();
     const g = h < 5 ? 'Gute Nacht' : h < 11 ? 'Guten Morgen' : h < 17 ? 'Hallo' : h < 22 ? 'Guten Abend' : 'Gute Nacht';
-    greet.textContent = g + ' 👋';
+    greet.textContent = g + (window.dashUserName ? ', ' + window.dashUserName : '') + ' 👋';
     today.textContent = now.toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
     clock.textContent = now.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     clock.dateTime = now.toISOString();
