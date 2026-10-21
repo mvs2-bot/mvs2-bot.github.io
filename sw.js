@@ -1,7 +1,7 @@
 // Service Worker für das Dashboard (nur Root-Seite, Unterprojekte haben eigene SWs).
 // Bei Änderungen an index.html die Versionsnummer erhöhen.
-const CACHE = 'mvs2-dashboard-v18';
-const ASSETS = ['./', './index.html', './konto.html', './admin.html', './shared/hub.css', './manifest.json', './icon.svg', './favicon.ico', './shared/overall-account.js', './icons/icon-192.png', './icons/icon-512.png', './icons/icon-maskable-512.png', './icons/apple-touch-icon.png', './icons/favicon-32.png'];
+const CACHE = 'mvs2-dashboard-v19';
+const ASSETS = ['./', './index.html', './konto.html', './admin.html', './shared/hub.css', './manifest.json', './icon.svg', './favicon.ico', './shared/overall-account.js', './shared/ios-nav.js', './icons/icon-192.png', './icons/icon-512.png', './icons/icon-maskable-512.png', './icons/apple-touch-icon.png', './icons/favicon-32.png'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
@@ -22,7 +22,7 @@ self.addEventListener('fetch', e => {
   // Nur eigene Root-Dateien bedienen – Unterprojekte (/TravelBase/, /QuickTools/ …) nicht anfassen.
   if (e.request.method !== 'GET' || url.origin !== location.origin) return;
   const path = url.pathname;
-  const isRootAsset = path === '/' || ['/index.html', '/konto.html', '/admin.html', '/shared/hub.css', '/manifest.json', '/icon.svg', '/favicon.ico'].includes(path) || path.startsWith('/icons/') || path === '/shared/overall-account.js';
+  const isRootAsset = path === '/' || ['/index.html', '/konto.html', '/admin.html', '/shared/hub.css', '/manifest.json', '/icon.svg', '/favicon.ico'].includes(path) || path.startsWith('/icons/') || path === '/shared/overall-account.js' || path === '/shared/ios-nav.js';
   if (!isRootAsset) return;
 
   // Network-first: immer aktuell, offline aus dem Cache.
