@@ -139,6 +139,7 @@ const APP_CARDS = {
   questlog:   { icon: '📜', color: '#7c3aed', render: questlogCard },
   travelbase: { icon: '🌍', color: '#2563eb', render: travelbaseCard },
   dashboard:  { icon: '🏠', color: '#0d9488', render: dashboardCard },
+  dailymind:  { icon: '🌅', color: '#7c9a82', render: dailymindCard },
 };
 
 function appCard(app, role, body) {
@@ -218,6 +219,100 @@ async function dashboardCard(card) {
     });
   };
   paint();
+}
+
+/* DailyMind: tägliche Push-Erinnerungen. Das Gerät-Abo verwaltet /DailyMind/push.js (Repo DailyMind). */
+function loadScript(src) {
+  return new Promise((ok, fail) => {
+    if (document.querySelector(`script[src="${src}"]`)) return ok();
+    const s = document.createElement('script');
+    s.src = src; s.onload = ok; s.onerror = () => fail(new Error('Konnte ' + src + ' nicht laden.'));
+    document.head.appendChild(s);
+  });
+}
+
+async function dailymindCard(card, user) {
+  await loadScript('/DailyMind/push.js');
+  const Push = window.DailyMindPush;
+  const row = check(await sb.from('dailymind_push_settings').select('morning_enabled, morning_time, evening_enabled, evening_time').eq('user_id', user.id).maybeSingle());
+  const st = Object.assign({ morning_enabled: false, morning_time: '07:30', evening_enabled: false, evening_time: '21:00' }, row || {});
+  const hhmm = t => String(t).slice(0, 5);
+  const box = card.querySelector('.app-body');
+  const reminder = (kind, icon, label, hint) => `
+    <div class="row">
+      <label class="switch" style="padding:0;flex:1 1 220px">
+        <input type="checkbox" data-dm="${kind}_enabled"${st[kind + '_enabled'] ? ' checked' : ''}>
+        <span><b>${icon} ${label}</b><small>${hint}</small></span>
+      </label>
+      <input type="time" data-dm="${kind}_time" value="${hhmm(st[kind + '_time'])}" aria-label="Uhrzeit ${label}"${st[kind + '_enabled'] ? '' : ' disabled'}>
+    </div>`;
+  box.innerHTML = `
+    <h4>🔔 Tägliche Erinnerungen</h4>
+    <p class="note">Eine Push-Benachrichtigung zur gewählten Uhrzeit. Hast du die Routine an dem Tag schon begonnen, kommt keine.</p>
+    ${reminder('morning', '☀️', 'Morgen-Erinnerung', 'Dankbarkeit, Tagesfokus und Affirmation')}
+    ${reminder('evening', '🌙', 'Abend-Erinnerung', 'Kleine Erfolge, gute Taten und Stimmung')}
+    <div class="row" id="dmDevice"></div>
+    <div class="msg" hidden></div>`;
+  const out = box.querySelector('.msg');
+  const dev = box.querySelector('#dmDevice');
+
+  // Status dieses Geräts: bekommt es Erinnerungen?
+  async function paintDevice() {
+    let text, btn = '';
+    if (!Push.supported()) {
+      text = Push.isIOS()
+        ? 'Auf iPhone und iPad kommen Erinnerungen nur in der installierten App: DailyMind in Safari öffnen, „Teilen → Zum Home-Bildschirm“, dann dort die Erinnerungen aktivieren.'
+        : 'Dieser Browser unterstützt keine Push-Benachrichtigungen.';
+    } else if (Notification.permission === 'denied') {
+      text = 'Benachrichtigungen sind für diese Seite blockiert. Erlaube sie in den Browser- bzw. Systemeinstellungen.';
+    } else if (await Push.current()) {
+      text = '✅ Dieses Gerät bekommt deine Erinnerungen.';
+      btn = '<button class="btn ghost" type="button" data-dev="off">Hier ausschalten</button>';
+    } else {
+      text = 'Dieses Gerät bekommt noch keine Erinnerungen.';
+      btn = '<button class="btn" type="button" data-dev="on">Auf diesem Gerät aktivieren</button>';
+    }
+    dev.innerHTML = `<div style="flex:1 1 220px"><b>📱 Dieses Gerät</b><small>${esc(text)}</small></div>${btn}`;
+  }
+  dev.addEventListener('click', async e => {
+    const b = e.target.closest('[data-dev]'); if (!b) return;
+    b.disabled = true; msg(out, '');
+    try {
+      if (b.dataset.dev === 'on') { await Push.enable(sb); msg(out, '✅ Erinnerungen auf diesem Gerät aktiviert.', true); }
+      else { await Push.disable(sb); msg(out, 'Auf diesem Gerät ausgeschaltet.', true); }
+    } catch (err) { msg(out, errText(err)); }
+    await paintDevice();
+  });
+
+  const save = () => sb.from('dailymind_push_settings').upsert({
+    user_id: user.id,
+    morning_enabled: st.morning_enabled, morning_time: hhmm(st.morning_time),
+    evening_enabled: st.evening_enabled, evening_time: hhmm(st.evening_time),
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/Berlin',
+  }, { onConflict: 'user_id' }).then(check);
+
+  box.querySelectorAll('[data-dm]').forEach(el => el.addEventListener('change', async () => {
+    const key = el.dataset.dm, before = st[key];
+    if (el.type === 'time' && !el.value) { el.value = hhmm(before); return; }
+    st[key] = el.type === 'checkbox' ? el.checked : el.value;
+    msg(out, '');
+    // Beim Einschalten gleich dieses Gerät anmelden. Vorher kein await, sonst fragt Safari nicht nach der Erlaubnis.
+    let deviceErr = null;
+    if (el.type === 'checkbox' && el.checked && Push.supported() && Notification.permission !== 'denied') {
+      await Push.enable(sb).catch(e => { deviceErr = e; });
+    }
+    try {
+      await save();
+      if (el.type === 'checkbox') box.querySelector(`[data-dm="${key.replace('enabled', 'time')}"]`).disabled = !el.checked;
+      msg(out, deviceErr ? 'Gespeichert. Auf diesem Gerät: ' + errText(deviceErr) : '✅ Gespeichert.', !deviceErr);
+    } catch (err) {
+      st[key] = before;
+      if (el.type === 'checkbox') el.checked = before; else el.value = hhmm(before);
+      msg(out, errText(err));
+    }
+    await paintDevice();
+  }));
+  await paintDevice();
 }
 
 async function renderApps(user) {
