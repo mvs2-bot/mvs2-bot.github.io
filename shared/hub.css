@@ -55,7 +55,9 @@ h1 { margin: 22px 0 4px; font-size: clamp(1.4rem, 4vw, 1.8rem); }
 .row small { display: block; color: var(--muted); font-size: .8rem; }
 
 label.field { display: flex; flex-direction: column; gap: 4px; font-size: .78rem; font-weight: 700; color: var(--muted); max-width: 360px; }
-input[type=text], select { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; font: inherit; font-size: 16px; color: var(--text); width: 100%; }
+input[type=text], input[type=time], select { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; font: inherit; font-size: 16px; color: var(--text); width: 100%; }
+input[type=time] { width: auto; }
+input[type=time]:disabled { opacity: .5; }
 .switch { display: flex; gap: 12px; align-items: flex-start; padding: 10px 0; cursor: pointer; }
 .switch + .switch { border-top: 1px solid var(--border); }
 .switch input { margin-top: 3px; width: 18px; height: 18px; accent-color: var(--accent); flex: 0 0 auto; }
