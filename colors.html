@@ -85,7 +85,6 @@
     <button class="back-btn" onclick="loadLiveTokens()" style="width: auto; padding: 0 14px; border-radius: 10px; font-size: 12px; font-weight: 600;" type="button">Neu laden</button>
   </div>
 
-  <!-- Design-Token Matrix: Zeigt nur noch den Primär-Akzent Light (--p1) -->
   <div class="card" style="padding: 0; overflow: hidden;">
     <div style="padding: 16px 16px 12px; font-weight: 600; font-size: 15px; border-bottom: 1px solid var(--sep);">Design-Token Matrix (Primär-Akzent Light --p1)</div>
     <div class="table-container">
@@ -164,12 +163,24 @@
       if (cssText) {
         const parts = cssText.split(/data-theme=["']dark["']|\.dark/i);
         
+        // Verbessertes Regex: Erfasst den gesamten Wert bis zum Semikolon
+        const cssValueRegex = /(--[\w-]+):\s*([^;]+);/g;
+
+        const cleanColorVal = (rawVal) => {
+          let val = rawVal.trim();
+          val = val.replace(/\s*\/\*[\s\S]*?\*\/\s*/g, ''); 
+          if (val.startsWith('#') || val.startsWith('rgb') || val.startsWith('hsl') || val.startsWith('color-mix')) {
+            return val;
+          }
+          return null;
+        };
+
         // Light Mode Variablen extrahieren
-        const lightMatches = [...parts[0].matchAll(/(--[\w-]+):\s*([^;}\s]+)/g)];
+        const lightMatches = [...parts[0].matchAll(cssValueRegex)];
         lightMatches.forEach(m => {
-          const val = m[2].trim();
-          if (val.startsWith('#') || val.startsWith('rgb') || val.startsWith('hsl')) {
-            lightVars[m[1]] = val;
+          const validColor = cleanColorVal(m[2]);
+          if (validColor) {
+            lightVars[m[1]] = validColor;
           }
         });
 
@@ -177,11 +188,11 @@
 
         // Dark Mode Variablen extrahieren
         if (parts.length > 1) {
-          const darkMatches = [...parts[1].matchAll(/(--[\w-]+):\s*([^;}\s]+)/g)];
+          const darkMatches = [...parts[1].matchAll(cssValueRegex)];
           darkMatches.forEach(m => {
-            const val = m[2].trim();
-            if (val.startsWith('#') || val.startsWith('rgb') || val.startsWith('hsl')) {
-              darkVars[m[1]] = val;
+            const validColor = cleanColorVal(m[2]);
+            if (validColor) {
+              darkVars[m[1]] = validColor;
             }
           });
         }
@@ -207,7 +218,6 @@
   }
 
   function render(data) {
-    // Matrix zeigt nun nur noch Repository, Primär-Akzent Light (--p1) und Status
     document.getElementById('matrixTable').innerHTML = data.map(r => `
       <tr>
         <td>
@@ -226,7 +236,6 @@
       </tr>
     `).join('');
 
-    // Repository Farb-Anatomie Karten zeigen sämtliche gefundenen Farb-Token an
     document.getElementById('cardsGrid').innerHTML = data.map(r => {
       const lightList = Object.entries(r.lightVars).map(([k, v]) => `
         <div class="token-item">
