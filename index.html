@@ -270,7 +270,13 @@
     <div class="group-head"><h2 id="toolsH">Mini-Tools</h2></div>
     <div class="box"><div class="quick">
       <button type="button" id="sunBtn" title="Sonnenauf- und -untergang am Standort"><span class="qi" style="color:#f59e0b"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M17 18a5 5 0 0 0-10 0M12 2v7M4.2 10.2l1.4 1.4M1 18h2M21 18h2M18.4 11.6l1.4-1.4M23 22H1M8 6l4-4 4 4"/></svg></span><span class="ql">Sonne</span></button>
-    </div><p class="tool-out" id="sunOut" aria-live="polite" hidden></p></div>
+      <button type="button" id="coinBtn" title="Münzwurf"><span class="qi" style="color:#ca8a04"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9.5 9.5h3.5a1.5 1.5 0 0 1 0 3H11a1.5 1.5 0 0 0 0 3h3.5"/></svg></span><span class="ql">Münze</span></button>
+      <button type="button" id="diceBtn" title="Würfel (1–6)"><span class="qi" style="color:#dc2626"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3"/><circle cx="9" cy="9" r=".8"/><circle cx="15" cy="15" r=".8"/><circle cx="12" cy="12" r=".8"/></svg></span><span class="ql">Würfel</span></button>
+      <button type="button" id="wxBtn" title="Wetter am Standort"><span class="qi" style="color:#0ea5e9"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 18a4 4 0 1 1 .9-7.9A6 6 0 0 1 19 12a3 3 0 0 1-1 6z"/></svg></span><span class="ql">Wetter</span></button>
+      <button type="button" id="timerBtn" title="Timer: Minuten eingeben"><span class="qi" style="color:#7c3aed"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2M9 2h6"/></svg></span><span class="ql">Timer</span></button>
+      <button type="button" id="swBtn" title="Stoppuhr starten/stoppen"><span class="qi" style="color:#16a34a"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="14" r="7"/><path d="M12 14V10M10 3h4M18 7l1.5-1.5"/></svg></span><span class="ql">Stoppuhr</span></button>
+      <button type="button" id="tripBtn" title="Countdown zu den Reisen 2027"><span class="qi" style="color:#2563eb"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 16l20-6-3-2-6 2-6-5-2 1 4 6-4 1-2-2-1 1z"/><path d="M3 21h18"/></svg></span><span class="ql">Urlaub</span></button>
+    </div><p class="tool-out" id="toolOut" aria-live="polite" hidden></p><p class="tool-out" id="clockOut" aria-live="polite" hidden></p></div>
   </section>
 
   <footer>mvs2-bot.github.io</footer>
@@ -767,18 +773,79 @@ function sunTimes(date, lat, lng) {
   return { rise: toDate(2 * noon - set), set: toDate(set) };
 }
 (function () {
-  const btn = document.getElementById('sunBtn'), out = document.getElementById('sunOut');
+  const $ = id => document.getElementById(id), out = $('toolOut'), clk = $('clockOut');
   const show = t => { out.textContent = t; out.hidden = false; };
   const hm = d => d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
-  btn.addEventListener('click', () => {
+  const getPos = ok => {
     if (!navigator.geolocation) return show('Standort wird von diesem Browser nicht unterstützt.');
     show('Standort wird ermittelt …');
-    navigator.geolocation.getCurrentPosition(p => {
-      const t = sunTimes(new Date(), p.coords.latitude, p.coords.longitude);
-      if (!t) return show('Heute kein Sonnenauf- oder -untergang (Polartag/-nacht).');
-      const min = Math.round((t.set - t.rise) / 6e4);
-      show(`Aufgang ${hm(t.rise)} · Untergang ${hm(t.set)} · Tageslänge ${Math.floor(min / 60)} h ${min % 60} min`);
-    }, err => show(err.code === 1 ? 'Standortzugriff verweigert.' : 'Standort nicht verfügbar.'), { maximumAge: 6e5, timeout: 15000 });
+    navigator.geolocation.getCurrentPosition(p => ok(p.coords.latitude, p.coords.longitude),
+      err => show(err.code === 1 ? 'Standortzugriff verweigert.' : 'Standort nicht verfügbar.'), { maximumAge: 6e5, timeout: 15000 });
+  };
+
+  $('sunBtn').addEventListener('click', () => getPos((lat, lng) => {
+    const t = sunTimes(new Date(), lat, lng);
+    if (!t) return show('Heute kein Sonnenauf- oder -untergang (Polartag/-nacht).');
+    const min = Math.round((t.set - t.rise) / 6e4);
+    show(`Aufgang ${hm(t.rise)} · Untergang ${hm(t.set)} · Tageslänge ${Math.floor(min / 60)} h ${min % 60} min`);
+  }));
+
+  const rnd = n => crypto.getRandomValues(new Uint32Array(1))[0] % n;
+  $('coinBtn').addEventListener('click', () => show(`Münze: ${rnd(2) ? 'Kopf' : 'Zahl'}`));
+  $('diceBtn').addEventListener('click', () => { const n = rnd(6); show(`Würfel: ${'⚀⚁⚂⚃⚄⚅'[n]} ${n + 1}`); });
+
+  // Wetter: Open-Meteo, kostenlos und ohne API-Key
+  const WX = { 0: 'klar', 1: 'überwiegend klar', 2: 'teils bewölkt', 3: 'bedeckt', 45: 'Nebel', 48: 'Reifnebel', 51: 'leichter Niesel', 53: 'Niesel', 55: 'starker Niesel',
+    56: 'gefrierender Niesel', 57: 'gefrierender Niesel', 61: 'leichter Regen', 63: 'Regen', 65: 'starker Regen', 66: 'gefrierender Regen', 67: 'gefrierender Regen',
+    71: 'leichter Schnee', 73: 'Schnee', 75: 'starker Schnee', 77: 'Schneegriesel', 80: 'Regenschauer', 81: 'Regenschauer', 82: 'heftige Schauer',
+    85: 'Schneeschauer', 86: 'Schneeschauer', 95: 'Gewitter', 96: 'Gewitter mit Hagel', 99: 'Gewitter mit Hagel' };
+  $('wxBtn').addEventListener('click', () => getPos(async (lat, lng) => {
+    show('Wetter wird geladen …');
+    try {
+      const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat.toFixed(3)}&longitude=${lng.toFixed(3)}&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m,precipitation&timezone=auto`);
+      if (!r.ok) throw 0;
+      const c = (await r.json()).current, n = v => Math.round(v);
+      show(`${n(c.temperature_2m)} °C (gefühlt ${n(c.apparent_temperature)} °C) · ${WX[c.weather_code] || '–'} · Wind ${n(c.wind_speed_10m)} km/h · Niederschlag ${c.precipitation} mm`);
+    } catch (e) { show('Wetter nicht abrufbar (offline?).'); }
+  }));
+
+  // Timer und Stoppuhr teilen sich eine Zeile; es läuft immer nur eins
+  let tick = null, mode = '';
+  const stop = () => { clearInterval(tick); tick = null; mode = ''; };
+  const fmt = ms => { const s = Math.floor(ms / 1000); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
+  const line = t => { clk.textContent = t; clk.hidden = false; };
+  $('timerBtn').addEventListener('click', () => {
+    if (mode === 'timer') { stop(); return line('Timer abgebrochen.'); }
+    const m = parseFloat(String(prompt('Timer – wie viele Minuten?', '5') || '').replace(',', '.'));
+    if (!(m > 0)) return;
+    stop(); mode = 'timer';
+    const end = Date.now() + m * 6e4;
+    const run = () => {
+      const left = end - Date.now();
+      if (left > 0) return line(`Timer: ${fmt(left + 999)} (nochmal tippen = abbrechen)`);
+      stop(); line('Timer abgelaufen!');
+      if (navigator.vibrate) navigator.vibrate([300, 150, 300, 150, 300]);
+      try { const a = new AudioContext(), o = a.createOscillator(); o.connect(a.destination); o.frequency.value = 880; o.start(); o.stop(a.currentTime + 0.8); } catch (e) {}
+    };
+    run(); tick = setInterval(run, 250);
+  });
+  $('swBtn').addEventListener('click', () => {
+    if (mode === 'sw') { const t = clk.textContent.replace(/ \(.*/, ''); stop(); return line(`${t} – gestoppt`); }
+    stop(); mode = 'sw';
+    const start = Date.now();
+    const run = () => { const ms = Date.now() - start; line(`Stoppuhr: ${fmt(ms)},${Math.floor(ms % 1000 / 100)} (nochmal tippen = stoppen)`); };
+    run(); tick = setInterval(run, 100);
+  });
+
+  // Reisen 2027 – Termine hier pflegen
+  const TRIPS = [{ name: 'Thailand & Sri Lanka', start: '2027-01-01', end: '2027-02-23' }, { name: 'Südamerika', start: '2027-03-15', end: '2027-05-28' }];
+  $('tripBtn').addEventListener('click', () => {
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const days = d => Math.round((new Date(d + 'T00:00') - today) / 864e5);
+    show(TRIPS.map(t => {
+      const a = days(t.start), b = days(t.end);
+      return `${t.name}: ${a > 0 ? `noch ${a} Tage` : b >= 0 ? `läuft (Tag ${1 - a})` : 'vorbei'}`;
+    }).join(' · '));
   });
 })();
 
