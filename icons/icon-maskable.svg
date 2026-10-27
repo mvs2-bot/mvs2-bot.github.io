@@ -1,15 +1,20 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <defs>
-    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#3b82f6"/>
-      <stop offset="1" stop-color="#0d9488"/>
-    </linearGradient>
-  </defs>
-  <rect width="512" height="512" fill="url(#g)"/>
-  <g fill="#fff">
-    <rect x="128" y="128" width="112" height="112" rx="28"/>
-    <rect x="272" y="128" width="112" height="112" rx="28" opacity=".85"/>
-    <rect x="128" y="272" width="112" height="112" rx="28" opacity=".85"/>
-    <rect x="272" y="272" width="112" height="112" rx="28" opacity=".7"/>
+  <rect width="512" height="512" fill="#1e293b"/>
+  <g transform="translate(51.2 51.2) scale(0.8)">
+  <!-- S -->
+  <rect x="88" y="88" width="144" height="144" rx="36" fill="#60a5fa"/>
+  <path d="M190 130C178 112 130 112 130 139C130 163 190 157 190 181C190 208 142 208 130 190" stroke="#fff" stroke-width="18" stroke-linecap="round" fill="none"/>
+  <!-- Kompass -->
+  <rect x="280" y="88" width="144" height="144" rx="36" fill="#34d399"/>
+  <circle cx="352" cy="160" r="48" stroke="#fff" stroke-width="12" fill="none"/>
+  <polygon points="352,118 370,160 334,160" fill="#fff"/>
+  <polygon points="334,160 370,160 352,202" fill="#1e293b"/>
+  <!-- Zahnrad -->
+  <circle cx="160" cy="352" r="62" stroke="#fbbf24" stroke-width="16" stroke-dasharray="24.35 24.35" fill="none"/>
+  <circle cx="160" cy="352" r="56" fill="#fbbf24"/>
+  <circle cx="160" cy="352" r="21" fill="#1e293b"/>
+  <!-- Plus -->
+  <rect x="280" y="280" width="144" height="144" rx="36" fill="#f87171"/>
+  <path d="M352 316V388M316 352H388" stroke="#fff" stroke-width="18" stroke-linecap="round"/>
   </g>
 </svg>
