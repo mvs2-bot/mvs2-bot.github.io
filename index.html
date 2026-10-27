@@ -276,6 +276,7 @@
       <button type="button" id="timerBtn" title="Timer: Minuten eingeben"><span class="qi" style="color:#7c3aed"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2M9 2h6"/></svg></span><span class="ql">Timer</span></button>
       <button type="button" id="swBtn" title="Stoppuhr starten/stoppen"><span class="qi" style="color:#16a34a"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="14" r="7"/><path d="M12 14V10M10 3h4M18 7l1.5-1.5"/></svg></span><span class="ql">Stoppuhr</span></button>
       <button type="button" id="tripBtn" title="Countdown zu den Reisen 2027"><span class="qi" style="color:#2563eb"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 16l20-6-3-2-6 2-6-5-2 1 4 6-4 1-2-2-1 1z"/><path d="M3 21h18"/></svg></span><span class="ql">Urlaub</span></button>
+      <button type="button" id="moonBtn" title="Aktuelle Mondphase"><span class="qi" style="color:#64748b"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg></span><span class="ql">Mond</span></button>
     </div><p class="tool-out" id="toolOut" aria-live="polite" hidden></p><p class="tool-out" id="clockOut" aria-live="polite" hidden></p></div>
   </section>
 
@@ -835,6 +836,15 @@ function sunTimes(date, lat, lng) {
     const start = Date.now();
     const run = () => { const ms = Date.now() - start; line(`Stoppuhr: ${fmt(ms)},${Math.floor(ms % 1000 / 100)} (nochmal tippen = stoppen)`); };
     run(); tick = setInterval(run, 100);
+  });
+
+  // Mondphase: Alter seit Referenz-Neumond 06.01.2000 18:14 UTC, synodischer Monat 29,53 Tage (Genauigkeit ca. ±1 Tag)
+  $('moonBtn').addEventListener('click', () => {
+    const P = 29.530588853, age = (((Date.now() - Date.UTC(2000, 0, 6, 18, 14)) / 864e5) % P + P) % P;
+    const names = ['Neumond', 'zunehmende Sichel', 'erstes Viertel', 'zunehmender Mond', 'Vollmond', 'abnehmender Mond', 'letztes Viertel', 'abnehmende Sichel'];
+    const light = Math.round((1 - Math.cos(2 * Math.PI * age / P)) / 2 * 100);
+    const toFull = (P / 2 - age + P) % P, toNew = P - age;
+    show(`Mond: ${names[Math.round(age / P * 8) % 8]} · ${light} % beleuchtet · nächster Vollmond in ${Math.round(toFull)} Tagen · Neumond in ${Math.round(toNew)} Tagen`);
   });
 
   // Reisen 2027 – Termine hier pflegen
