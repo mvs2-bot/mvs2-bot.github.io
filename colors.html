@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>mvs2 · Farbarchitektur & Design-Token</title>
-<meta name="description" content="Automatische Live-Übersicht aller Repository-Farbkonzepte aus shared/style.css oder index.html">
+<meta name="description" content="Automatische Live-Übersicht aller Repository-Farbkonzepte und Design-Token">
 <meta name="theme-color" content="#f2f2f7">
 <link rel="icon" href="favicon.ico" sizes="16x16 32x32 48x48">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" sizes="180x180">
@@ -52,10 +52,12 @@
   th { background: var(--well); color: var(--mute); font-weight: 600; padding: 10px 12px; border-bottom: 1px solid var(--sep); text-transform: uppercase; font-size: 11px; letter-spacing: .05em; }
   td { padding: 12px; border-bottom: 1px solid var(--sep); vertical-align: middle; }
   tr:last-child td { border-bottom: 0; }
-  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
-  .repo-card { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px; display: flex; flex-direction: column; justify-content: space-between; gap: 12px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+  .repo-card { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px; display: flex; flex-direction: column; gap: 12px; }
   .badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; background: var(--well); color: var(--mute); }
   .ic { width: 16px; height: 16px; stroke-width: 1.8; stroke: currentColor; fill: none; }
+  .token-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; background: var(--well); padding: 10px; border-radius: 12px; max-height: 180px; overflow-y: auto; }
+  .token-item { display: flex; justify-content: space-between; align-items: center; font-size: 11px; font-family: monospace; background: var(--card); padding: 4px 8px; border-radius: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.02); }
 </style>
 <script src="shared/ios-nav.js" defer></script>
 </head>
@@ -68,7 +70,7 @@
     </a>
     <div class="head">
       <h1>Farbarchitektur & Design-Token</h1>
-      <div class="sub">Live-Parser aus shared/style.css oder index.html</div>
+      <div class="sub">Live-Parser für alle Farb-Variablen</div>
     </div>
     <button class="back-btn" id="themeBtn" type="button" aria-label="Dark Mode"></button>
   </div>
@@ -78,21 +80,21 @@
   <div class="card" style="display: flex; justify-content: space-between; align-items: center;">
     <div>
       <div style="font-weight: 600; color: var(--ink);">Quellcode-Live-Sync</div>
-      <div style="font-size: 12px; color: var(--mute);" id="statusText">Prüfe shared/style.css & index.html...</div>
+      <div style="font-size: 12px; color: var(--mute);" id="statusText">Lade Tokens von GitHub...</div>
     </div>
     <button class="back-btn" onclick="loadLiveTokens()" style="width: auto; padding: 0 14px; border-radius: 10px; font-size: 12px; font-weight: 600;" type="button">Neu laden</button>
   </div>
 
+  <!-- Design-Token Matrix: Zeigt nur noch den Primär-Akzent Light (--p1) -->
   <div class="card" style="padding: 0; overflow: hidden;">
-    <div style="padding: 16px 16px 12px; font-weight: 600; font-size: 15px; border-bottom: 1px solid var(--sep);">Design-Token Matrix (--p1 Live)</div>
+    <div style="padding: 16px 16px 12px; font-weight: 600; font-size: 15px; border-bottom: 1px solid var(--sep);">Design-Token Matrix (Primär-Akzent Light --p1)</div>
     <div class="table-container">
       <table>
         <thead>
           <tr>
             <th>Repository</th>
             <th>Primär-Akzent Light (--p1)</th>
-            <th>Primär-Akzent Dark (--p1)</th>
-            <th>Quelle / Status</th>
+            <th>Status</th>
           </tr>
         </thead>
         <tbody id="matrixTable">
@@ -102,7 +104,7 @@
     </div>
   </div>
 
-  <div style="font-weight: 600; font-size: 16px; margin: 24px 0 12px;">Repository Farb-Anatomie</div>
+  <div style="font-weight: 600; font-size: 16px; margin: 24px 0 12px;">Repository Farb-Anatomie (Alle Farb-Variablen)</div>
   <div class="grid" id="cardsGrid">
     <!-- Dynamisch -->
   </div>
@@ -128,11 +130,9 @@
       
       for (const branch of ['main', 'master']) {
         try {
-          // 1. Manifest laden
           const mRes = await fetch(`https://raw.githubusercontent.com/mvs2-bot/${repo.slug}/${branch}/manifest.json`);
           if (mRes.ok) manifestData = await mRes.json();
           
-          // 2. Zuerst versuchen, shared/style.css zu laden
           const cssRes = await fetch(`https://raw.githubusercontent.com/mvs2-bot/${repo.slug}/${branch}/shared/style.css`);
           if (cssRes.ok) {
             const text = await cssRes.text();
@@ -144,7 +144,6 @@
             }
           }
           
-          // 3. Fallback: index.html laden
           const hRes = await fetch(`https://raw.githubusercontent.com/mvs2-bot/${repo.slug}/${branch}/index.html`);
           if (hRes.ok) {
             const text = await hRes.text();
@@ -158,18 +157,33 @@
         } catch (e) {}
       }
 
-      // Regex Parser für --p1 (unterstützt Light & Dark Modi via data-theme oder .dark)
+      let lightVars = {};
+      let darkVars = {};
       let p1Light = '#0066cc';
-      let p1Dark = '#409cff';
 
       if (cssText) {
         const parts = cssText.split(/data-theme=["']dark["']|\.dark/i);
-        const lightMatch = parts[0].match(/--p1:\s*([^;}\s]+)/);
-        if (lightMatch) p1Light = lightMatch[1].trim();
+        
+        // Light Mode Variablen extrahieren
+        const lightMatches = [...parts[0].matchAll(/(--[\w-]+):\s*([^;}\s]+)/g)];
+        lightMatches.forEach(m => {
+          const val = m[2].trim();
+          if (val.startsWith('#') || val.startsWith('rgb') || val.startsWith('hsl')) {
+            lightVars[m[1]] = val;
+          }
+        });
 
+        if (lightVars['--p1']) p1Light = lightVars['--p1'];
+
+        // Dark Mode Variablen extrahieren
         if (parts.length > 1) {
-          const darkMatch = parts[1].match(/--p1:\s*([^;}\s]+)/);
-          if (darkMatch) p1Dark = darkMatch[1].trim();
+          const darkMatches = [...parts[1].matchAll(/(--[\w-]+):\s*([^;}\s]+)/g)];
+          darkMatches.forEach(m => {
+            const val = m[2].trim();
+            if (val.startsWith('#') || val.startsWith('rgb') || val.startsWith('hsl')) {
+              darkVars[m[1]] = val;
+            }
+          });
         }
       }
 
@@ -180,7 +194,8 @@
         url: `https://github.com/mvs2-bot/${repo.slug}`,
         liveName: manifestData ? (manifestData.short_name || manifestData.name) : repo.name,
         p1Light,
-        p1Dark,
+        lightVars,
+        darkVars,
         icon: iconSrc ? `https://raw.githubusercontent.com/mvs2-bot/${repo.slug}/${activeBranch}/${iconSrc}` : null,
         status: sourceFound ? `Live (${sourceFound})` : 'Fallback',
         ok: !!sourceFound
@@ -192,6 +207,7 @@
   }
 
   function render(data) {
+    // Matrix zeigt nun nur noch Repository, Primär-Akzent Light (--p1) und Status
     document.getElementById('matrixTable').innerHTML = data.map(r => `
       <tr>
         <td>
@@ -206,39 +222,50 @@
             <code style="font-size:12px;">${r.p1Light}</code>
           </div>
         </td>
-        <td>
-          <div style="display:flex; align-items:center; gap:6px;">
-            <span style="width:12px; height:12px; border-radius:50%; background:${r.p1Dark}; display:inline-block; border:1px solid rgba(255,255,255,0.2)"></span>
-            <code style="font-size:12px;">${r.p1Dark}</code>
-          </div>
-        </td>
         <td><span class="badge" style="background: ${r.ok ? 'var(--ok-soft)' : 'var(--danger-soft)'}; color: ${r.ok ? 'var(--ok)' : 'var(--danger)'};">${r.status}</span></td>
       </tr>
     `).join('');
 
-    document.getElementById('cardsGrid').innerHTML = data.map(r => `
-      <div class="repo-card">
-        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-          <div style="display:flex; gap:10px; align-items:center;">
-            ${r.icon ? `<img src="${r.icon}" style="width:36px; height:36px; border-radius:10px; object-fit:cover;">` : ''}
-            <div>
-              <div style="font-weight:600; font-size:14px; color: var(--ink);">${r.liveName}</div>
-              <a href="${r.url}" target="_blank" style="font-size:11px; color:var(--mute); text-decoration:none;">GitHub Repo ↗</a>
+    // Repository Farb-Anatomie Karten zeigen sämtliche gefundenen Farb-Token an
+    document.getElementById('cardsGrid').innerHTML = data.map(r => {
+      const lightList = Object.entries(r.lightVars).map(([k, v]) => `
+        <div class="token-item">
+          <span style="color:var(--mute);">${k}</span>
+          <span style="display:flex; align-items:center; gap:4px;">
+            <span style="width:8px; height:8px; border-radius:50%; background:${v}; border:1px solid rgba(0,0,0,0.1)"></span>
+            <span>${v}</span>
+          </span>
+        </div>
+      `).join('') || '<div style="font-size:11px; color:var(--mute);">Keine Light-Token gefunden</div>';
+
+      const darkList = Object.entries(r.darkVars).length > 0 ? Object.entries(r.darkVars).map(([k, v]) => `
+        <div class="token-item">
+          <span style="color:var(--mute);">${k}</span>
+          <span style="display:flex; align-items:center; gap:4px;">
+            <span style="width:8px; height:8px; border-radius:50%; background:${v}; border:1px solid rgba(255,255,255,0.2)"></span>
+            <span>${v}</span>
+          </span>
+        </div>
+      `).join('') : '<div style="font-size:11px; color:var(--mute);">Keine separaten Dark-Token</div>';
+
+      return `
+        <div class="repo-card">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+            <div style="display:flex; gap:10px; align-items:center;">
+              ${r.icon ? `<img src="${r.icon}" style="width:36px; height:36px; border-radius:10px; object-fit:cover;">` : ''}
+              <div>
+                <div style="font-weight:600; font-size:14px; color: var(--ink);">${r.liveName}</div>
+                <a href="${r.url}" target="_blank" style="font-size:11px; color:var(--mute); text-decoration:none;">GitHub Repo ↗</a>
+              </div>
             </div>
           </div>
+          <div style="font-size:12px; font-weight:600; color:var(--ink); margin-top:4px;">Light Mode Farben:</div>
+          <div class="token-grid">${lightList}</div>
+          <div style="font-size:12px; font-weight:600; color:var(--ink); margin-top:4px;">Dark Mode Farben:</div>
+          <div class="token-grid">${darkList}</div>
         </div>
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-          <div style="background:var(--well); padding:8px; border-radius:8px; font-size:11px;">
-            <div style="color:var(--mute);">Light (--p1)</div>
-            <code style="font-weight:600; color:var(--ink);">${r.p1Light}</code>
-          </div>
-          <div style="background:var(--well); padding:8px; border-radius:8px; font-size:11px;">
-            <div style="color:var(--mute);">Dark (--p1)</div>
-            <code style="font-weight:600; color:var(--ink);">${r.p1Dark}</code>
-          </div>
-        </div>
-      </div>
-    `).join('');
+      `;
+    }).join('');
   }
 
   const themeBtn = document.getElementById('themeBtn');
