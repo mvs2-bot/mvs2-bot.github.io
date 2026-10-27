@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>mvs2 · Farbarchitektur & Design-Token</title>
-<meta name="description" content="Automatische Live-Übersicht aller Repository-Farbkonzepte aus dem Quellcode">
+<meta name="description" content="Automatische Live-Übersicht aller Repository-Farbkonzepte aus shared/style.css oder index.html">
 <meta name="theme-color" content="#f2f2f7">
 <link rel="icon" href="favicon.ico" sizes="16x16 32x32 48x48">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" sizes="180x180">
@@ -68,7 +68,7 @@
     </a>
     <div class="head">
       <h1>Farbarchitektur & Design-Token</h1>
-      <div class="sub">Live-Parser aus CSS-Quellcode & Manifests</div>
+      <div class="sub">Live-Parser aus shared/style.css oder index.html</div>
     </div>
     <button class="back-btn" id="themeBtn" type="button" aria-label="Dark Mode"></button>
   </div>
@@ -78,7 +78,7 @@
   <div class="card" style="display: flex; justify-content: space-between; align-items: center;">
     <div>
       <div style="font-weight: 600; color: var(--ink);">Quellcode-Live-Sync</div>
-      <div style="font-size: 12px; color: var(--mute);" id="statusText">Analysiere GitHub Repositories...</div>
+      <div style="font-size: 12px; color: var(--mute);" id="statusText">Prüfe shared/style.css & index.html...</div>
     </div>
     <button class="back-btn" onclick="loadLiveTokens()" style="width: auto; padding: 0 14px; border-radius: 10px; font-size: 12px; font-weight: 600;" type="button">Neu laden</button>
   </div>
@@ -92,7 +92,7 @@
             <th>Repository</th>
             <th>Primär-Akzent Light (--p1)</th>
             <th>Primär-Akzent Dark (--p1)</th>
-            <th>Status</th>
+            <th>Quelle / Status</th>
           </tr>
         </thead>
         <tbody id="matrixTable">
@@ -121,38 +121,52 @@
   ];
 
   async function loadLiveTokens() {
-    document.getElementById('statusText').textContent = 'Lade index.html & Manifests von GitHub...';
+    document.getElementById('statusText').textContent = 'Analysiere CSS-Quellen von GitHub...';
     
     const results = await Promise.all(repos.map(async repo => {
-      let manifestData = null, htmlText = '', activeBranch = 'main';
+      let manifestData = null, cssText = '', sourceFound = '', activeBranch = 'main';
       
       for (const branch of ['main', 'master']) {
         try {
+          // 1. Manifest laden
           const mRes = await fetch(`https://raw.githubusercontent.com/mvs2-bot/${repo.slug}/${branch}/manifest.json`);
           if (mRes.ok) manifestData = await mRes.json();
           
+          // 2. Zuerst versuchen, shared/style.css zu laden
+          const cssRes = await fetch(`https://raw.githubusercontent.com/mvs2-bot/${repo.slug}/${branch}/shared/style.css`);
+          if (cssRes.ok) {
+            const text = await cssRes.text();
+            if (text.includes('--p1')) {
+              cssText = text;
+              sourceFound = 'shared/style.css';
+              activeBranch = branch;
+              break;
+            }
+          }
+          
+          // 3. Fallback: index.html laden
           const hRes = await fetch(`https://raw.githubusercontent.com/mvs2-bot/${repo.slug}/${branch}/index.html`);
           if (hRes.ok) {
-            htmlText = await hRes.text();
-            activeBranch = branch;
-            break;
+            const text = await hRes.text();
+            if (text.includes('--p1') || !cssText) {
+              cssText = text;
+              sourceFound = 'index.html';
+              activeBranch = branch;
+              break;
+            }
           }
         } catch (e) {}
       }
 
-      // Regex Parser für --p1 aus dem CSS der index.html auslesen
+      // Regex Parser für --p1 (unterstützt Light & Dark Modi via data-theme oder .dark)
       let p1Light = '#0066cc';
       let p1Dark = '#409cff';
 
-      if (htmlText) {
-        // Teile den Text nach [data-theme="dark"] auf, um Light- und Dark-Mode Werte zu trennen
-        const parts = htmlText.split(/data-theme=["']dark["']/i);
-        
-        // Suche --p1 im Light-Bereich
+      if (cssText) {
+        const parts = cssText.split(/data-theme=["']dark["']|\.dark/i);
         const lightMatch = parts[0].match(/--p1:\s*([^;}\s]+)/);
         if (lightMatch) p1Light = lightMatch[1].trim();
 
-        // Suche --p1 im Dark-Bereich (falls vorhanden)
         if (parts.length > 1) {
           const darkMatch = parts[1].match(/--p1:\s*([^;}\s]+)/);
           if (darkMatch) p1Dark = darkMatch[1].trim();
@@ -168,8 +182,8 @@
         p1Light,
         p1Dark,
         icon: iconSrc ? `https://raw.githubusercontent.com/mvs2-bot/${repo.slug}/${activeBranch}/${iconSrc}` : null,
-        status: htmlText ? 'Live aus Quellcode' : 'Fallback',
-        ok: !!htmlText
+        status: sourceFound ? `Live (${sourceFound})` : 'Fallback',
+        ok: !!sourceFound
       };
     }));
 
