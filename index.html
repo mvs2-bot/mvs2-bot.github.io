@@ -66,8 +66,9 @@
   .bar { display: flex; align-items: center; gap: 12px; padding-block: 12px 10px; }
   .bar .logo { width: 36px; height: 36px; flex: none; border-radius: 9px; }
   .bar .head { flex: 1; min-width: 0; }
-  h1 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -.02em; color: var(--ink); line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .sub { font-size: 12px; font-weight: 500; color: var(--mute); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  h1 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -.02em; color: var(--ink); line-height: 1.15; text-wrap: balance; }
+  .sub { font-size: 12px; font-weight: 500; color: var(--mute); font-variant-numeric: tabular-nums; text-wrap: balance; }
+  .sub > * { display: inline-block; white-space: nowrap; }
   .sub time::before { content: "·"; margin: 0 6px; }
   .acts { display: flex; gap: 8px; flex: none; }
   .icon-btn { position: relative; overflow: hidden; width: 36px; height: 36px; border: 0; border-radius: 50%; background: var(--card); color: var(--ink); box-shadow: var(--shadow);
@@ -75,7 +76,9 @@
   .icon-btn:hover { background: var(--hover); }
   .icon-btn .ic { width: 18px; height: 18px; }
   #profileBtn img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
-  @media (max-width: 420px) { .bar .logo { display: none; } h1 { font-size: 20px; } }
+  /* Handy: Farbarchitektur wandert ins Kontomenü, damit die Begrüßung Platz hat */
+  .pm-item.colors { display: none; }
+  @media (max-width: 420px) { .bar .logo, .icon-btn.colors { display: none; } .pm-item.colors { display: flex; } h1 { font-size: 20px; } }
 
   /* Gruppen und Projektkarten */
   .group { margin-top: 18px; }
@@ -207,7 +210,7 @@
     </div>
     <div class="acts">
 
-      <a class="icon-btn" href="colors.html" aria-label="Farbarchitektur" title="Farbarchitektur-Übersicht">
+      <a class="icon-btn colors" href="colors.html" aria-label="Farbarchitektur" title="Farbarchitektur-Übersicht">
   <svg class="ic" viewBox="0 0 24 24" aria-hidden="true">
     <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
   </svg>
@@ -344,6 +347,7 @@ const IC = {
   shield: '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 5 6v5c0 4.5 3 8.3 7 10 4-1.7 7-5.5 7-10V6z"/><path d="m9 12 2 2 4-4"/></svg>',
   logout: '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 17l5-5-5-5M15 12H4"/></svg>',
   lock:   '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>',
+  drop:   '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>',
   chev:   '<svg class="ic chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>',
   star:   '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true" style="fill:currentColor;stroke:none"><path d="m12 3.5 2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/></svg>',
 };
@@ -556,6 +560,7 @@ const profileMenu = (() => {
       </div>
       <a class="pm-item" role="menuitem" href="konto.html?from=dashboard">${IC.gear}Kontoeinstellungen</a>
       ${profile.role === 'admin' ? '<a class="pm-item" role="menuitem" href="' + ADMIN_URL + '">' + IC.shield + 'Admin-Einstellungen<small>nur Admins</small></a>' : ''}
+      <a class="pm-item colors" role="menuitem" href="colors.html">${IC.drop}Farbarchitektur</a>
       <div class="pm-sep"></div>
       <button class="pm-item danger" type="button" role="menuitem" data-act="logout">${IC.logout}Abmelden</button>`;
   }
