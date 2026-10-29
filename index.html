@@ -68,8 +68,7 @@
   .bar .head { flex: 1; min-width: 0; }
   h1 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -.02em; color: var(--ink); line-height: 1.15; text-wrap: balance; }
   .sub { font-size: 12px; font-weight: 500; color: var(--mute); font-variant-numeric: tabular-nums; text-wrap: balance; }
-  .sub > * { display: inline-block; white-space: nowrap; }
-  .sub time::before { content: "·"; margin: 0 6px; }
+  .sub time { display: block; }
   .acts { display: flex; gap: 8px; flex: none; }
   .icon-btn { position: relative; overflow: hidden; width: 36px; height: 36px; border: 0; border-radius: 50%; background: var(--card); color: var(--ink); box-shadow: var(--shadow);
     display: inline-grid; place-items: center; padding: 0; transition: background .15s; }
@@ -78,7 +77,7 @@
   #profileBtn img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
   /* Handy: Farbarchitektur wandert ins Kontomenü, damit die Begrüßung Platz hat */
   .pm-item.colors { display: none; }
-  @media (max-width: 420px) { .bar .logo, .icon-btn.colors { display: none; } .pm-item.colors { display: flex; } h1 { font-size: 20px; } }
+  @media (max-width: 420px) { .icon-btn.colors { display: none; } .pm-item.colors { display: flex; } h1 { font-size: 20px; } }
 
   /* Gruppen und Projektkarten */
   .group { margin-top: 18px; }
