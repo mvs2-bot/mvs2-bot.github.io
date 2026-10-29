@@ -351,13 +351,14 @@
    supabase: optional, Supabase-Projekt-ID → zusätzlicher Button zum Supabase-Dashboard
    supabaseKey: optional, öffentlicher Publishable Key → Statuspunkt (erreichbar / pausiert)
    streak: optional, App-ID → Streak-Anzeige an der Kachel (shared/streak.js), wenn für diese App eingeschaltet
+   only:   optional, Liste von User-IDs → Kachel nur für diese Konten (nur Anzeige; Datenschutz macht RLS)
    ================================================================ */
 const PROJECTS = [
   { name: 'TravelBase',         desc: 'Alle Reiseplanungen an einem Ort',            url: '/TravelBase/', img: '/TravelBase/icons/apple-touch-icon.png',             icon: 'globePin', color: '#2563eb', badge: 'Login', supabase: 'syaonnedmidaipwjjmio', supabaseKey: 'sb_publishable_a3tggKZJmotlFtIqKKdSYg_cNsazRkX' },
   { name: 'Quest Log',          desc: 'The Real World: 100 Quests, Level & Titel',   url: '/RealWorld-Questlog/', img: '/RealWorld-Questlog/icons/apple-touch-icon.png',     icon: 'quest',    color: '#7c3aed', badge: 'Login', supabase: 'syaonnedmidaipwjjmio', supabaseKey: 'sb_publishable_a3tggKZJmotlFtIqKKdSYg_cNsazRkX' },
   { name: 'MatchBoard',         desc: 'Lasset die Spiele beginnen!',                 url: '/MatchBoard/', img: '/MatchBoard/icon.svg',                       icon: 'trophy',   color: '#ea580c', badge: 'Login', supabase: 'syaonnedmidaipwjjmio', supabaseKey: 'sb_publishable_a3tggKZJmotlFtIqKKdSYg_cNsazRkX' },
   { name: 'DailyMind',          desc: 'Dankbar sein',                                url: '/DailyMind/', img: '/DailyMind/icon.svg',                         icon: 'sunrise',  color: '#7c9a82', badge: 'Login', supabase: 'syaonnedmidaipwjjmio', supabaseKey: 'sb_publishable_a3tggKZJmotlFtIqKKdSYg_cNsazRkX', streak: 'dailymind' },
-  { name: 'Camino Tracker',     desc: 'Meine Jakobswege, Karte & Unterkünfte',       url: '/CaminoTracker/', img: '/CaminoTracker/apple-touch-icon.png',      icon: 'shell',    color: '#0b4f9c', badge: 'Login', supabase: 'syaonnedmidaipwjjmio', supabaseKey: 'sb_publishable_a3tggKZJmotlFtIqKKdSYg_cNsazRkX' },
+  { name: 'Camino Tracker',     desc: 'Meine Jakobswege, Karte & Unterkünfte',       url: '/CaminoTracker/', img: '/CaminoTracker/apple-touch-icon.png',      icon: 'shell',    color: '#0b4f9c', badge: 'Login', supabase: 'syaonnedmidaipwjjmio', supabaseKey: 'sb_publishable_a3tggKZJmotlFtIqKKdSYg_cNsazRkX', only: ['c41729ca-110b-4b0c-9c77-29ca1a09a23e', '35fc7fda-c35c-4fbd-81e0-fe64a16a3710'] },
   { name: 'PegelTracker',       desc: 'Alles nur zu Forschungszwecken',              url: '/PegelTracker/', img: '/PegelTracker/icon.svg',                   icon: 'glass',    color: '#d97706', badge: 'Login', supabase: 'syaonnedmidaipwjjmio', supabaseKey: 'sb_publishable_a3tggKZJmotlFtIqKKdSYg_cNsazRkX' },
   { name: 'Quick-Tools',        desc: 'Währung, Phrasen, GPS & Notfall pro Land',    url: '/QuickTools/', img: '/QuickTools/icon.svg',             icon: 'tools',    color: '#0d9488' },
   { name: 'Camper-Namenssuche', desc: 'Namen für den Bus vorschlagen & abstimmen',   url: '/Spitznamensuche-Camper/', img: '/Spitznamensuche-Camper/apple-touch-icon.png', icon: 'camper',   color: '#ea580c' },
@@ -366,9 +367,11 @@ const PROJECTS = [
 ];
 
 // Gruppen ergeben sich aus dem Badge: badge: 'Login' → „Mit Login“, sonst „Ohne Login“
+let viewer = null; // User-ID des angemeldeten Kontos (für only)
+const visible = it => !it.only || it.only.includes(viewer);
 const SECTIONS = [
-  { title: 'Mit Login',  items: PROJECTS.filter(it => it.badge === 'Login') },
-  { title: 'Ohne Login', items: PROJECTS.filter(it => it.badge !== 'Login') },
+  { title: 'Mit Login',  get items() { return PROJECTS.filter(it => it.badge === 'Login' && visible(it)); } },
+  { title: 'Ohne Login', get items() { return PROJECTS.filter(it => it.badge !== 'Login' && visible(it)); } },
 ];
 
 const GITHUB_USER = 'mvs2-bot';
@@ -566,7 +569,9 @@ let started = false;
 
 function startDashboard() {
   document.body.classList.add('unlocked');
-  if (started) return;
+  const prev = viewer;
+  try { viewer = localStorage.getItem(ACCESS_KEY); } catch (e) {}
+  if (started) { if (viewer !== prev) render(); return; }
   started = true;
   render();
   loadPushed();
