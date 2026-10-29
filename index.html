@@ -23,6 +23,14 @@
     var t = 'light';
     try { t = localStorage.getItem('overall-theme') || localStorage.getItem('dash-theme') || 'light'; } catch (e) {}
     document.documentElement.setAttribute('data-theme', t);
+    // Startanimation nur in der installierten App am Handy, einmal pro App-Start, nicht bei „Bewegung reduzieren“
+    try {
+      var mm = function (q) { return matchMedia(q).matches; };
+      if ((mm('(display-mode: standalone)') || navigator.standalone) && mm('(pointer: coarse)') && !mm('(prefers-reduced-motion: reduce)') && !sessionStorage.getItem('dash-intro')) {
+        sessionStorage.setItem('dash-intro', '1');
+        document.documentElement.classList.add('intro');
+      }
+    } catch (e) {}
   })();
 </script>
 <style>
@@ -193,12 +201,22 @@
   .pm-item.danger, .pm-item.danger .ic { color: var(--danger); }
   .pm-sep { height: 1px; margin: 4px 6px; background: var(--sep); }
 
+  /* Startanimation (installierte App am Handy): Logo erscheint mittig und fliegt in die Kopfzeile, danach steigen die Kacheln ein */
+  #intro { display: none; }
+  .intro #intro { display: grid; place-items: center; position: fixed; inset: 0; z-index: 100; background: var(--bg); pointer-events: none; }
+  #intro img { width: 96px; height: 96px; border-radius: 22px; }
+  .intro .bar .logo, .intro .bar .head, .intro .bar .acts, .intro main .group { opacity: 0; }
+  .intro-tiles .group { animation: rise .5s cubic-bezier(.2, .8, .2, 1) backwards; }
+  .intro-tiles .group:nth-child(2) { animation-delay: .06s; } .intro-tiles .group:nth-child(3) { animation-delay: .12s; } .intro-tiles .group:nth-child(n+4) { animation-delay: .18s; }
+  @keyframes rise { from { opacity: 0; transform: translateY(12px); } }
+
   @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; } }
   @media (prefers-reduced-transparency: reduce) { header { background: var(--bg); } .pm-menu { background: var(--card); } header, .pm-menu { -webkit-backdrop-filter: none; backdrop-filter: none; } }
 </style>
 <script src="shared/ios-nav.js" defer></script>
 </head>
 <body>
+<div id="intro" aria-hidden="true"><img src="icon.svg" alt=""></div>
 
 <header>
   <div class="wrap bar">
@@ -221,6 +239,30 @@
     </div>
   </div>
 </header>
+<script>
+  (function () {
+    var root = document.documentElement;
+    if (!root.classList.contains('intro')) return;
+    var box = document.getElementById('intro'), img = box.querySelector('img'), logo = document.querySelector('.bar .logo');
+    var ease = 'cubic-bezier(.2, .8, .2, 1)';
+    var done = function () { root.classList.remove('intro'); };
+    setTimeout(done, 1500); // Notbremse, falls etwas hängt
+    requestAnimationFrame(function () {
+      var a = img.getBoundingClientRect(), b = logo.getBoundingClientRect(), k = b.width / a.width;
+      var dx = b.left + b.width / 2 - (a.left + a.width / 2), dy = b.top + b.height / 2 - (a.top + a.height / 2);
+      img.animate([{ opacity: 0, transform: 'scale(.85)' }, { opacity: 1, transform: 'none' }], { duration: 260, easing: ease });
+      img.animate([{ transform: 'none', borderRadius: '22px' }, { transform: 'translate(' + dx + 'px,' + dy + 'px) scale(' + k + ')', borderRadius: 9 / k + 'px' }],
+        { duration: 420, delay: 360, easing: ease, fill: 'forwards' });
+      box.animate([{ backgroundColor: getComputedStyle(box).backgroundColor }, { backgroundColor: 'transparent' }], { duration: 300, delay: 560, fill: 'forwards' })
+        .onfinish = function () {
+          root.classList.add('intro-tiles');
+          done();
+          [logo.nextElementSibling, logo.parentNode.querySelector('.acts')].forEach(function (el) { el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 250 }); });
+          setTimeout(function () { root.classList.remove('intro-tiles'); }, 1200);
+        };
+    });
+  })();
+</script>
 
 <section id="gate" aria-live="polite">
   <div class="gate-card busy" id="gateBusy"><span class="spin" aria-hidden="true"></span>Anmeldung wird geprüft …</div>
