@@ -8,7 +8,7 @@ DIR=$(mktemp -d); trap 'pg_ctl -D "$DIR/db" -m immediate stop >/dev/null 2>&1; r
 initdb -D "$DIR/db" -U postgres >/dev/null
 pg_ctl -D "$DIR/db" -o "-k $DIR -c listen_addresses=''" -l "$DIR/log" -w start >/dev/null
 P="psql -h $DIR -U postgres -X -q -v ON_ERROR_STOP=1"; export PGOPTIONS="-c client_min_messages=warning"
-$P -c 'create database t' && $P -d t -f stub.sql -f ../001_streak.sql -f streak_test.sql
+$P -c 'create database t' && $P -d t -f stub.sql -f ../001_streak.sql -f ../002_streak_rebuild.sql -f streak_test.sql
 # Gleichzeitige Anfragen: 20 parallele Meldungen desselben Kontos am selben Tag zählen einmal
 $P -d t -c "insert into auth.users values ('00000000-0000-0000-0000-0000000000ee', 'p@test')"
 for i in $(seq 20); do
