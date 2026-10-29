@@ -261,7 +261,28 @@ function renderGlobal() {
   paintUsers();
 }
 
-async function loadGlobal() { G.state = await fn('overall-admin', 'list'); renderGlobal(); }
+async function loadGlobal() { G.state = await fn('overall-admin', 'list'); renderGlobal(); streakCard(); }
+
+/* Streaks aller Konten (supabase/001_streak.sql, nur globale Admins) */
+async function streakCard() {
+  const card = document.createElement('div');
+  card.className = 'card'; card.id = 'g-streaks';
+  card.innerHTML = '<h3>🔥 Streaks</h3><p class="note" style="margin:0">⏳ Lädt …</p>';
+  $('globalBody').appendChild(card);
+  try {
+    const rows = check(await sb.rpc('streak_admin_overview'));
+    const today = r => r.today_done ? '<span class="pill strong">heute ✓</span>' : r.at_risk ? '<span class="pill">heute offen</span>' : '';
+    card.innerHTML = `<h3>🔥 Streaks</h3>
+      <p class="note">Aktuelle Serie und Rekord je Konto. Zählt vorerst nur DailyMind (gespeicherter Morgen- oder Abendeintrag); jede Person kann es in den Kontoeinstellungen ausschalten.</p>
+      <div class="list">${rows.map(r => `
+        <div class="item"><div class="item-head">
+          <span class="ini">${esc(initials(r.display_name || r.email))}</span>
+          <div class="who"><b>${esc(r.display_name || r.email)}</b>
+            <small>Rekord ${r.best} · ${r.last_day ? 'zuletzt aktiv ' + fmtDate(r.last_day + 'T12:00') : 'noch nie aktiv'} · ${r.freezes}/2 Freezes${r.off_apps.length ? ' · ausgeschaltet in ' + esc(r.off_apps.map(id => (CTX.apps.find(x => x.app.id === id) || { app: { name: id } }).app.name).join(', ')) : ''}</small></div>
+          ${today(r)}<b style="font-size:1rem;font-variant-numeric:tabular-nums">🔥 ${r.current}</b>
+        </div></div>`).join('')}</div>`;
+  } catch (e) { card.querySelector('.note').textContent = errText(e); }
+}
 
 // Nach jeder Änderung neu laden und die Meldung am betroffenen Konto anzeigen
 async function runUser(card, action, okText) {
@@ -544,7 +565,7 @@ async function start() {
   show('page');
   $('who').textContent = 'Angemeldet als ' + session.user.email + (CTX.globalAdmin ? ' · globaler Admin' : '');
   const adminApps = CTX.apps.filter(x => x.role === 'admin' && APP_ADMIN[x.app.id]);
-  $('jump').innerHTML = (CTX.globalAdmin ? '<a href="#global">🌐 Global</a>' : '') + adminApps.map(x => `<a href="#app-${esc(x.app.id)}">${APP_ADMIN[x.app.id].icon} ${esc(x.app.name)}</a>`).join('');
+  $('jump').innerHTML = (CTX.globalAdmin ? '<a href="#global">🌐 Global</a><a href="#g-streaks">🔥 Streaks</a>' : '') + adminApps.map(x => `<a href="#app-${esc(x.app.id)}">${APP_ADMIN[x.app.id].icon} ${esc(x.app.name)}</a>`).join('');
   $('global').hidden = !CTX.globalAdmin;
   const jobs = [renderApps()];
   if (CTX.globalAdmin) jobs.push(loadGlobal().catch(e => { $('globalBody').innerHTML = `<div class="card"><p class="note" style="margin:0">${esc(errText(e))}</p></div>`; }));
