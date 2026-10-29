@@ -4,7 +4,7 @@ Tages-Serie nach dem Prinzip von Duolingo. Liegt im gemeinsamen Supabase-Core-Pr
 
 | Teil | Datei | Aufgabe |
 |---|---|---|
-| Speicherung + Berechnung | `supabase/001_streak.sql` | Tabellen, Regeln, Trigger, RPCs (verbindlich, manipulationssicher) |
+| Speicherung + Berechnung | `supabase/001_streak.sql`, `002_streak_rebuild.sql` | Tabellen, Regeln, Trigger, RPCs (verbindlich, manipulationssicher) |
 | Tests | `supabase/tests/run.sh` | Tageswechsel, Doppelte, Fehltage, Freeze, Zeitzonen, Rechte, Parallelität |
 | Schnittstelle + Darstellung | `shared/streak.js`, `shared/streak.css` | Abrufen/Melden, Cache, Chip, Detail-Dialog, Meldungen |
 | Einbindung | `index.html` (Kachel), `konto.html` (Schalter), `admin.html` (alle Konten), DailyMind `index.html` | |
@@ -21,6 +21,7 @@ Tages-Serie nach dem Prinzip von Duolingo. Liegt im gemeinsamen Supabase-Core-Pr
 8. **Rekord** (`best`) = höchste je erreichte Serie, sinkt nie.
 9. **Anzeige ohne Schreiben** (`streak_status`): Serie gilt als gebrochen (0), wenn mehr Tage fehlen als Freezes da sind. `at_risk` = Serie läuft, heute fehlt noch (Erinnerungspunkt am Chip). Gespeichert wird der Bruch erst beim nächsten aktiven Tag.
 10. **Persönlicher Schalter** (`streak_prefs`, Kontoeinstellungen → DailyMind): aus = Aktivitäten dieser App zählen nicht, die App und die Kachel zeigen nichts. Keine Zeile = an. Die Serie läuft beim Ausschalten nicht weiter; nach dem Einschalten gelten die normalen Regeln.
+11. **Löschen zählt mit**: Wird ein DailyMind-Eintrag gelöscht oder ganz geleert (beide Routinen leer), verliert sein Eintragsdatum den DailyMind-Anteil. Der Stand des Kontos wird dann aus den verbleibenden aktiven Tagen neu aufgebaut (`streak_rebuild`): Serie, Rekord und Freezes werden neu gerechnet, gefrorene Tage neu vergeben.
 
 ## Randfälle
 
@@ -28,6 +29,7 @@ Tages-Serie nach dem Prinzip von Duolingo. Liegt im gemeinsamen Supabase-Core-Pr
 - **Tageswechsel um Mitternacht**: 23:59 und 00:01 Ortszeit sind zwei Tage. Seiten holen den Stand beim Zurückkehren (`visibilitychange`) neu.
 - **Sommer-/Winterzeit**: Rechnung über Kalenderdaten, nicht über 24-h-Abstände.
 - **Zeitzonenwechsel** (Reise): springt das Datum zurück auf einen schon gezählten Tag, bleibt der Zähler gleich; vorwärts gilt Regel 5/6.
+- **Eintrag für einen früheren Tag** wird heute gezählt (Regel 3), beim Löschen fällt aber das Eintragsdatum weg. In der Praxis sind beide fast immer gleich.
 - **Fehler im Trigger** (z. B. Zeile ohne User) werden als Warnung geloggt und verhindern das Speichern in der App nie.
 - **Offline**: Seiten zeigen den letzten Stand aus `localStorage` (`streak:<user-id>`), der Server bleibt maßgeblich.
 

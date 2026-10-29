@@ -114,6 +114,46 @@ do $$ begin
                    and day = (now() at time zone 'Europe/Berlin')::date), 'DailyMind zählt';
 end $$;
 
+-- Gelöschter oder geleerter DailyMind-Eintrag: Tag fällt weg, Stand wird neu gerechnet
+insert into auth.users values ('00000000-0000-0000-0000-00000000000e', 'e@test');
+alter table dailymind_entries disable trigger streak_dailymind;
+insert into dailymind_entries (user_id, entry_date, morning_done_at)
+select '00000000-0000-0000-0000-00000000000e', d::date, now() from generate_series('2026-02-01'::date, '2026-02-10', interval '1 day') d;
+alter table dailymind_entries enable trigger streak_dailymind;
+do $$ declare r jsonb; i int; begin
+    for i in 1..10 loop r := t('e', ('2026-02-' || lpad(i::text, 2, '0') || ' 10:00+01'), 'Europe/Berlin', 'dailymind', 'entry'); end loop;
+    assert (r->>'current')::int = 10 and (r->>'freezes')::int = 1, 'Aufbau: ' || r::text;
+end $$;
+delete from dailymind_entries where user_id = '00000000-0000-0000-0000-00000000000e' and entry_date = '2026-02-05';
+do $$ declare r jsonb; begin
+    r := st('e', '2026-02-10 18:00+01');
+    assert (r->>'current')::int = 5 and (r->>'best')::int = 5 and (r->>'freezes')::int = 0, 'nach Löschen: ' || r::text;
+    assert not exists (select 1 from streak_days where user_id = '00000000-0000-0000-0000-00000000000e' and day = '2026-02-05'), 'Tag weg';
+end $$;
+update dailymind_entries set morning_done_at = null where user_id = '00000000-0000-0000-0000-00000000000e' and entry_date = '2026-02-10';
+do $$ declare r jsonb; begin
+    r := st('e', '2026-02-10 18:00+01');
+    assert (r->>'current')::int = 4 and not (r->>'today_done')::bool and (r->>'last_day')::date = '2026-02-09', 'nach Leeren: ' || r::text;
+end $$;
+-- Per Freeze überbrückte Lücke: letzten Tag löschen, Frost-Tag verschwindet mit
+do $$ declare r jsonb; i int; begin
+    delete from dailymind_entries where user_id = '00000000-0000-0000-0000-00000000000e';
+    delete from streak_days where user_id = '00000000-0000-0000-0000-00000000000e';
+    delete from streak_state where user_id = '00000000-0000-0000-0000-00000000000e';
+    alter table dailymind_entries disable trigger streak_dailymind;
+    insert into dailymind_entries (user_id, entry_date, morning_done_at) values ('00000000-0000-0000-0000-00000000000e', '2026-02-28', now());
+    alter table dailymind_entries enable trigger streak_dailymind;
+    for i in 20..26 loop r := t('e', '2026-02-' || i || ' 10:00+01', 'Europe/Berlin', 'dailymind', 'entry'); end loop;
+    r := t('e', '2026-02-28 10:00+01', 'Europe/Berlin', 'dailymind', 'entry');  -- 27. fehlt, Freeze
+    assert (r->>'current')::int = 8 and (r->>'freezes')::int = 0, 'Freeze-Aufbau: ' || r::text;
+end $$;
+delete from dailymind_entries where user_id = '00000000-0000-0000-0000-00000000000e' and entry_date = '2026-02-28';
+do $$ declare r jsonb; begin
+    r := st('e', '2026-02-28 18:00+01');
+    assert (r->>'current')::int = 7 and (r->>'freezes')::int = 1 and (r->>'last_day')::date = '2026-02-26', 'Freeze zurück: ' || r::text;
+    assert not exists (select 1 from streak_days where user_id = '00000000-0000-0000-0000-00000000000e' and frozen), 'Frost-Tag weg';
+end $$;
+
 -- Rechte: Clients schreiben nur über streak_log, sehen nur sich selbst, Übersicht nur für Admins
 set role authenticated;
 set test.uid = '00000000-0000-0000-0000-00000000000b';
@@ -143,8 +183,8 @@ do $$ declare r jsonb; ok boolean; begin
 end $$;
 set test.uid = '00000000-0000-0000-0000-00000000000a';
 do $$ begin
-    assert (select count(*) from public.streak_admin_overview()) = 4, 'Admin sieht alle Konten';
-    assert (select count(distinct user_id) from streak_state) = 4, 'Admin liest alle';
+    assert (select count(*) from public.streak_admin_overview()) = 5, 'Admin sieht alle Konten';
+    assert (select count(distinct user_id) from streak_state) = 5, 'Admin liest alle';
 end $$;
 reset role;
 \echo 'Alle Streak-Tests bestanden.'
