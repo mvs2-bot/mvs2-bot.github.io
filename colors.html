@@ -214,7 +214,7 @@
       };
     }));
 
-    document.getElementById('statusText').textContent = `Live synchronisiert (${results.filter(r=>r.ok).length}/8 Repos)`;
+    document.getElementById('statusText').textContent = `Live synchronisiert (${results.filter(r=>r.ok).length}/${repos.length} Repos)`;
     render(results);
   }
 
