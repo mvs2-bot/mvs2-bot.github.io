@@ -236,6 +236,8 @@ async function dailymindCard(card, user) {
   const Push = window.DailyMindPush;
   const row = check(await sb.from('dailymind_push_settings').select('morning_enabled, morning_time, evening_enabled, evening_time').eq('user_id', user.id).maybeSingle());
   const st = Object.assign({ morning_enabled: false, morning_time: '07:30', evening_enabled: false, evening_time: '21:00' }, row || {});
+  // Streak-Schalter (streak_prefs, keine Zeile = an); fehlt die Tabelle noch, bleibt der Schalter weg
+  const streakRow = await sb.from('streak_prefs').select('enabled').eq('user_id', user.id).eq('app', 'dailymind').maybeSingle();
   const hhmm = t => String(t).slice(0, 5);
   const box = card.querySelector('.app-body');
   const reminder = (kind, icon, label, hint) => `
@@ -247,6 +249,14 @@ async function dailymindCard(card, user) {
       <input type="time" data-dm="${kind}_time" value="${hhmm(st[kind + '_time'])}" aria-label="Uhrzeit ${label}"${st[kind + '_enabled'] ? '' : ' disabled'}>
     </div>`;
   box.innerHTML = `
+    ${streakRow.error ? '' : `<h4>🔥 Streak</h4>
+    <p class="note">Zählt jeden Tag, an dem du in DailyMind etwas in die Morgen- oder Abendroutine schreibst. Ausgeschaltet zählt DailyMind nicht mehr, und der Streak erscheint weder in DailyMind noch im Dashboard.</p>
+    <div class="row">
+      <label class="switch" style="padding:0;flex:1 1 220px">
+        <input type="checkbox" id="dmStreak"${streakRow.data && !streakRow.data.enabled ? '' : ' checked'}>
+        <span><b>🔥 Streak zählen und anzeigen</b><small>Serie, Rekord und Wochenkalender</small></span>
+      </label>
+    </div>`}
     <h4>🔔 Tägliche Erinnerungen</h4>
     <p class="note">Eine Push-Benachrichtigung zur gewählten Uhrzeit. Hast du die Routine an dem Tag schon begonnen, kommt keine.</p>
     ${reminder('morning', '☀️', 'Morgen-Erinnerung', 'Dankbarkeit, Tagesfokus und Affirmation')}
@@ -255,6 +265,15 @@ async function dailymindCard(card, user) {
     <div class="msg" hidden></div>`;
   const out = box.querySelector('.msg');
   const dev = box.querySelector('#dmDevice');
+  const streakBox = box.querySelector('#dmStreak');
+  if (streakBox) streakBox.addEventListener('change', async () => {
+    msg(out, ''); streakBox.disabled = true;
+    try {
+      check(await sb.from('streak_prefs').upsert({ user_id: user.id, app: 'dailymind', enabled: streakBox.checked }));
+      msg(out, streakBox.checked ? '✅ Streak eingeschaltet.' : 'Streak ausgeschaltet.', true);
+    } catch (err) { streakBox.checked = !streakBox.checked; msg(out, errText(err)); }
+    streakBox.disabled = false;
+  });
 
   // Status dieses Geräts: bekommt es Erinnerungen?
   async function paintDevice() {

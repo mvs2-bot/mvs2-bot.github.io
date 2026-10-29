@@ -14,6 +14,8 @@
 <link rel="manifest" href="manifest.json">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="shared/overall-account.js"></script>
+<script src="shared/streak.js"></script>
+<link rel="stylesheet" href="shared/streak.css">
 <script>
   // Theme vor dem ersten Rendern setzen (kein Aufblitzen). Standard: hell.
   // overall-theme gilt für alle Seiten (Kontoeinstellungen → Darstellung), dash-theme ist der alte Schlüssel.
@@ -109,6 +111,9 @@
   .mini .dot { position: absolute; top: 0; right: 0; width: 9px; height: 9px; border-radius: 50%; background: #8e8e93; box-shadow: 0 0 0 2px var(--card); }
   .mini .dot.ok { background: var(--ok); }
   .mini .dot.bad { background: var(--danger); }
+  /* Streak an der Kachel (shared/streak.css), so hoch wie die runden Knöpfe */
+  .foot .streak-chip { height: 32px; padding: 0 10px 0 7px; background: var(--well); box-shadow: none; font-size: 13px; }
+  .foot .streak-chip .ic { width: 16px; height: 16px; }
 
   /* Schnellzugriff: Symbole mit Namen wie auf dem Home-Bildschirm */
   .box { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); padding: 14px 10px 10px; }
@@ -301,12 +306,13 @@
    repo:  optional, GitHub-Repo-Name (Standard: aus url abgeleitet, z. B. '/TravelBase/' → TravelBase)
    supabase: optional, Supabase-Projekt-ID → zusätzlicher Button zum Supabase-Dashboard
    supabaseKey: optional, öffentlicher Publishable Key → Statuspunkt (erreichbar / pausiert)
+   streak: optional, App-ID → Streak-Anzeige an der Kachel (shared/streak.js), wenn für diese App eingeschaltet
    ================================================================ */
 const PROJECTS = [
   { name: 'TravelBase',         desc: 'Alle Reiseplanungen an einem Ort',            url: '/TravelBase/', img: '/TravelBase/icons/apple-touch-icon.png',             icon: 'globePin', color: '#2563eb', badge: 'Login', supabase: 'syaonnedmidaipwjjmio', supabaseKey: 'sb_publishable_a3tggKZJmotlFtIqKKdSYg_cNsazRkX' },
   { name: 'Quest Log',          desc: 'The Real World: 100 Quests, Level & Titel',   url: '/RealWorld-Questlog/', img: '/RealWorld-Questlog/icons/apple-touch-icon.png',     icon: 'quest',    color: '#7c3aed', badge: 'Login', supabase: 'syaonnedmidaipwjjmio', supabaseKey: 'sb_publishable_a3tggKZJmotlFtIqKKdSYg_cNsazRkX' },
   { name: 'MatchBoard',         desc: 'Lasset die Spiele beginnen!',                 url: '/MatchBoard/', img: '/MatchBoard/icon.svg',                       icon: 'trophy',   color: '#ea580c', badge: 'Login', supabase: 'syaonnedmidaipwjjmio', supabaseKey: 'sb_publishable_a3tggKZJmotlFtIqKKdSYg_cNsazRkX' },
-  { name: 'DailyMind',          desc: 'Dankbar sein',                                url: '/DailyMind/', img: '/DailyMind/icon.svg',                         icon: 'sunrise',  color: '#7c9a82', badge: 'Login', supabase: 'syaonnedmidaipwjjmio', supabaseKey: 'sb_publishable_a3tggKZJmotlFtIqKKdSYg_cNsazRkX' },
+  { name: 'DailyMind',          desc: 'Dankbar sein',                                url: '/DailyMind/', img: '/DailyMind/icon.svg',                         icon: 'sunrise',  color: '#7c9a82', badge: 'Login', supabase: 'syaonnedmidaipwjjmio', supabaseKey: 'sb_publishable_a3tggKZJmotlFtIqKKdSYg_cNsazRkX', streak: 'dailymind' },
   { name: 'PegelTracker',       desc: 'Alles nur zu Forschungszwecken',              url: '/PegelTracker/', img: '/PegelTracker/icon.svg',                   icon: 'glass',    color: '#d97706', badge: 'Login', supabase: 'syaonnedmidaipwjjmio', supabaseKey: 'sb_publishable_a3tggKZJmotlFtIqKKdSYg_cNsazRkX' },
   { name: 'Quick-Tools',        desc: 'Währung, Phrasen, GPS & Notfall pro Land',    url: '/QuickTools/', img: '/QuickTools/icon.svg',             icon: 'tools',    color: '#0d9488' },
   { name: 'Camper-Namenssuche', desc: 'Namen für den Bus vorschlagen & abstimmen',   url: '/Spitznamensuche-Camper/', img: '/Spitznamensuche-Camper/apple-touch-icon.png', icon: 'camper',   color: '#ea580c' },
@@ -390,6 +396,7 @@ function tileHtml(it, showBadge) {
           </a>
           <div class="foot">
             <span class="meta" data-repo="${esc(repoName(it))}"></span>
+            ${it.streak ? `<button class="streak-chip" type="button" data-streak="${esc(it.streak)}" hidden></button>` : ''}
             <button class="mini fav${fav ? ' on' : ''}" type="button" data-fav="${esc(it.url)}" aria-pressed="${fav}" aria-label="${esc(it.name)} ${fav ? 'aus Favoriten entfernen' : 'zu Favoriten'}" title="${fav ? 'Aus Favoriten entfernen' : 'Als Favorit oben anheften'}">${STAR_ICON}</button>
             ${gh ? `<a class="mini" href="${esc(gh)}" target="_blank" rel="noopener" aria-label="${esc(it.name)} auf GitHub" title="Repo auf GitHub">${GH_ICON}</a>` : ''}
             ${it.supabase ? `<a class="mini" href="https://supabase.com/dashboard/project/${esc(it.supabase)}" target="_blank" rel="noopener" aria-label="${esc(it.name)} in Supabase" title="Supabase-Dashboard">${SB_ICON}${it.supabaseKey ? `<span class="dot" data-sb="${esc(it.supabase)}"></span>` : ''}</a>` : ''}
@@ -414,6 +421,23 @@ function render() {
   host.innerHTML = html;
   paintPushed();
   paintStatus();
+  paintStreak();
+}
+
+/* ---------------- Streak an der Kachel (Berechnung auf dem Server, shared/streak.js) ---------------- */
+let streakSt = null;
+function paintStreak() {
+  document.querySelectorAll('[data-streak]').forEach(el => {
+    el.hidden = !(streakSt && streakSt.enabled !== false);
+    if (!el.hidden) Streak.chip(el, streakSt, sb);
+  });
+}
+async function loadStreak() {
+  if (!window.Streak || !sb) return;
+  streakSt = streakSt || Streak.cached(localStorage.getItem(ACCESS_KEY));
+  paintStreak();
+  try { streakSt = await Streak.status(sb, 'dailymind'); paintStreak(); }
+  catch (e) { if (navigator.onLine) console.warn('Streak', e); }
 }
 
 /* ---------------- Letzte Änderung (GitHub, 15 Min. zwischengespeichert) ---------------- */
@@ -498,6 +522,7 @@ function startDashboard() {
   render();
   loadPushed();
   checkSupabase();
+  loadStreak();
 }
 
 /* ---------------- Profilbild oben rechts + Menü ----------------
@@ -675,8 +700,8 @@ document.getElementById('sections').addEventListener('click', e => {
   if (b) toggleFav(b.dataset.fav);
 });
 // Zurück aus einem Projekt (bfcache) oder App wieder im Vordergrund: Zeiten & Status auffrischen
-window.addEventListener('pageshow', e => { if (e.persisted) { loadPushed(); checkSupabase(); } });
-document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { paintPushed(); loadPushed(); checkSupabase(); } });
+window.addEventListener('pageshow', e => { if (e.persisted) { loadPushed(); checkSupabase(); loadStreak(); } });
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { paintPushed(); loadPushed(); checkSupabase(); if (started) loadStreak(); } });
 
 /* ---------------- Suche (Lupe / Taste „/“ / Strg+K) ---------------- */
 (function () {
