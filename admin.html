@@ -150,6 +150,11 @@ const ROLE_LABEL = { admin: 'Admin', member: 'Mitglied', guest: 'Gast' };
 /* Wer darf was – je App und Rolle, so wie es die RLS-Regeln in Supabase festlegen.
    Bei neuen Apps oder geänderten Regeln hier nachziehen. */
 const RIGHTS = {
+  global: {
+    guest: 'Nur mit dem Zugang pro App. Ohne App-Zugang ist jede Login-App gesperrt.',
+    member: 'Gleich wie Gast. Die globale Rolle Mitglied gibt allein keinen Zugang, es zählt der Zugang pro App.',
+    admin: 'Darf in jeder App alles, was ein App-Admin darf. Verwaltet zusätzlich Konten, globale Rollen, App-Zugänge und Apps hier auf der Admin-Seite. Ausnahmen: fremde DailyMind-Einträge sieht niemand, CaminoTracker bearbeiten kann nur Stefan.',
+  },
   dashboard: {
     guest: 'Kein Zugang.',
     member: 'Dashboard öffnen. Sieht nur die Kacheln der Apps, für die das Konto Zugang hat, plus die Apps ohne Login. Favoriten setzen.',
@@ -261,7 +266,8 @@ function renderGlobal() {
     <div class="card" id="g-rights">
       <h3>📋 Wer darf was?</h3>
       <p class="note">Was die Rollen je App erlauben. Kein Zugang = App gesperrt und keine Kachel im Dashboard. Globale Admins dürfen überall so viel wie ein App-Admin und verwalten zusätzlich die Konten.</p>
-      ${G.state.apps.map(a => `<details class="rights"><summary>${esc(a.name)}</summary>${rightsTable(a.id)}</details>`).join('')}
+      ${[{ id: 'global', name: 'Globale Rolle' }].concat(G.state.apps.filter(a => a.id === 'dashboard'), G.state.apps.filter(a => a.id !== 'dashboard'))
+        .map(a => `<details class="rights"><summary>${esc(a.name)}</summary>${rightsTable(a.id)}</details>`).join('')}
     </div>
     <div class="card" id="g-users">
       <h3>👥 Konten, Rollen &amp; App-Zugänge</h3>
