@@ -4,8 +4,8 @@ Tages-Serie nach dem Prinzip von Duolingo. Liegt im gemeinsamen Supabase-Core-Pr
 
 | Teil | Datei | Aufgabe |
 |---|---|---|
-| Speicherung + Berechnung | `supabase/001_streak.sql`, `002_streak_rebuild.sql` | Tabellen, Regeln, Trigger, RPCs (verbindlich, manipulationssicher) |
-| Tests | `supabase/tests/run.sh` | Tageswechsel, Doppelte, Fehltage, Freeze, Zeitzonen, Rechte, Parallelität |
+| Speicherung + Berechnung | Repo `supabase-core`: Migrationen `…_streak.sql`, `…_streak_rebuild.sql` | Tabellen, Regeln, Trigger, RPCs (verbindlich, manipulationssicher) |
+| Tests | Repo `supabase-core`: `supabase/tests/streak/run.sh` | Tageswechsel, Doppelte, Fehltage, Freeze, Zeitzonen, Rechte, Parallelität |
 | Schnittstelle + Darstellung | `shared/streak.js`, `shared/streak.css` | Abrufen/Melden, Cache, Chip, Detail-Dialog, Meldungen |
 | Einbindung | `index.html` (Kachel), `konto.html` (Schalter), `admin.html` (alle Konten), DailyMind `index.html` | |
 
@@ -60,7 +60,7 @@ Einbinden: `shared/streak.js` und `shared/streak.css` (Kopie in DailyMind unter 
 ## Tests
 
 ```sh
-sh supabase/tests/run.sh   # braucht lokal PostgreSQL (initdb, pg_ctl, psql), nicht als root
+sh supabase/tests/streak/run.sh   # im Repo supabase-core, braucht lokal PostgreSQL (initdb, pg_ctl, psql), nicht als root
 ```
 
 Startet ein Wegwerf-Postgres, spielt `tests/stub.sql` (Nachbau von `auth`, Rollen, Profilen, DailyMind-Tabelle), die Migration und `tests/streak_test.sql` ein.
