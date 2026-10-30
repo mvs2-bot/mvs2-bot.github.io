@@ -181,9 +181,9 @@ const RIGHTS = {
     admin: 'Dazu die Getränke aller ansehen.',
   },
   caminotracker: {
-    guest: 'Sieht die Kachel und kann die App öffnen, aber keine Daten.',
-    member: 'Gleich wie Gast.',
-    admin: 'Gleich wie Gast, dazu die Datenübersicht hier. Die Daten selbst sieht nur Stefans Konto (fest eingestellt).',
+    guest: 'Kein Zugang.',
+    member: 'Sieht Stefans Wege, Etappen und Unterkünfte, nur lesend.',
+    admin: 'Wie Mitglied, dazu die Datenübersicht hier. Bearbeiten kann nur Stefans Konto (fest eingestellt).',
   },
 };
 const rightsTable = id => RIGHTS[id] ? `<table class="rights-tbl">${['guest', 'member', 'admin'].map(r =>
@@ -592,7 +592,7 @@ async function caminoAdmin(box) {
   const n = t => sb.from(t).select('id', { count: 'exact', head: true }).then(r => { check(r); return r.count; });
   const [routes, stages, stays] = await Promise.all(['camino_routes', 'camino_stages', 'camino_stays'].map(n));
   box.innerHTML = `<p class="note">🗺️ ${routes} Wege · 🥾 ${stages} Etappen · 🛏️ ${stays} Unterkünfte</p>
-    <p class="note" style="margin:0">Privat: Die Daten sind fest an Stefans Konto gebunden. App-Zugänge hier ändern daran nichts.</p>`;
+    <p class="note" style="margin:0">Bearbeiten kann nur Stefans Konto. Wer für CaminoTracker mindestens Mitglied ist, darf alles ansehen.</p>`;
 }
 
 let CTX = null;   // { user, globalAdmin, apps: [{ app, role }] }
