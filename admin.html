@@ -370,6 +370,7 @@ const APP_ADMIN = {
   travelbase: { icon: '🌍', color: '#2563eb', title: 'Reise-Freigaben', render: travelbaseAdmin },
   questlog:   { icon: '📜', color: '#7c3aed', title: 'Spieler:innen & Gamemaster', render: questlogAdmin },
   dashboard:  { icon: '🏠', color: '#0d9488', title: 'Zugang', render: dashboardAdmin },
+  caminotracker: { icon: '🐚', color: '#b88a00', title: 'Daten', render: caminoAdmin },
 };
 
 /* ---------- TravelBase: wer sieht welche Reise in welcher Rolle ---------- */
@@ -517,6 +518,14 @@ async function questlogAdmin(box, ctx) {
 async function dashboardAdmin(box, ctx) {
   box.innerHTML = `<p class="note" style="margin:0">Ins Dashboard kommen globale Admins und Konten mit mindestens der Rolle <b>Mitglied</b> für das Dashboard; Gäste nicht.
     ${ctx.globalAdmin ? 'Zugänge vergibst du oben unter <a href="#g-users">Konten, Rollen &amp; App-Zugänge</a>.' : 'Zugänge vergeben globale Admins.'}</p>`;
+}
+
+/* ---------- CaminoTracker: privat, Daten per RLS fest an Stefans Konto ---------- */
+async function caminoAdmin(box) {
+  const n = t => sb.from(t).select('id', { count: 'exact', head: true }).then(r => { check(r); return r.count; });
+  const [routes, stages, stays] = await Promise.all(['camino_routes', 'camino_stages', 'camino_stays'].map(n));
+  box.innerHTML = `<p class="note">🗺️ ${routes} Wege · 🥾 ${stages} Etappen · 🛏️ ${stays} Unterkünfte</p>
+    <p class="note" style="margin:0">Privat: Die Daten sind fest an Stefans Konto gebunden. App-Zugänge hier ändern daran nichts.</p>`;
 }
 
 let CTX = null;   // { user, globalAdmin, apps: [{ app, role }] }
