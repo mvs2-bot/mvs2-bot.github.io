@@ -351,15 +351,16 @@
    supabase: optional, Supabase-Projekt-ID → zusätzlicher Button zum Supabase-Dashboard
    supabaseKey: optional, öffentlicher Publishable Key → Statuspunkt (erreichbar / pausiert)
    streak: optional, App-ID → Streak-Anzeige an der Kachel (shared/streak.js), wenn für diese App eingeschaltet
-   only:   optional, Liste von User-IDs → Kachel nur für diese Konten (nur Anzeige; Datenschutz macht RLS)
+   app:    App-ID aus overall_apps (Pflicht bei badge: 'Login') → Kachel nur, wenn das Konto dort eine Rolle hat
+           (Zugriff in der Verwaltung; Admins sehen alles; nur Anzeige, Datenschutz macht RLS)
    ================================================================ */
 const PROJECTS = [
-  { name: 'TravelBase',         desc: 'Alle Reiseplanungen an einem Ort',            url: '/TravelBase/', img: '/TravelBase/icons/apple-touch-icon.png',             icon: 'globePin', color: '#2f7fc1', badge: 'Login', supabase: 'syaonnedmidaipwjjmio', supabaseKey: 'sb_publishable_a3tggKZJmotlFtIqKKdSYg_cNsazRkX' },
-  { name: 'QuestLog',          desc: 'The Real World: 100 Quests, Level & Titel',   url: '/RealWorld-Questlog/', img: '/RealWorld-Questlog/icons/apple-touch-icon.png',     icon: 'quest',    color: '#5b4bd1', badge: 'Login', supabase: 'syaonnedmidaipwjjmio', supabaseKey: 'sb_publishable_a3tggKZJmotlFtIqKKdSYg_cNsazRkX' },
-  { name: 'MatchBoard',         desc: 'Lasset die Spiele beginnen!',                 url: '/MatchBoard/', img: '/MatchBoard/icon.svg',                       icon: 'trophy',   color: '#1e3a8a', badge: 'Login', supabase: 'syaonnedmidaipwjjmio', supabaseKey: 'sb_publishable_a3tggKZJmotlFtIqKKdSYg_cNsazRkX' },
-  { name: 'DailyMind',          desc: 'Dankbar sein',                                url: '/DailyMind/', img: '/DailyMind/icon.svg',                         icon: 'sunrise',  color: '#6f9a7c', badge: 'Login', supabase: 'syaonnedmidaipwjjmio', supabaseKey: 'sb_publishable_a3tggKZJmotlFtIqKKdSYg_cNsazRkX', streak: 'dailymind' },
-  { name: 'CaminoTracker',     desc: 'Meine Jakobswege, Karte & Unterkünfte',       url: '/CaminoTracker/', img: '/CaminoTracker/apple-touch-icon.png',      icon: 'shell',    color: '#1f4e9c', badge: 'Login', supabase: 'syaonnedmidaipwjjmio', supabaseKey: 'sb_publishable_a3tggKZJmotlFtIqKKdSYg_cNsazRkX', only: ['c41729ca-110b-4b0c-9c77-29ca1a09a23e', '35fc7fda-c35c-4fbd-81e0-fe64a16a3710'] },
-  { name: 'PegelTracker',       desc: 'Alles nur zu Forschungszwecken',              url: '/PegelTracker/', img: '/PegelTracker/icon.svg',                   icon: 'glass',    color: '#3b2f2b', badge: 'Login', supabase: 'syaonnedmidaipwjjmio', supabaseKey: 'sb_publishable_a3tggKZJmotlFtIqKKdSYg_cNsazRkX' },
+  { name: 'TravelBase',         desc: 'Alle Reiseplanungen an einem Ort',            url: '/TravelBase/', img: '/TravelBase/icons/apple-touch-icon.png',             icon: 'globePin', color: '#2f7fc1', app: 'travelbase', badge: 'Login', supabase: 'syaonnedmidaipwjjmio', supabaseKey: 'sb_publishable_a3tggKZJmotlFtIqKKdSYg_cNsazRkX' },
+  { name: 'QuestLog',          desc: 'The Real World: 100 Quests, Level & Titel',   url: '/RealWorld-Questlog/', img: '/RealWorld-Questlog/icons/apple-touch-icon.png',     icon: 'quest',    color: '#5b4bd1', app: 'questlog', badge: 'Login', supabase: 'syaonnedmidaipwjjmio', supabaseKey: 'sb_publishable_a3tggKZJmotlFtIqKKdSYg_cNsazRkX' },
+  { name: 'MatchBoard',         desc: 'Lasset die Spiele beginnen!',                 url: '/MatchBoard/', img: '/MatchBoard/icon.svg',                       icon: 'trophy',   color: '#1e3a8a', app: 'matchboard', badge: 'Login', supabase: 'syaonnedmidaipwjjmio', supabaseKey: 'sb_publishable_a3tggKZJmotlFtIqKKdSYg_cNsazRkX' },
+  { name: 'DailyMind',          desc: 'Dankbar sein',                                url: '/DailyMind/', img: '/DailyMind/icon.svg',                         icon: 'sunrise',  color: '#6f9a7c', app: 'dailymind', badge: 'Login', supabase: 'syaonnedmidaipwjjmio', supabaseKey: 'sb_publishable_a3tggKZJmotlFtIqKKdSYg_cNsazRkX', streak: 'dailymind' },
+  { name: 'CaminoTracker',     desc: 'Meine Jakobswege, Karte & Unterkünfte',       url: '/CaminoTracker/', img: '/CaminoTracker/apple-touch-icon.png',      icon: 'shell',    color: '#1f4e9c', app: 'caminotracker', badge: 'Login', supabase: 'syaonnedmidaipwjjmio', supabaseKey: 'sb_publishable_a3tggKZJmotlFtIqKKdSYg_cNsazRkX' },
+  { name: 'PegelTracker',       desc: 'Alles nur zu Forschungszwecken',              url: '/PegelTracker/', img: '/PegelTracker/icon.svg',                   icon: 'glass',    color: '#3b2f2b', app: 'pegeltracker', badge: 'Login', supabase: 'syaonnedmidaipwjjmio', supabaseKey: 'sb_publishable_a3tggKZJmotlFtIqKKdSYg_cNsazRkX' },
   { name: 'Quick-Tools',        desc: 'Währung, Phrasen, GPS & Notfall pro Land',    url: '/QuickTools/', img: '/QuickTools/icon.svg',             icon: 'tools',    color: '#8b949e' },
   { name: 'Camper-Namenssuche', desc: 'Namen für den Bus vorschlagen & abstimmen',   url: '/Spitznamensuche-Camper/', img: '/Spitznamensuche-Camper/apple-touch-icon.png', icon: 'camper',   color: '#2f6b4f' },
   { name: 'Münzwurf',           desc: 'Entscheidungshilfe: A oder B?',               url: '/Muenzwurf/', img: '/Muenzwurf/apple-touch-icon.png',              icon: 'coin',     color: '#12909c' },
@@ -367,8 +368,8 @@ const PROJECTS = [
 ];
 
 // Gruppen ergeben sich aus dem Badge: badge: 'Login' → „Mit Login“, sonst „Ohne Login“
-let viewer = null; // User-ID des angemeldeten Kontos (für only)
-const visible = it => !it.only || it.only.includes(viewer);
+let allowed = null; // App-IDs, für die das angemeldete Konto eine Rolle hat (null = noch unbekannt → keine Login-Kacheln)
+const visible = it => !it.app || (allowed || []).includes(it.app);
 const SECTIONS = [
   { title: 'Mit Login',  get items() { return PROJECTS.filter(it => it.badge === 'Login' && visible(it)); } },
   { title: 'Ohne Login', get items() { return PROJECTS.filter(it => it.badge !== 'Login' && visible(it)); } },
@@ -567,11 +568,32 @@ const ACCESS_KEY = 'dash-access'; // User-ID der letzten erfolgreichen Prüfung,
 const sb = window.supabase ? window.supabase.createClient(CORE.url, CORE.key, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } }) : null;
 let started = false;
 
+/* Login-Kacheln nur für Apps mit Zugriff: je App overall_has_app_role(app, 'guest') = irgendeine Rolle
+   (globale Admins sehen alles). Ergebnis pro Konto zwischengespeichert, damit es offline und ohne Flackern geht. */
+const APPS_KEY = 'dash-apps';
+function cachedApps(id) {
+  try { const c = JSON.parse(localStorage.getItem(APPS_KEY)); return c && c.id === id ? c.apps : null; } catch (e) { return null; }
+}
+async function loadAllowed(id) {
+  const apps = [...new Set(PROJECTS.map(it => it.app).filter(Boolean))];
+  try {
+    const res = await Promise.all(apps.map(app => sb.rpc('overall_has_app_role', { p_app: app, p_min_role: 'guest' })));
+    const err = res.find(r => r.error);
+    if (err) throw err.error;
+    const list = apps.filter((app, i) => res[i].data);
+    try { localStorage.setItem(APPS_KEY, JSON.stringify({ id, apps: list })); } catch (e) {}
+    if (String(list) !== String(allowed)) { allowed = list; render(); }
+  } catch (e) { if (navigator.onLine) console.warn('App-Zugriff', e); }
+}
+
 function startDashboard() {
   document.body.classList.add('unlocked');
-  const prev = viewer;
-  try { viewer = localStorage.getItem(ACCESS_KEY); } catch (e) {}
-  if (started) { if (viewer !== prev) render(); return; }
+  let id = null;
+  try { id = localStorage.getItem(ACCESS_KEY); } catch (e) {}
+  const prev = allowed;
+  allowed = cachedApps(id);
+  if (sb && id) loadAllowed(id);
+  if (started) { if (String(allowed) !== String(prev)) render(); return; }
   started = true;
   render();
   loadPushed();
@@ -763,8 +785,7 @@ document.addEventListener('visibilitychange', () => { if (document.visibilitySta
   const dlg = document.getElementById('searchDlg');
   const q = document.getElementById('q');
   const box = document.getElementById('results');
-  const all = SECTIONS.flatMap(sec => sec.items.map(it => ({ ...it, section: sec.title })));
-  let hits = [], sel = 0;
+  let all = [], hits = [], sel = 0;
 
   function update() {
     const f = q.value.trim().toLowerCase();
@@ -781,6 +802,7 @@ document.addEventListener('visibilitychange', () => { if (document.visibilitySta
 
   function open() {
     if (dlg.open) return;
+    all = SECTIONS.flatMap(sec => sec.items.map(it => ({ ...it, section: sec.title })));
     q.value = ''; sel = 0; update();
     dlg.showModal();
     q.focus();
