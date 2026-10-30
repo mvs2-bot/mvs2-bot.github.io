@@ -268,7 +268,7 @@
   <div class="gate-card busy" id="gateBusy"><span class="spin" aria-hidden="true"></span>Anmeldung wird geprüft …</div>
   <form class="gate-card" id="loginForm" hidden>
     <h2>Anmelden</h2>
-    <p>Das Dashboard ist nur mit Konto erreichbar (dasselbe wie bei TravelBase und Quest Log).</p>
+    <p>Das Dashboard ist nur mit Konto erreichbar (dasselbe wie bei TravelBase und QuestLog).</p>
     <label>E-Mail<input type="email" id="loginEmail" autocomplete="username" required></label>
     <label>Passwort<input type="password" id="loginPassword" autocomplete="current-password" required></label>
     <button class="btn" type="submit">Anmelden</button>
@@ -355,10 +355,10 @@
    ================================================================ */
 const PROJECTS = [
   { name: 'TravelBase',         desc: 'Alle Reiseplanungen an einem Ort',            url: '/TravelBase/', img: '/TravelBase/icons/apple-touch-icon.png',             icon: 'globePin', color: '#2563eb', badge: 'Login', supabase: 'syaonnedmidaipwjjmio', supabaseKey: 'sb_publishable_a3tggKZJmotlFtIqKKdSYg_cNsazRkX' },
-  { name: 'Quest Log',          desc: 'The Real World: 100 Quests, Level & Titel',   url: '/RealWorld-Questlog/', img: '/RealWorld-Questlog/icons/apple-touch-icon.png',     icon: 'quest',    color: '#7c3aed', badge: 'Login', supabase: 'syaonnedmidaipwjjmio', supabaseKey: 'sb_publishable_a3tggKZJmotlFtIqKKdSYg_cNsazRkX' },
+  { name: 'QuestLog',          desc: 'The Real World: 100 Quests, Level & Titel',   url: '/RealWorld-Questlog/', img: '/RealWorld-Questlog/icons/apple-touch-icon.png',     icon: 'quest',    color: '#7c3aed', badge: 'Login', supabase: 'syaonnedmidaipwjjmio', supabaseKey: 'sb_publishable_a3tggKZJmotlFtIqKKdSYg_cNsazRkX' },
   { name: 'MatchBoard',         desc: 'Lasset die Spiele beginnen!',                 url: '/MatchBoard/', img: '/MatchBoard/icon.svg',                       icon: 'trophy',   color: '#ea580c', badge: 'Login', supabase: 'syaonnedmidaipwjjmio', supabaseKey: 'sb_publishable_a3tggKZJmotlFtIqKKdSYg_cNsazRkX' },
   { name: 'DailyMind',          desc: 'Dankbar sein',                                url: '/DailyMind/', img: '/DailyMind/icon.svg',                         icon: 'sunrise',  color: '#7c9a82', badge: 'Login', supabase: 'syaonnedmidaipwjjmio', supabaseKey: 'sb_publishable_a3tggKZJmotlFtIqKKdSYg_cNsazRkX', streak: 'dailymind' },
-  { name: 'Camino Tracker',     desc: 'Meine Jakobswege, Karte & Unterkünfte',       url: '/CaminoTracker/', img: '/CaminoTracker/apple-touch-icon.png',      icon: 'shell',    color: '#0b4f9c', badge: 'Login', supabase: 'syaonnedmidaipwjjmio', supabaseKey: 'sb_publishable_a3tggKZJmotlFtIqKKdSYg_cNsazRkX', only: ['c41729ca-110b-4b0c-9c77-29ca1a09a23e', '35fc7fda-c35c-4fbd-81e0-fe64a16a3710'] },
+  { name: 'CaminoTracker',     desc: 'Meine Jakobswege, Karte & Unterkünfte',       url: '/CaminoTracker/', img: '/CaminoTracker/apple-touch-icon.png',      icon: 'shell',    color: '#0b4f9c', badge: 'Login', supabase: 'syaonnedmidaipwjjmio', supabaseKey: 'sb_publishable_a3tggKZJmotlFtIqKKdSYg_cNsazRkX', only: ['c41729ca-110b-4b0c-9c77-29ca1a09a23e', '35fc7fda-c35c-4fbd-81e0-fe64a16a3710'] },
   { name: 'PegelTracker',       desc: 'Alles nur zu Forschungszwecken',              url: '/PegelTracker/', img: '/PegelTracker/icon.svg',                   icon: 'glass',    color: '#d97706', badge: 'Login', supabase: 'syaonnedmidaipwjjmio', supabaseKey: 'sb_publishable_a3tggKZJmotlFtIqKKdSYg_cNsazRkX' },
   { name: 'Quick-Tools',        desc: 'Währung, Phrasen, GPS & Notfall pro Land',    url: '/QuickTools/', img: '/QuickTools/icon.svg',             icon: 'tools',    color: '#0d9488' },
   { name: 'Camper-Namenssuche', desc: 'Namen für den Bus vorschlagen & abstimmen',   url: '/Spitznamensuche-Camper/', img: '/Spitznamensuche-Camper/apple-touch-icon.png', icon: 'camper',   color: '#ea580c' },
@@ -561,7 +561,7 @@ async function checkSupabase() {
 /* ---------------- Login-Pflicht (Supabase-Core-Projekt, gemeinsame Konten aller Apps) ----------------
    Hinein darf, wer im Core-Projekt globaler Admin ist oder für die App "dashboard" mindestens
    die Rolle member hat (overall_app_access, vergeben in der Verwaltung). Gäste bleiben draußen.
-   Gleiche Domain wie TravelBase und Quest Log: wer dort angemeldet ist, ist es hier auch. */
+   Gleiche Domain wie TravelBase und QuestLog: wer dort angemeldet ist, ist es hier auch. */
 const CORE = { url: 'https://syaonnedmidaipwjjmio.supabase.co', key: 'sb_publishable_a3tggKZJmotlFtIqKKdSYg_cNsazRkX' };
 const ACCESS_KEY = 'dash-access'; // User-ID der letzten erfolgreichen Prüfung, damit das Dashboard offline aufgeht
 const sb = window.supabase ? window.supabase.createClient(CORE.url, CORE.key, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } }) : null;
@@ -741,7 +741,7 @@ const gate = (() => {
   });
   profileMenu.setLogout(logout);
   $('noAccessLogout').addEventListener('click', logout);
-  // Ab- oder Anmeldung in einem anderen Tab (auch in TravelBase/Quest Log) gilt sofort auch hier
+  // Ab- oder Anmeldung in einem anderen Tab (auch in TravelBase/QuestLog) gilt sofort auch hier
   if (sb) sb.auth.onAuthStateChange(ev => { if (ev === 'SIGNED_OUT' || ev === 'SIGNED_IN') setTimeout(check, 0); });
 
   return { check };
