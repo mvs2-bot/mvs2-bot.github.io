@@ -353,10 +353,11 @@
    streak: optional, App-ID → Streak-Anzeige an der Kachel (shared/streak.js), wenn für diese App eingeschaltet
    app:    App-ID aus overall_apps (Pflicht bei badge: 'Login') → Kachel nur, wenn das Konto dort eine Rolle hat
            (Zugriff in der Verwaltung; Admins sehen alles; nur Anzeige, Datenschutz macht RLS)
+   min:    optional, Mindestrolle für die Kachel (Standard 'member'; 'guest' nur, wo Gäste in der App etwas sehen)
    ================================================================ */
 const PROJECTS = [
-  { name: 'TravelBase',         desc: 'Alle Reiseplanungen an einem Ort',            url: '/TravelBase/', img: '/TravelBase/icons/apple-touch-icon.png',             icon: 'globePin', color: '#2f7fc1', app: 'travelbase', badge: 'Login', supabase: 'syaonnedmidaipwjjmio', supabaseKey: 'sb_publishable_a3tggKZJmotlFtIqKKdSYg_cNsazRkX' },
-  { name: 'QuestLog',          desc: 'The Real World: 100 Quests, Level & Titel',   url: '/RealWorld-Questlog/', img: '/RealWorld-Questlog/icons/apple-touch-icon.png',     icon: 'quest',    color: '#5b4bd1', app: 'questlog', badge: 'Login', supabase: 'syaonnedmidaipwjjmio', supabaseKey: 'sb_publishable_a3tggKZJmotlFtIqKKdSYg_cNsazRkX' },
+  { name: 'TravelBase',         desc: 'Alle Reiseplanungen an einem Ort',            url: '/TravelBase/', img: '/TravelBase/icons/apple-touch-icon.png',             icon: 'globePin', color: '#2f7fc1', app: 'travelbase', min: 'guest', badge: 'Login', supabase: 'syaonnedmidaipwjjmio', supabaseKey: 'sb_publishable_a3tggKZJmotlFtIqKKdSYg_cNsazRkX' },
+  { name: 'QuestLog',          desc: 'The Real World: 100 Quests, Level & Titel',   url: '/RealWorld-Questlog/', img: '/RealWorld-Questlog/icons/apple-touch-icon.png',     icon: 'quest',    color: '#5b4bd1', app: 'questlog', min: 'guest', badge: 'Login', supabase: 'syaonnedmidaipwjjmio', supabaseKey: 'sb_publishable_a3tggKZJmotlFtIqKKdSYg_cNsazRkX' },
   { name: 'MatchBoard',         desc: 'Lasset die Spiele beginnen!',                 url: '/MatchBoard/', img: '/MatchBoard/icon.svg',                       icon: 'trophy',   color: '#1e3a8a', app: 'matchboard', badge: 'Login', supabase: 'syaonnedmidaipwjjmio', supabaseKey: 'sb_publishable_a3tggKZJmotlFtIqKKdSYg_cNsazRkX' },
   { name: 'DailyMind',          desc: 'Dankbar sein',                                url: '/DailyMind/', img: '/DailyMind/icon.svg',                         icon: 'sunrise',  color: '#6f9a7c', app: 'dailymind', badge: 'Login', supabase: 'syaonnedmidaipwjjmio', supabaseKey: 'sb_publishable_a3tggKZJmotlFtIqKKdSYg_cNsazRkX', streak: 'dailymind' },
   { name: 'CaminoTracker',     desc: 'Meine Jakobswege, Karte & Unterkünfte',       url: '/CaminoTracker/', img: '/CaminoTracker/apple-touch-icon.png',      icon: 'shell',    color: '#1f4e9c', app: 'caminotracker', badge: 'Login', supabase: 'syaonnedmidaipwjjmio', supabaseKey: 'sb_publishable_a3tggKZJmotlFtIqKKdSYg_cNsazRkX' },
@@ -568,16 +569,16 @@ const ACCESS_KEY = 'dash-access'; // User-ID der letzten erfolgreichen Prüfung,
 const sb = window.supabase ? window.supabase.createClient(CORE.url, CORE.key, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } }) : null;
 let started = false;
 
-/* Login-Kacheln nur für Apps mit Zugriff: je App overall_has_app_role(app, 'guest') = irgendeine Rolle
+/* Login-Kacheln nur für Apps mit Zugriff: je Kachel overall_has_app_role(app, min)
    (globale Admins sehen alles). Ergebnis pro Konto zwischengespeichert, damit es offline und ohne Flackern geht. */
 const APPS_KEY = 'dash-apps';
 function cachedApps(id) {
   try { const c = JSON.parse(localStorage.getItem(APPS_KEY)); return c && c.id === id ? c.apps : null; } catch (e) { return null; }
 }
 async function loadAllowed(id) {
-  const apps = [...new Set(PROJECTS.map(it => it.app).filter(Boolean))];
+  const tiles = PROJECTS.filter(it => it.app), apps = tiles.map(it => it.app);
   try {
-    const res = await Promise.all(apps.map(app => sb.rpc('overall_has_app_role', { p_app: app, p_min_role: 'guest' })));
+    const res = await Promise.all(tiles.map(it => sb.rpc('overall_has_app_role', { p_app: it.app, p_min_role: it.min || 'member' })));
     const err = res.find(r => r.error);
     if (err) throw err.error;
     const list = apps.filter((app, i) => res[i].data);

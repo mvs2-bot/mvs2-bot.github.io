@@ -63,6 +63,17 @@
   .switchrow + .switchrow { border-top: 1px solid var(--border); }
   .switchrow input { width: 20px; height: 20px; accent-color: var(--accent); }
   #denied { max-width: 460px; margin: 12vh auto 0; }
+  details.item > summary .item-head::after { content: '›'; flex: 0 0 auto; font-size: 1.3rem; line-height: 1; color: var(--muted); transition: transform .15s; }
+  details.item[open] > summary .item-head::after { transform: rotate(90deg); }
+  .sum { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+  details.rights { border-top: 1px solid var(--border); }
+  details.rights:first-of-type { border-top: 0; }
+  details.rights > summary { cursor: pointer; padding: 10px 0; font-weight: 700; font-size: .9rem; }
+  .rights-tbl { width: 100%; border-collapse: collapse; font-size: .82rem; margin: 0 0 10px; }
+  .rights-tbl th { text-align: left; vertical-align: top; white-space: nowrap; padding: 6px 12px 6px 0; width: 1%; }
+  .rights-tbl td { padding: 6px 0; color: var(--muted); }
+  .rights-tbl tr + tr > * { border-top: 1px dashed var(--border); }
+  .app-rights { margin-bottom: 12px; }
 </style>
 <script src="shared/ios-nav.js" defer></script>
 </head>
@@ -135,6 +146,48 @@ function errText(e) {
 const fmtDate = iso => iso ? new Date(iso).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '–';
 const initials = s => (String(s || '?').trim().split(/\s+/).map(w => w[0]).join('').slice(0, 2) || '?').toUpperCase();
 const ROLE_LABEL = { admin: 'Admin', member: 'Mitglied', guest: 'Gast' };
+
+/* Wer darf was – je App und Rolle, so wie es die RLS-Regeln in Supabase festlegen.
+   Bei neuen Apps oder geänderten Regeln hier nachziehen. */
+const RIGHTS = {
+  dashboard: {
+    guest: 'Kein Zugang.',
+    member: 'Dashboard öffnen. Sieht nur die Kacheln der Apps, für die das Konto Zugang hat, plus die Apps ohne Login. Favoriten setzen.',
+    admin: 'Wie Mitglied, dazu der Dashboard-Bereich hier in den Admin-Einstellungen.',
+  },
+  travelbase: {
+    guest: 'Sieht nur Reisen, die freigegeben wurden. Was je Reise geht, bestimmt die Rolle in der Reise-Freigabe: als Gast lesen (nur Abschnitte für Gäste), als Mitglied zusätzlich Packliste und To-dos bearbeiten.',
+    member: 'Gleich wie Gast. Auch hier entscheidet die Rolle je Reise.',
+    admin: 'Sieht und bearbeitet alle Reisen und vergibt die Reise-Freigaben.',
+  },
+  questlog: {
+    guest: 'Spieler:in: führt den eigenen Questlog und sieht die Questlogs anderer, wenn diese sie teilen.',
+    member: 'Gleich wie Gast (Spieler:in).',
+    admin: 'Gamemaster: sieht und bearbeitet die Spielstände aller und verwaltet die Spieler:innen.',
+  },
+  matchboard: {
+    guest: 'Kein Zugang.',
+    member: 'Spiele und Orte ansehen, anlegen und bearbeiten. Eigene Spiele löschen.',
+    admin: 'Dazu Kategorien verwalten und alle Spiele und Orte löschen.',
+  },
+  dailymind: {
+    guest: 'Kein Zugang.',
+    member: 'Eigene Einträge schreiben und Erinnerungen einstellen. Niemand sonst sieht die Einträge.',
+    admin: 'Wie Mitglied. Auch Admins sehen keine fremden Einträge.',
+  },
+  pegeltracker: {
+    guest: 'Kein Zugang.',
+    member: 'Eigene Getränke eintragen und eigene Getränkesorten anlegen.',
+    admin: 'Dazu die Getränke aller ansehen.',
+  },
+  caminotracker: {
+    guest: 'Sieht die Kachel und kann die App öffnen, aber keine Daten.',
+    member: 'Gleich wie Gast.',
+    admin: 'Gleich wie Gast, dazu die Datenübersicht hier. Die Daten selbst sieht nur Stefans Konto (fest eingestellt).',
+  },
+};
+const rightsTable = id => RIGHTS[id] ? `<table class="rights-tbl">${['guest', 'member', 'admin'].map(r =>
+  `<tr><th>${ROLE_LABEL[r]}</th><td>${esc(RIGHTS[id][r])}</td></tr>`).join('')}</table>` : '<p class="note">Noch keine Beschreibung hinterlegt.</p>';
 const roleOptions = (sel, none, roles = ['admin', 'member', 'guest']) =>
   (none ? `<option value=""${sel ? '' : ' selected'}>${esc(none)}</option>` : '') +
   roles.map(r => `<option value="${r}"${r === sel ? ' selected' : ''}>${ROLE_LABEL[r] || r}</option>`).join('');
@@ -180,7 +233,7 @@ window.addEventListener('storage', e => { if (e.key === 'overall-theme' && e.new
 /* =====================================================================
    GLOBAL: Apps und Konten (Edge Function overall-admin, nur globale Admins)
    ===================================================================== */
-const G = { state: null, openEdit: new Set() };   // state = { me, roles, apps, users }
+const G = { state: null, openEdit: new Set(), openUsers: new Set() };   // state = { me, roles, apps, users }
 
 function renderGlobal() {
   $('globalBody').innerHTML = `
@@ -204,6 +257,11 @@ function renderGlobal() {
         <div class="actions"><button class="btn" type="submit">Konto anlegen</button></div>
       </form>
       <div class="msg" id="createMsg" hidden></div>
+    </div>
+    <div class="card" id="g-rights">
+      <h3>📋 Wer darf was?</h3>
+      <p class="note">Was die Rollen je App erlauben. Kein Zugang = App gesperrt und keine Kachel im Dashboard. Globale Admins dürfen überall so viel wie ein App-Admin und verwalten zusätzlich die Konten.</p>
+      ${G.state.apps.map(a => `<details class="rights"><summary>${esc(a.name)}</summary>${rightsTable(a.id)}</details>`).join('')}
     </div>
     <div class="card" id="g-users">
       <h3>👥 Konten, Rollen &amp; App-Zugänge</h3>
@@ -230,13 +288,17 @@ function renderGlobal() {
       const access = s.apps.map(a => admin
         ? `<label>${esc(appName(a))}<select disabled><option>Admin (global)</option></select></label>`
         : `<label class="${u.access[a.id] ? '' : 'off'}">${esc(appName(a))}<select data-act="access" data-app="${esc(a.id)}">${roleOptions(u.access[a.id] || '', 'kein Zugang')}</select></label>`).join('');
+      const has = s.apps.filter(a => u.access[a.id]);
       return `
-        <article class="item${admin ? ' is-admin' : ''}" data-id="${esc(u.id)}">
-          <div class="item-head">
+        <details class="item${admin ? ' is-admin' : ''}" data-id="${esc(u.id)}"${G.openUsers.has(u.id) ? ' open' : ''}>
+          <summary><div class="item-head">
             <span class="ini">${esc(initials(u.display_name || u.email))}</span>
             <div class="who"><b>${esc(u.display_name || u.email)}${me ? ' <span class="pill">Du</span>' : ''}</b>
-              <small>${esc(u.email)} · angelegt ${fmtDate(u.created_at)} · ${u.last_sign_in_at ? 'zuletzt angemeldet ' + fmtDate(u.last_sign_in_at) : 'noch nie angemeldet'}</small></div>
-          </div>
+              <small>${esc(u.email)} · angelegt ${fmtDate(u.created_at)} · ${u.last_sign_in_at ? 'zuletzt angemeldet ' + fmtDate(u.last_sign_in_at) : 'noch nie angemeldet'}</small>
+              <div class="sum"><span class="pill${admin ? ' strong' : ''}">${admin ? 'Admin (global, alle Apps)' : ROLE_LABEL[u.role] || esc(u.role)}</span>${admin ? '' : has.length
+                ? has.map(a => `<span class="pill">${esc(a.name)}: ${ROLE_LABEL[u.access[a.id]] || esc(u.access[a.id])}</span>`).join('')
+                : '<span class="pill">keine App</span>'}</div></div>
+          </div></summary>
           <div class="acc">
             <label>Globale Rolle<select data-act="role"${me ? ' disabled title="Die eigene Rolle kann man nicht ändern."' : ''}>${roleOptions(u.role)}</select></label>
             ${access}
@@ -254,7 +316,7 @@ function renderGlobal() {
             <div class="actions"><button class="btn small" type="submit">Speichern</button></div>
           </form>
           <div class="msg" hidden></div>
-        </article>`;
+        </details>`;
     }).join('') || '<p class="note">Keine Konten gefunden.</p>';
   };
   G.paintUsers = paintUsers;
@@ -304,6 +366,11 @@ async function runUser(card, action, okText) {
 function wireGlobal() {
   const host = $('globalBody');
   host.addEventListener('input', e => { if (e.target.id === 'search' && G.state) G.paintUsers(); });
+  // Auf- und Zugeklapptes merken, damit es nach dem Speichern so bleibt (toggle blubbert nicht, daher capture)
+  host.addEventListener('toggle', e => {
+    const d = e.target; if (!d.matches || !d.matches('#users details.item')) return;
+    d.open ? G.openUsers.add(d.dataset.id) : G.openUsers.delete(d.dataset.id);
+  }, true);
   host.addEventListener('change', async e => {
     const t = e.target;
     if (t.dataset.appActive) {
@@ -538,6 +605,7 @@ async function renderApps() {
     const m = APP_ADMIN[app.id];
     return `<div class="card app" id="app-${esc(app.id)}" style="--app:${m.color}">
       <h3>${m.icon} ${esc(app.name)} · ${esc(m.title)}<span class="tag"><i></i>nur ${esc(app.name)}</span></h3>
+      <details class="rights app-rights"><summary>📋 Wer darf was?</summary>${rightsTable(app.id)}</details>
       <div class="app-body"><p class="note" style="margin:0">⏳ Lädt …</p></div></div>`;
   }).join('');
   await Promise.all(mine.map(async ({ app }) => {
