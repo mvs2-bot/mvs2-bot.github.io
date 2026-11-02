@@ -18,10 +18,12 @@
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="shared/overall-account.js"></script>
+<script src="shared/projects.js"></script>
 <link rel="stylesheet" href="shared/hub.css">
+<script src="shared/settings-nav.js"></script>
 <script src="shared/ios-nav.js" defer></script>
 </head>
-<body>
+<body class="settings-page">
 
 <header>
   <div class="bar">
@@ -45,47 +47,49 @@
     </form>
   </section>
 
-  <div id="page">
-    <h1>Kontoeinstellungen</h1>
-    <p class="lead" id="who"></p>
-    <nav class="jump" id="jump" aria-label="Bereiche"></nav>
+  <div id="page" class="settings">
+    <aside class="side">
+      <h1>Kontoeinstellungen</h1>
+      <p class="lead" id="who"></p>
+      <nav class="snav" id="jump" aria-label="Bereiche"></nav>
+      <div class="side-foot"><button class="btn ghost" type="button" data-logout>Abmelden</button></div>
+    </aside>
 
-    <section class="group" id="global">
-      <div class="group-head">
-        <h2>🌐 Globale Kontoeinstellungen</h2>
-        <span class="tag"><i></i>gilt für alle Apps</span>
-      </div>
-      <div class="card" id="profil"><h3>👤 Profil</h3><div id="mountProfile"></div></div>
-      <div class="card" id="email"><h3>✉️ E-Mail-Adresse</h3><div id="mountEmail"></div></div>
-      <div class="card" id="passwort"><h3>🔑 Passwort</h3><div id="mountPassword"></div></div>
-      <div class="card" id="darstellung">
-        <h3>🎨 Darstellung &amp; Sprache</h3>
-        <p class="note">Gilt auf diesem Gerät für alle Seiten.</p>
-        <div class="row">
-          <div><b>Design</b><small>Hell oder dunkel (dunkel ist für AMOLED-Displays optimiert)</small></div>
-          <div class="seg" role="group" aria-label="Design">
-            <button type="button" data-theme-set="light">☀️ Hell</button>
-            <button type="button" data-theme-set="dark">🌙 Dunkel</button>
+    <div class="panes">
+      <section class="pane" id="profil">
+        <div class="pane-head" data-head="user|#007aff"><div><h2>Profil</h2><p>Name, Foto und Angaben, die alle Apps sehen.</p></div></div>
+        <div class="card"><div id="mountProfile"></div></div>
+      </section>
+
+      <section class="pane" id="anmeldung">
+        <div class="pane-head" data-head="key|#8e8e93"><div><h2>Anmeldung</h2><p>E-Mail-Adresse und Passwort für alle Apps.</p></div></div>
+        <div class="card" id="email"><h3>E-Mail-Adresse</h3><div id="mountEmail"></div></div>
+        <div class="card" id="passwort"><h3>Passwort</h3><div id="mountPassword"></div></div>
+      </section>
+
+      <section class="pane" id="darstellung">
+        <div class="pane-head" data-head="display|#5856d6"><div><h2>Darstellung</h2><p>Gilt auf diesem Gerät für alle Seiten.</p></div></div>
+        <div class="card">
+          <div class="row">
+            <div><b>Design</b><small>Dunkel ist für AMOLED-Displays optimiert.</small></div>
+            <div class="seg" role="group" aria-label="Design">
+              <button type="button" data-theme-set="light">Hell</button>
+              <button type="button" data-theme-set="dark">Dunkel</button>
+            </div>
+          </div>
+          <div class="row">
+            <div><b>Sprache</b><small>Weitere Sprachen gibt es noch nicht.</small></div>
+            <select disabled aria-label="Sprache" style="width:auto"><option>Deutsch</option></select>
           </div>
         </div>
-        <div class="row">
-          <div><b>Sprache</b><small>Weitere Sprachen gibt es noch nicht.</small></div>
-          <select disabled aria-label="Sprache" style="width:auto"><option>Deutsch</option></select>
-        </div>
-      </div>
-    </section>
+      </section>
 
-    <section class="group" id="apps">
-      <div class="group-head">
-        <h2>🧩 Individuelle Kontoeinstellungen</h2>
-        <p>Persönliche Einstellungen, die nur in einer App gelten.</p>
-      </div>
-      <div id="appCards"><div class="card"><p class="note" style="margin:0">⏳ Lädt …</p></div></div>
-    </section>
+      <div id="appCards" style="display:contents"></div>
+    </div>
 
     <footer>
       <span id="footWho"></span>
-      <button class="btn ghost" type="button" id="logoutBtn">🚪 Abmelden</button>
+      <button class="btn ghost" type="button" data-logout>Abmelden</button>
     </footer>
   </div>
 </main>
@@ -135,24 +139,28 @@ document.querySelectorAll('[data-theme-set]').forEach(b => b.addEventListener('c
 window.addEventListener('storage', e => { if (e.key === 'overall-theme' && e.newValue) applyTheme(e.newValue, false); });
 
 /* ---------------- Individuelle Einstellungen je App ----------------
-   Jede App bekommt eine Karte, wenn man Zugang hat (overall_app_role). Neue Apps: Eintrag in APP_CARDS. */
+   Jede App mit eigenen Einstellungen bekommt einen Bereich, wenn man Zugang hat (overall_app_role).
+   Neue Apps: Eintrag in APP_CARDS. Symbol und Farbe kommen aus shared/projects.js. */
 const APP_CARDS = {
-  questlog:   { icon: '📜', color: '#7c3aed', render: questlogCard },
-  travelbase: { icon: '🌍', color: '#2563eb', render: travelbaseCard },
-  dashboard:  { icon: '🏠', color: '#0d9488', render: dashboardCard },
-  dailymind:  { icon: '🌅', color: '#7c9a82', render: dailymindCard },
-  migralog:   { icon: '⚡', color: '#7d4a94', render: migralogCard },
-  caminotracker: { icon: '🐚', color: '#b88a00' },
+  dashboard:  { render: dashboardCard, label: 'Startseite, Apps und Mini-Tools' },
+  questlog:   { render: questlogCard, label: 'Spielername und Privatsphäre' },
+  travelbase: { render: travelbaseCard, label: 'Deine Reisen' },
+  dailymind:  { render: dailymindCard, label: 'Streak und Erinnerungen' },
+  migralog:   { render: migralogCard, label: 'Cloud-Sync und Datenschutz' },
 };
+const appIcon = (id, name) => {
+  const p = PROJECTS.find(x => x.app === id);
+  return Object.assign({ label: name }, id === 'dashboard' ? { img: 'icon.svg', color: '#1c1c1e' } : p ? { img: p.img, color: p.color } : { icon: 'apps', color: '#64748b' });
+};
+const roleText = role => `Deine Rolle: <b>${esc(ROLE_LABEL[role] || role)}</b>`;
 
-function appCard(app, role, body) {
-  const meta = APP_CARDS[app.id] || { icon: '🧩', color: '#64748b' };
+function appPane(app, role) {
   return `
-    <div class="card app" id="app-${esc(app.id)}" style="--app:${meta.color}">
-      <h3>${meta.icon} ${esc(app.name)}<span class="tag"><i></i>nur ${esc(app.name)}</span></h3>
-      <p class="note">Deine Rolle: <b>${esc(ROLE_LABEL[role] || role)}</b>${app.url ? ` · <a href="${esc(app.url)}">App öffnen</a>` : ''}</p>
-      ${body}
-    </div>`;
+    <section class="pane" id="app-${esc(app.id)}">
+      <div class="pane-head">${SettingsNav.tile(appIcon(app.id, app.name))}
+        <div><h2>${esc(app.name)}</h2><p>${roleText(role)}${app.url ? ` · <a href="${esc(app.url)}">App öffnen</a>` : ''}</p></div></div>
+      <div class="card app-body"><p class="note" style="margin:0">Lädt …</p></div>
+    </section>`;
 }
 
 async function questlogCard(card, user) {
@@ -165,14 +173,14 @@ async function questlogCard(card, user) {
       <label class="field">Spielername<input type="text" id="qlName" maxlength="40" required value="${esc(p.player_name)}"></label>
       <button class="btn" type="submit">Speichern</button>
     </form>
-    <h4>🔒 Privatsphäre</h4>
+    <h4>Privatsphäre</h4>
     <label class="switch"><input type="checkbox" data-ql="visible"${p.visible !== false ? ' checked' : ''}>
       <span><b>Für Mitspieler sichtbar</b><small>Du erscheinst bei den anderen im Dashboard, im Scoreboard und in der Aktivität.</small></span></label>
     <label class="switch"><input type="checkbox" data-ql="show_avatar"${p.show_avatar !== false ? ' checked' : ''}>
       <span><b>Profilbild für Mitspieler sichtbar</b><small>Ausgeschaltet sehen die anderen nur deine Initialen.</small></span></label>
     <label class="switch"><input type="checkbox" data-ql="share_questlog"${p.share_questlog ? ' checked' : ''}>
       <span><b>Questlog für Mitspieler freigeben</b><small>Mitspieler können dein Questlog ansehen, aber nichts ändern.</small></span></label>
-    <h4>🎮 Grundregeln</h4>
+    <h4>Grundregeln</h4>
     <p class="note">Seit Spielbeginn festgelegt.</p>
     <div class="chips">
       <span class="chip">🗓️ Spielbeginn ${fmt(p.game_started_at)}</span>
@@ -199,14 +207,50 @@ async function questlogCard(card, user) {
 async function travelbaseCard(card) {
   const trips = check(await sb.rpc('travelbase_my_trips')) || [];
   card.querySelector('.app-body').innerHTML = `
-    <h4>🧳 Meine Reisen</h4>
+    <h4>Meine Reisen</h4>
     ${trips.length ? `<ul class="plain">${trips.map(t => `<li><a href="/TravelBase/${esc(t.slug)}/">${esc((t.flags || []).join(' '))} ${esc(t.title)}</a><span>${esc(ROLE_LABEL[t.role] || t.role)}</span></li>`).join('')}</ul>`
       : '<p class="note" style="margin:0">Du bist noch bei keiner Reise eingetragen.</p>'}
     <p class="note" style="margin:12px 0 0">Wer welche Reise sieht, legen Admins fest. Eigene TravelBase-Einstellungen gibt es noch nicht.</p>`;
 }
 
+/* Dashboard-Anzeige: was ausgeschaltet ist, steht in user_metadata.dash_hidden (gilt fürs Konto, auf allen Geräten).
+   Apps aus shared/projects.js, Schnellzugriff und Mini-Tools direkt aus dem Dashboard-HTML. */
+let myApps = []; // App-IDs mit Rolle (aus renderApps)
+async function dashboardVisibility(box) {
+  const doc = new DOMParser().parseFromString(await fetch('./').then(r => r.text()), 'text/html');
+  const items = sel => [...doc.querySelectorAll(sel)].map(el => ({
+    key: el.id ? 'tool:' + el.id : 'quick:' + el.getAttribute('aria-label'),
+    name: el.querySelector('.ql') ? el.querySelector('.ql').textContent : el.getAttribute('aria-label'),
+    icon: el.querySelector('.qi') ? el.querySelector('.qi').outerHTML : '',
+  }));
+  const apps = PROJECTS.filter(it => !it.app || myApps.includes(it.app)).map(it => ({
+    key: it.url, name: it.name, desc: it.badge ? 'Mit Login' : 'Ohne Login', icon: SettingsNav.tile({ label: it.name, img: it.img, color: it.color }),
+  }));
+  let hidden = (await sb.auth.getUser()).data.user.user_metadata.dash_hidden || [];
+  const list = (title, note, rows) => `
+    <p class="card-label">${title}</p>
+    <div class="card"><p class="note">${note}</p><div class="toggles">${rows.map(r => `
+      <label class="switch"><input type="checkbox" data-hide="${esc(r.key)}"${hidden.includes(r.key) ? '' : ' checked'}>
+        <span>${r.icon}<span><b>${esc(r.name)}</b>${r.desc ? `<small>${esc(r.desc)}</small>` : ''}</span></span></label>`).join('')}</div>
+      <div class="msg" hidden></div></div>`;
+  box.innerHTML = list('Apps', 'Ausgeschaltete Apps erscheinen nicht im Dashboard und nicht in der Suche.', apps)
+    + list('Schnellzugriff', 'Welche Links im Schnellzugriff stehen.', items('[aria-labelledby="quickH"] .quick > a'))
+    + list('Mini-Tools', 'Welche Mini-Tools angezeigt werden.', items('[aria-labelledby="toolsH"] .quick > button'));
+  box.addEventListener('change', async e => {
+    const cb = e.target.closest('[data-hide]'); if (!cb) return;
+    const out = cb.closest('.card').querySelector('.msg'), before = hidden;
+    hidden = cb.checked ? hidden.filter(k => k !== cb.dataset.hide) : hidden.concat(cb.dataset.hide);
+    msg(out, '');
+    try { check(await sb.auth.updateUser({ data: { dash_hidden: hidden } })); msg(out, 'Gespeichert. Gilt auf allen Geräten.', true); }
+    catch (err) { hidden = before; cb.checked = !cb.checked; msg(out, errText(err)); }
+  });
+}
+
 async function dashboardCard(card) {
   const box = card.querySelector('.app-body');
+  box.insertAdjacentHTML('afterend', '<div class="dash-vis"><p class="note">Lädt …</p></div>');
+  const vis = card.querySelector('.dash-vis');
+  dashboardVisibility(vis).catch(e => { vis.innerHTML = `<p class="note">${esc(errText(e))}</p>`; });
   const favs = () => { try { return JSON.parse(localStorage.getItem('dash-favs')) || []; } catch (e) { return []; } };
   const paint = () => {
     const n = favs().length;
@@ -272,7 +316,7 @@ async function dailymindCard(card, user) {
       <input type="time" data-dm="${kind}_time" value="${hhmm(st[kind + '_time'])}" aria-label="Uhrzeit ${label}"${st[kind + '_enabled'] ? '' : ' disabled'}>
     </div>`;
   box.innerHTML = `
-    ${streakRow.error ? '' : `<h4>🔥 Streak</h4>
+    ${streakRow.error ? '' : `<h4>Streak</h4>
     <p class="note">Zählt jeden Tag, an dem du in DailyMind etwas in die Morgen- oder Abendroutine schreibst. Ausgeschaltet zählt DailyMind nicht mehr, und der Streak erscheint weder in DailyMind noch im Dashboard.</p>
     <div class="row">
       <label class="switch" style="padding:0;flex:1 1 220px">
@@ -280,7 +324,7 @@ async function dailymindCard(card, user) {
         <span><b>🔥 Streak zählen und anzeigen</b><small>Serie, Rekord und Wochenkalender</small></span>
       </label>
     </div>`}
-    <h4>🔔 Tägliche Erinnerungen</h4>
+    <h4>Tägliche Erinnerungen</h4>
     <p class="note">Eine Push-Benachrichtigung zur gewählten Uhrzeit. Hast du die Routine an dem Tag schon begonnen, kommt keine.</p>
     ${reminder('morning', '☀️', 'Morgen-Erinnerung', 'Dankbarkeit, Tagesfokus und Affirmation')}
     ${reminder('evening', '🌙', 'Abend-Erinnerung', 'Kleine Erfolge, gute Taten und Stimmung')}
@@ -363,23 +407,29 @@ async function renderApps(user) {
     const apps = check(await sb.from('overall_apps').select('id, name, url, is_active').order('created_at')).filter(a => a.is_active);
     const roles = await Promise.all(apps.map(a => sb.rpc('overall_app_role', { p_app: a.id }).then(check).catch(() => null)));
     const mine = apps.map((a, i) => ({ app: a, role: roles[i] })).filter(x => x.role);
+    myApps = mine.map(x => x.app.id);
     // Reihenfolge: App, von der man kommt, zuerst
     const fromId = new URLSearchParams(location.search).get('from');
     mine.sort((a, b) => (b.app.id === fromId) - (a.app.id === fromId));
-    if (!mine.length) { host.innerHTML = '<div class="card"><p class="note" style="margin:0">Du hast noch keinen Zugang zu einer App.</p></div>'; return mine; }
-    host.innerHTML = mine.map(x => appCard(x.app, x.role, '<div class="app-body"><p class="note" style="margin:0">⏳ Lädt …</p></div>')).join('');
-    await Promise.all(mine.map(async x => {
-      const card = $('app-' + x.app.id), meta = APP_CARDS[x.app.id];
-      try {
-        if (meta && meta.render) await meta.render(card, user);
-        else card.querySelector('.app-body').innerHTML = '<p class="note" style="margin:0">Für diese App gibt es noch keine eigenen Einstellungen.</p>';
-      } catch (e) { card.querySelector('.app-body').innerHTML = `<p class="note" style="margin:0">${esc(errText(e))}</p>`; }
+    const withSettings = mine.filter(x => APP_CARDS[x.app.id]), rest = mine.filter(x => !APP_CARDS[x.app.id]);
+    host.innerHTML = withSettings.map(x => appPane(x.app, x.role)).join('') + `
+      <section class="pane" id="weitere">
+        <div class="pane-head">${SettingsNav.tile({ icon: 'apps', color: '#8e8e93' })}<div><h2>Weitere Apps</h2><p>Apps, für die du Zugang hast, ohne eigene Einstellungen.</p></div></div>
+        <div class="card">${rest.length ? `<ul class="plain applist">${rest.map(x => `<li>${SettingsNav.tile(appIcon(x.app.id, x.app.name))}
+          <span><b>${esc(x.app.name)}</b><small>Rolle: ${esc(ROLE_LABEL[x.role] || x.role)}</small></span>${x.app.url ? `<a class="btn ghost small" href="${esc(x.app.url)}">Öffnen</a>` : ''}</li>`).join('')}</ul>`
+          : `<p class="note" style="margin:0">${mine.length ? 'Alle deine Apps haben eigene Einstellungen.' : 'Du hast noch keinen Zugang zu einer App.'}</p>`}</div>
+      </section>`;
+    await Promise.all(withSettings.map(async x => {
+      const card = $('app-' + x.app.id);
+      try { await APP_CARDS[x.app.id].render(card, user); }
+      catch (e) { card.querySelector('.app-body').innerHTML = `<p class="note" style="margin:0">${esc(errText(e))}</p>`; }
     }));
-    return mine;
-  } catch (e) { host.innerHTML = `<div class="card"><p class="note" style="margin:0">${esc(errText(e))}</p></div>`; return []; }
+    return { withSettings, rest };
+  } catch (e) { host.innerHTML = `<section class="pane" id="weitere"><div class="card"><p class="note" style="margin:0">${esc(errText(e))}</p></div></section>`; return { withSettings: [], rest: [] }; }
 }
 
 /* ---------------- Seite aufbauen ---------------- */
+document.querySelectorAll('[data-head]').forEach(h => { const [icon, color] = h.dataset.head.split('|'); h.insertAdjacentHTML('afterbegin', SettingsNav.tile({ icon, color })); });
 let shown = null;
 async function start() {
   if (!sb) { $('gateBusy').hidden = true; $('loginForm').hidden = false; msg($('loginMsg'), 'Keine Verbindung zum Server. Bist du online?'); return; }
@@ -397,9 +447,17 @@ async function start() {
   OverallAccount.mountEmail($('mountEmail'), { sb, redirectTo });
   OverallAccount.mountPassword($('mountPassword'), { sb, redirectTo });
 
-  const mine = await renderApps(user);
-  $('jump').innerHTML = '<a href="#global">🌐 Global</a>' + mine.map(x => `<a href="#app-${esc(x.app.id)}">${(APP_CARDS[x.app.id] || { icon: '🧩' }).icon} ${esc(x.app.name)}</a>`).join('');
-  if (location.hash) { const t = document.querySelector(location.hash.replace(/[^#\w-]/g, '')); if (t) t.scrollIntoView(); }
+  const nav = apps => SettingsNav.build($('jump'), [
+    { title: 'Konto', items: [
+      { id: 'profil', label: 'Profil', icon: 'user', color: '#007aff' },
+      { id: 'anmeldung', label: 'Anmeldung', icon: 'key', color: '#8e8e93' },
+      { id: 'darstellung', label: 'Darstellung', icon: 'display', color: '#5856d6' },
+    ] },
+    { title: 'Apps', items: apps.withSettings.map(x => Object.assign(appIcon(x.app.id, x.app.name), { id: 'app-' + x.app.id }))
+      .concat(apps.rest.length ? [{ id: 'weitere', label: 'Weitere Apps', icon: 'apps', color: '#8e8e93' }] : []) },
+  ]);
+  nav({ withSettings: [], rest: [] });
+  nav(await renderApps(user));
 }
 
 $('loginForm').addEventListener('submit', async e => {
@@ -412,11 +470,11 @@ $('loginForm').addEventListener('submit', async e => {
   } catch (err) { msg($('loginMsg'), errText(err)); }
   finally { b.disabled = false; }
 });
-$('logoutBtn').addEventListener('click', async () => {
+document.querySelectorAll('[data-logout]').forEach(b => b.addEventListener('click', async () => {
   try { localStorage.removeItem('dash-access'); } catch (e) {}
   await sb.auth.signOut().catch(() => {});
   location.href = from.url;
-});
+}));
 if (sb) sb.auth.onAuthStateChange(ev => { if (ev === 'SIGNED_OUT') { shown = null; setTimeout(start, 0); } });
 start();
 </script>

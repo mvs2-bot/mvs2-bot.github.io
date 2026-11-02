@@ -15,6 +15,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="shared/overall-account.js"></script>
 <script src="shared/streak.js"></script>
+<script src="shared/projects.js"></script>
 <link rel="stylesheet" href="shared/streak.css">
 <script>
   // Theme vor dem ersten Rendern setzen (kein Aufblitzen). Standard: hell.
@@ -342,37 +343,31 @@
 </dialog>
 
 <script>
-/* ================================================================
-   PROJEKTE – hier pflegen.
-   Neues Projekt = neuen Eintrag in PROJECTS kopieren; mit badge: 'Login' landet es unter „Mit Login“.
-   icon: Emoji ODER Schlüssel aus ICONS (unten)
-   color: Hintergrundfarbe der Icon-Kachel
-   repo:  optional, GitHub-Repo-Name (Standard: aus url abgeleitet, z. B. '/TravelBase/' → TravelBase)
-   supabase: optional, Supabase-Projekt-ID → zusätzlicher Button zum Supabase-Dashboard
-   supabaseKey: optional, öffentlicher Publishable Key → Statuspunkt (erreichbar / pausiert)
-   streak: optional, App-ID → Streak-Anzeige an der Kachel (shared/streak.js), wenn für diese App eingeschaltet
-   app:    App-ID aus overall_apps (Pflicht bei badge: 'Login') → Kachel nur, wenn das Konto dort eine Rolle hat
-           (Zugriff in der Verwaltung; Admins sehen alles; nur Anzeige, Datenschutz macht RLS)
-   min:    optional, Mindestrolle für die Kachel (Standard 'member'; 'guest' nur, wo Gäste in der App etwas sehen)
-   ================================================================ */
-const PROJECTS = [
-  { name: 'TravelBase',         desc: 'Alle Reiseplanungen an einem Ort',            url: '/TravelBase/', img: '/TravelBase/icons/apple-touch-icon.png',             icon: 'globePin', color: '#2f7fc1', app: 'travelbase', min: 'guest', badge: 'Login', supabase: 'syaonnedmidaipwjjmio', supabaseKey: 'sb_publishable_a3tggKZJmotlFtIqKKdSYg_cNsazRkX' },
-  { name: 'QuestLog',          desc: 'The Real World: 100 Quests, Level & Titel',   url: '/RealWorld-Questlog/', img: '/RealWorld-Questlog/icons/apple-touch-icon.png',     icon: 'quest',    color: '#5b4bd1', app: 'questlog', min: 'guest', badge: 'Login', supabase: 'syaonnedmidaipwjjmio', supabaseKey: 'sb_publishable_a3tggKZJmotlFtIqKKdSYg_cNsazRkX' },
-  { name: 'MatchBoard',         desc: 'Lasset die Spiele beginnen!',                 url: '/MatchBoard/', img: '/MatchBoard/icon.svg',                       icon: 'trophy',   color: '#1e3a8a', app: 'matchboard', badge: 'Login', supabase: 'syaonnedmidaipwjjmio', supabaseKey: 'sb_publishable_a3tggKZJmotlFtIqKKdSYg_cNsazRkX' },
-  { name: 'DailyMind',          desc: 'Dankbar sein',                                url: '/DailyMind/', img: '/DailyMind/icon.svg',                         icon: 'sunrise',  color: '#6f9a7c', app: 'dailymind', badge: 'Login', supabase: 'syaonnedmidaipwjjmio', supabaseKey: 'sb_publishable_a3tggKZJmotlFtIqKKdSYg_cNsazRkX', streak: 'dailymind' },
-  { name: 'Migräne Tracker',    desc: 'Migräne, Auslöser & Medikamente im Blick',     url: '/MigraLog/', img: '/MigraLog/icon.svg',                           icon: 'migraine', color: '#7d4a94', app: 'migralog', badge: 'Login', supabase: 'syaonnedmidaipwjjmio', supabaseKey: 'sb_publishable_a3tggKZJmotlFtIqKKdSYg_cNsazRkX' },
-  { name: 'CaminoTracker',     desc: 'Meine Jakobswege, Karte & Unterkünfte',       url: '/CaminoTracker/', img: '/CaminoTracker/apple-touch-icon.png',      icon: 'shell',    color: '#1f4e9c', app: 'caminotracker', badge: 'Login', supabase: 'syaonnedmidaipwjjmio', supabaseKey: 'sb_publishable_a3tggKZJmotlFtIqKKdSYg_cNsazRkX' },
-  { name: 'PegelTracker',       desc: 'Alles nur zu Forschungszwecken',              url: '/PegelTracker/', img: '/PegelTracker/icon.svg',                   icon: 'glass',    color: '#3b2f2b', app: 'pegeltracker', badge: 'Login', supabase: 'syaonnedmidaipwjjmio', supabaseKey: 'sb_publishable_a3tggKZJmotlFtIqKKdSYg_cNsazRkX' },
-  { name: 'Quick-Tools',        desc: 'Währung, Phrasen, GPS & Notfall pro Land',    url: '/QuickTools/', img: '/QuickTools/icon.svg',             icon: 'tools',    color: '#8b949e' },
-  { name: 'Camper-Namenssuche', desc: 'Namen für den Bus vorschlagen & abstimmen',   url: '/Spitznamensuche-Camper/', img: '/Spitznamensuche-Camper/apple-touch-icon.png', icon: 'camper',   color: '#2f6b4f' },
-  { name: 'Münzwurf',           desc: 'Entscheidungshilfe: A oder B?',               url: '/Muenzwurf/', img: '/Muenzwurf/apple-touch-icon.png',              icon: 'coin',     color: '#12909c' },
-  { name: 'QuickSTL',           desc: 'STL-Dateien ansehen & vermessen',             url: '/QuickSTL/', img: '/QuickSTL/icon.svg',                         icon: 'cube',     color: '#1f2024' },
-  { name: 'QuicKniff',           desc: 'Der schnelle digitale Kniffel-Block',        url: '/QuicKniff/', img: '/QuicKniff/icon.svg',                         icon: 'dice',     color: '#a63a32' },
-];
-
 // Gruppen ergeben sich aus dem Badge: badge: 'Login' → „Mit Login“, sonst „Ohne Login“
 let allowed = null; // App-IDs, für die das angemeldete Konto eine Rolle hat (null = noch unbekannt → keine Login-Kacheln)
-const visible = it => !it.app || (allowed || []).includes(it.app);
+const visible = it => !hidden.includes(it.url) && (!it.app || (allowed || []).includes(it.app));
+
+/* Ausgeblendetes aus den Kontoeinstellungen (konto.html): user_metadata.dash_hidden im Konto,
+   Einträge sind App-URL, 'quick:<aria-label>' oder 'tool:<Button-ID>'. Lokal gemerkt für offline. */
+const HIDDEN_KEY = 'dash-hidden';
+let hidden = [];
+try { hidden = JSON.parse(localStorage.getItem(HIDDEN_KEY)) || []; } catch (e) {}
+function setHidden(list) {
+  list = Array.isArray(list) ? list : [];
+  try { localStorage.setItem(HIDDEN_KEY, JSON.stringify(list)); } catch (e) {}
+  const changed = String(list) !== String(hidden);
+  hidden = list;
+  paintHidden();
+  if (changed && started) render();
+}
+function paintHidden() {
+  document.querySelectorAll('.quick').forEach(box => {
+    const items = [...box.children];
+    items.forEach(el => { el.hidden = hidden.includes(el.id ? 'tool:' + el.id : 'quick:' + el.getAttribute('aria-label')); });
+    box.closest('section').hidden = items.every(el => el.hidden);
+  });
+}
+paintHidden();
 const SECTIONS = [
   { title: 'Mit Login',  get items() { return PROJECTS.filter(it => it.badge === 'Login' && visible(it)); } },
   { title: 'Ohne Login', get items() { return PROJECTS.filter(it => it.badge !== 'Login' && visible(it)); } },
@@ -416,6 +411,7 @@ const ICONS = {
   coin:     '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="12" rx="8" ry="9"/><path d="M12 7.5v9M9.5 9.5c0-1 1.1-1.7 2.5-1.7s2.5.7 2.5 1.6c0 2.3-5 1.2-5 3.6 0 1 1.1 1.7 2.5 1.7s2.5-.7 2.5-1.7"/></svg>',
   shell:    '<svg viewBox="0 0 24 24" fill="none" stroke="#f6c21c" stroke-width="1.8" stroke-linecap="round"><path d="M4 12h16"/><path d="m4 12 15-6M4 12l15 6"/><path d="m4 12 12-9M4 12l12 9"/><path d="M4 12 10 2.5M4 12l6 9.5"/></svg>',
   cube:     '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.8 20 7.3v9.4l-8 4.5-8-4.5V7.3z"/><path d="M4 7.3l8 4.5 8-4.5M12 11.8v9.4"/></svg>',
+  dice:     '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="3"/><circle cx="8.5" cy="8.5" r=".9" fill="#fff"/><circle cx="12" cy="12" r=".9" fill="#fff"/><circle cx="15.5" cy="15.5" r=".9" fill="#fff"/></svg>',
 };
 
 /* ---------------- Rendering ---------------- */
@@ -719,6 +715,9 @@ const gate = (() => {
     document.body.classList.toggle('signed-in', !!session);
     profileMenu.refresh(session);
     if (!session) { remember(null); show('loginForm'); return; }
+    setHidden(session.user.user_metadata.dash_hidden);
+    // Gespeicherte Sitzung kann veraltet sein (auf anderem Gerät geändert): frisch vom Server holen
+    sb.auth.getUser().then(({ data }) => { if (data && data.user) setHidden(data.user.user_metadata.dash_hidden); }).catch(() => {});
     try {
       const { data, error } = await sb.rpc('overall_has_app_role', { p_app: 'dashboard', p_min_role: 'member' });
       if (error) throw error;

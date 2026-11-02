@@ -97,3 +97,82 @@ form.stack { display: flex; flex-direction: column; gap: 12px; }
 body:not(.ready) #page, body.ready #gate { display: none; }
 footer { margin-top: 28px; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; color: var(--mute); font-size: 12px; font-weight: 500; }
 @media (prefers-reduced-transparency: reduce) { header { background: var(--bg); -webkit-backdrop-filter: none; backdrop-filter: none; } }
+
+/* ---------- Einstellungsseiten: Bereichsliste + ein Bereich (shared/settings-nav.js) ---------- */
+:root { --toggle-off: #e3e3e8; --toggle-on: #34c759; }
+[data-theme="dark"] { --toggle-off: #39393d; --toggle-on: #30d158; }
+body.settings-page .wrap, body.settings-page .bar { max-width: 1040px; }
+.settings { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 32px; align-items: start; margin-top: 24px; }
+.side { position: sticky; top: calc(70px + env(safe-area-inset-top, 0px)); }
+.side h1 { margin: 0 0 2px; }
+.side .lead { margin: 0 0 18px; overflow-wrap: anywhere; }
+.snav-group + .snav-group { margin-top: 18px; }
+.snav-title { margin: 0 10px 6px; font-size: 12px; font-weight: 600; color: var(--mute); }
+.snav a { display: flex; align-items: center; gap: 10px; min-height: 40px; padding: 6px 10px; border-radius: 10px; color: var(--ink); text-decoration: none; font-size: 14px; font-weight: 500; }
+.snav a:hover { background: var(--hover); }
+.snav a[aria-current="page"] { background: var(--p1-soft); color: var(--ink); font-weight: 600; }
+[data-theme="dark"] .snav a[aria-current="page"] { background: var(--hover); }
+.ti { position: relative; flex: none; width: 28px; height: 28px; border-radius: 7px; display: grid; place-items: center; color: #fff; overflow: hidden; }
+.ti svg { width: 17px; height: 17px; }
+.ti b { font-size: 13px; font-weight: 700; color: #fff; }
+.ti img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.side-foot { margin-top: 22px; }
+
+.pane { display: none; min-width: 0; scroll-margin-top: 80px; }
+.pane.on { display: block; }
+.pane-head { display: flex; align-items: center; gap: 12px; margin: 2px 4px 14px; }
+.pane-head .ti { width: 40px; height: 40px; border-radius: 10px; }
+.pane-head .ti svg { width: 22px; height: 22px; }
+.pane-head h2 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -.02em; color: var(--ink); line-height: 1.2; }
+.pane-head p { margin: 2px 0 0; color: var(--mute); font-size: 13px; }
+.pane .card h3 + .note { margin-top: 0; }
+.card-label { margin: 22px 16px 6px; font-size: 12px; font-weight: 600; color: var(--mute); }
+
+/* Schalter wie unter iOS: Text links, Schalter rechts */
+.switch { flex-direction: row-reverse; justify-content: space-between; align-items: center; }
+.switch > span { flex: 1 1 auto; min-width: 0; }
+.switch input, .switchrow input[type=checkbox] { -webkit-appearance: none; appearance: none; position: relative; flex: none; width: 46px; height: 28px; margin: 0; border-radius: 999px; background: var(--toggle-off); cursor: pointer; transition: background .2s ease-out; }
+.switch input::before, .switchrow input[type=checkbox]::before { content: ''; position: absolute; top: 2px; left: 2px; width: 24px; height: 24px; border-radius: 50%; background: #fff; box-shadow: 0 2px 4px rgba(0, 0, 0, .18), 0 0 1px rgba(0, 0, 0, .2); transition: transform .2s cubic-bezier(.2, .9, .3, 1.1); }
+.switch input:checked, .switchrow input[type=checkbox]:checked { background: var(--toggle-on); }
+.switch input:checked::before, .switchrow input[type=checkbox]:checked::before { transform: translateX(18px); }
+.switch input:disabled { opacity: .5; cursor: wait; }
+.switch .ti { width: 26px; height: 26px; }
+.switch > span:has(> .ti, > .qi) { display: flex; align-items: center; gap: 12px; }
+@media (prefers-reduced-motion: reduce) { .switch input, .switch input::before, .switchrow input::before { transition: none; } }
+
+/* Viele Schalter (Dashboard-Anzeige): zweispaltig, sobald Platz ist */
+.toggles { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); column-gap: 28px; }
+.toggles .switch, .toggles .switch + .switch { border-top: 0; border-bottom: 1px solid var(--sep); }
+.toggles .switch b small { display: inline; }
+
+@media (max-width: 860px) {
+  .settings { display: block; margin-top: 16px; }
+  .side { display: contents; }
+  .side .lead { margin-bottom: 10px; }
+  /* Bereiche als waagerechte Leiste, klebt unter dem Kopf */
+  .snav { position: sticky; top: calc(57px + env(safe-area-inset-top, 0px)); z-index: 5; display: flex; gap: 6px; margin: 0 -16px 16px; padding: 8px 16px; overflow-x: auto; scrollbar-width: none; background: color-mix(in srgb, var(--bg) 88%, transparent); -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); }
+  .snav::-webkit-scrollbar { display: none; }
+  .snav-group { display: contents; }
+  .snav-title { display: none; }
+  .snav a[aria-current="page"] { box-shadow: inset 0 0 0 1.5px var(--p1); }
+  .snav a { flex: none; min-height: 36px; padding: 4px 12px 4px 5px; border-radius: 999px; background: var(--card); box-shadow: var(--shadow); font-size: 13px; gap: 7px; }
+  .snav a .ti { width: 26px; height: 26px; border-radius: 50%; }
+  .snav a .ti svg { width: 15px; height: 15px; }
+  .side-foot { display: none; }
+  .pane-head h2 { font-size: 20px; }
+  .card, .pane { scroll-margin-top: calc(125px + env(safe-area-inset-top, 0px)); }
+}
+.settings > footer { display: none; }
+@media (max-width: 860px) { .settings > footer { display: flex; } }
+.toggles .qi { flex: none; width: 26px; height: 26px; border-radius: 7px; background: var(--well); display: grid; place-items: center; color: var(--ink); }
+.toggles .qi svg { width: 16px; height: 16px; }
+.toggles .qi .ic { fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+.btn.small { min-height: 34px; padding: 6px 12px; font-size: 13px; }
+ul.applist li { align-items: center; justify-content: flex-start; }
+ul.applist li > span:not(.ti) { flex: 1; min-width: 0; }
+ul.applist li b { display: block; font-weight: 500; color: var(--ink); }
+ul.applist li small, ul.applist li small b { color: var(--mute); font-size: 12px; font-weight: 400; }
+ul.applist li { gap: 12px; }
+ul.applist li span { white-space: normal; color: inherit; font-size: inherit; }
+ul.applist li .ti b { color: #fff; font-size: 13px; }
+a.btn { display: inline-flex; align-items: center; text-decoration: none; }
