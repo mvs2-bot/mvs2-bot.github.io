@@ -18,6 +18,7 @@
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="shared/overall-account.js"></script>
+<script src="shared/projects.js"></script>
 <link rel="stylesheet" href="shared/hub.css">
 <script src="shared/ios-nav.js" defer></script>
 </head>
@@ -203,8 +204,40 @@ async function travelbaseCard(card) {
     <p class="note" style="margin:12px 0 0">Wer welche Reise sieht, legen Admins fest. Eigene TravelBase-Einstellungen gibt es noch nicht.</p>`;
 }
 
+/* Dashboard-Anzeige: was ausgeschaltet ist, steht in user_metadata.dash_hidden (gilt fürs Konto, auf allen Geräten).
+   Apps aus shared/projects.js, Schnellzugriff und Mini-Tools direkt aus dem Dashboard-HTML. */
+let myApps = []; // App-IDs mit Rolle (aus renderApps)
+async function dashboardVisibility(box) {
+  const doc = new DOMParser().parseFromString(await fetch('./').then(r => r.text()), 'text/html');
+  const items = sel => [...doc.querySelectorAll(sel)].map(el => ({
+    key: el.id ? 'tool:' + el.id : 'quick:' + el.getAttribute('aria-label'),
+    name: el.querySelector('.ql') ? el.querySelector('.ql').textContent : el.getAttribute('aria-label'),
+  }));
+  const apps = PROJECTS.filter(it => !it.app || myApps.includes(it.app)).map(it => ({ key: it.url, name: it.name, desc: it.badge ? 'Mit Login' : 'Ohne Login' }));
+  let hidden = (await sb.auth.getUser()).data.user.user_metadata.dash_hidden || [];
+  const list = (title, note, rows) => `<h4>${title}</h4><p class="note">${note}</p>` + rows.map(r => `
+    <label class="switch"><input type="checkbox" data-hide="${esc(r.key)}"${hidden.includes(r.key) ? '' : ' checked'}>
+      <span><b>${esc(r.name)}</b>${r.desc ? `<small>${esc(r.desc)}</small>` : ''}</span></label>`).join('');
+  box.innerHTML = list('🧩 Apps', 'Ausgeschaltete Apps erscheinen nicht im Dashboard und nicht in der Suche.', apps)
+    + list('⚡ Schnellzugriff', 'Welche Links im Schnellzugriff stehen.', items('[aria-labelledby="quickH"] .quick > a'))
+    + list('🛠️ Mini-Tools', 'Welche Mini-Tools angezeigt werden.', items('[aria-labelledby="toolsH"] .quick > button'))
+    + '<div class="msg" hidden></div>';
+  const out = box.querySelector('.msg');
+  box.addEventListener('change', async e => {
+    const cb = e.target.closest('[data-hide]'); if (!cb) return;
+    const before = hidden;
+    hidden = cb.checked ? hidden.filter(k => k !== cb.dataset.hide) : hidden.concat(cb.dataset.hide);
+    msg(out, '');
+    try { check(await sb.auth.updateUser({ data: { dash_hidden: hidden } })); msg(out, '✅ Gespeichert.', true); }
+    catch (err) { hidden = before; cb.checked = !cb.checked; msg(out, errText(err)); }
+  });
+}
+
 async function dashboardCard(card) {
   const box = card.querySelector('.app-body');
+  box.insertAdjacentHTML('afterend', '<div class="dash-vis"><p class="note">⏳ Lädt …</p></div>');
+  const vis = card.querySelector('.dash-vis');
+  dashboardVisibility(vis).catch(e => { vis.innerHTML = `<p class="note">${esc(errText(e))}</p>`; });
   const favs = () => { try { return JSON.parse(localStorage.getItem('dash-favs')) || []; } catch (e) { return []; } };
   const paint = () => {
     const n = favs().length;
@@ -341,6 +374,7 @@ async function renderApps(user) {
     const apps = check(await sb.from('overall_apps').select('id, name, url, is_active').order('created_at')).filter(a => a.is_active);
     const roles = await Promise.all(apps.map(a => sb.rpc('overall_app_role', { p_app: a.id }).then(check).catch(() => null)));
     const mine = apps.map((a, i) => ({ app: a, role: roles[i] })).filter(x => x.role);
+    myApps = mine.map(x => x.app.id);
     // Reihenfolge: App, von der man kommt, zuerst
     const fromId = new URLSearchParams(location.search).get('from');
     mine.sort((a, b) => (b.app.id === fromId) - (a.app.id === fromId));
