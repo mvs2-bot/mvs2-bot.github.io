@@ -153,7 +153,7 @@ const RIGHTS = {
   global: {
     guest: 'Nur mit dem Zugang pro App. Ohne App-Zugang ist jede Login-App gesperrt.',
     member: 'Gleich wie Gast. Die globale Rolle Mitglied gibt allein keinen Zugang, es zählt der Zugang pro App.',
-    admin: 'Darf in jeder App alles, was ein App-Admin darf. Verwaltet zusätzlich Konten, globale Rollen, App-Zugänge und Apps hier auf der Admin-Seite. Ausnahmen: fremde DailyMind-Einträge sieht niemand, CaminoTracker bearbeiten kann nur Stefan.',
+    admin: 'Darf in jeder App alles, was ein App-Admin darf. Verwaltet zusätzlich Konten, globale Rollen, App-Zugänge und Apps hier auf der Admin-Seite. Ausnahmen: fremde DailyMind- und Migräne-Tracker-Einträge sieht niemand, CaminoTracker bearbeiten kann nur Stefan.',
   },
   dashboard: {
     guest: 'Kein Zugang.',
@@ -179,6 +179,11 @@ const RIGHTS = {
     guest: 'Kein Zugang.',
     member: 'Eigene Einträge schreiben und Erinnerungen einstellen. Niemand sonst sieht die Einträge.',
     admin: 'Wie Mitglied. Auch Admins sehen keine fremden Einträge.',
+  },
+  migralog: {
+    guest: 'Kein Zugang.',
+    member: 'Eigene Migräne-Einträge erfassen, auswerten und exportieren. Niemand sonst sieht die Einträge.',
+    admin: 'Wie Mitglied, dazu der Link zu den Admin-Einstellungen in der App. Auch Admins sehen keine fremden Einträge.',
   },
   pegeltracker: {
     guest: 'Kein Zugang.',
@@ -220,6 +225,7 @@ const FROM = {
   matchboard: { label: 'MatchBoard', url: '/MatchBoard/' },
   pegeltracker: { label: 'PegelTracker', url: '/PegelTracker/' },
   dailymind:  { label: 'DailyMind',  url: '/DailyMind/' },
+  migralog:   { label: 'Migräne Tracker', url: '/MigraLog/' },
 };
 const fromId = new URLSearchParams(location.search).get('from');
 const from = FROM[fromId] || FROM.dashboard;
