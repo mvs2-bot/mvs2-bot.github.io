@@ -118,6 +118,7 @@ const FROM = {
   matchboard: { label: 'MatchBoard', url: '/MatchBoard/' },
   pegeltracker: { label: 'PegelTracker', url: '/PegelTracker/' },
   dailymind:  { label: 'DailyMind',  url: '/DailyMind/' },
+  migralog:   { label: 'Migräne Tracker', url: '/MigraLog/' },
 };
 const from = FROM[new URLSearchParams(location.search).get('from')] || FROM.dashboard;
 $('backLink').textContent = '← ' + from.label;
@@ -145,6 +146,7 @@ const APP_CARDS = {
   questlog:   { render: questlogCard, label: 'Spielername und Privatsphäre' },
   travelbase: { render: travelbaseCard, label: 'Deine Reisen' },
   dailymind:  { render: dailymindCard, label: 'Streak und Erinnerungen' },
+  migralog:   { render: migralogCard, label: 'Cloud-Sync und Datenschutz' },
 };
 const appIcon = (id, name) => {
   const p = PROJECTS.find(x => x.app === id);
@@ -264,6 +266,26 @@ async function dashboardCard(card) {
     });
   };
   paint();
+}
+
+/* Migräne Tracker: Cloud-Sync-Status. Einträge liegen in migralog_entries (strikt privat);
+   Einträge, die offline erfasst wurden, wartet die App unter localStorage 'migralog-queue-<user>' ab. */
+async function migralogCard(card, user) {
+  const box = card.querySelector('.app-body');
+  const t0 = performance.now();
+  const { data, error, count } = await sb.from('migralog_entries').select('entry_date', { count: 'exact' }).order('entry_date', { ascending: false }).limit(1);
+  const ms = Math.round(performance.now() - t0);
+  let waiting = 0;
+  try { waiting = Object.keys(JSON.parse(localStorage.getItem('migralog-queue-' + user.id)) || {}).length; } catch (e) {}
+  const last = data && data[0] ? new Date(data[0].entry_date + 'T00:00').toLocaleDateString('de-DE') : '–';
+  box.innerHTML = `
+    <div class="row">
+      <div><b>${error ? '🔴 Datenbank nicht erreichbar' : '🟢 Cloud-Sync verbunden'}</b><small>${error ? esc(errText(error)) : `Antwort in ${ms} ms · ${count ?? 0} Einträge · letzter am ${last}`}</small></div>
+    </div>
+    <div class="row">
+      <div><b>Auf diesem Gerät</b><small>${waiting ? `⏳ ${waiting} offline erfasste ${waiting === 1 ? 'Eintrag wartet' : 'Einträge warten'} auf die Übertragung. Öffne den Migräne Tracker mit Internet, dann wird automatisch nachgeschickt.` : 'Alles übertragen, nichts wartet.'}</small></div>
+    </div>
+    <p class="note" style="margin:12px 0 0">Deine Einträge sind privat. Niemand sonst sieht sie, auch Admins nicht. Name, Profilbild und Hell/Dunkel übernimmt der Migräne Tracker aus diesem Konto.</p>`;
 }
 
 /* DailyMind: tägliche Push-Erinnerungen. Das Gerät-Abo verwaltet /DailyMind/push.js (Repo DailyMind). */
