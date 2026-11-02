@@ -21,8 +21,8 @@
 <style>
   .wrap, .bar { max-width: 960px; }
   .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
-  .grid label, .acc label, .add label { display: flex; flex-direction: column; gap: 4px; font-size: .78rem; font-weight: 700; color: var(--muted); min-width: 0; }
-  input[type=email], input[type=password], input[type=date], input[type=search] { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; font: inherit; font-size: 16px; color: var(--text); width: 100%; min-width: 0; }
+  .grid label, .acc label, .add label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; font-weight: 500; color: var(--muted); min-width: 0; }
+  input[type=email], input[type=password], input[type=date], input[type=search] { background: var(--well); border: 0; border-radius: 10px; padding: 10px 12px; font: inherit; font-size: 16px; color: var(--text); width: 100%; min-width: 0; }
   select { min-width: 0; }
   .acc { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; margin-top: 12px; }
   .acc label.off select { color: var(--muted); }
@@ -32,9 +32,10 @@
   .btn.danger:hover { border-color: #dc2626; }
 
   .list { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
-  .item { border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; background: var(--bg); }
-  .item.is-admin { border-left: 4px solid var(--accent); }
-  .item-head { display: flex; gap: 12px; align-items: center; }
+  .item { border-radius: 14px; padding: 12px 14px; background: var(--well); }
+  .item .ini { background: var(--card); border: 0; }
+  .item-head { display: flex; gap: 8px 12px; align-items: center; flex-wrap: wrap; }
+  .item-head .who { flex: 1 1 160px; }
   .ini { width: 38px; height: 38px; flex: 0 0 auto; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: .85rem; background: var(--card); border: 1px solid var(--border); }
   .who { flex: 1 1 auto; min-width: 0; }
   .who b { display: block; font-size: .95rem; }
@@ -45,18 +46,19 @@
   details.item > summary { list-style: none; cursor: pointer; }
   details.item > summary::-webkit-details-marker { display: none; }
   details.item[open] > summary { margin-bottom: 10px; }
-  .edit { padding-top: 12px; margin-top: 12px; border-top: 1px dashed var(--border); }
+  .edit { padding-top: 12px; margin-top: 12px; border-top: 1px solid var(--sep); }
   .facts { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 6px 14px; font-size: .8rem; margin-bottom: 12px; }
   .facts span { display: block; color: var(--muted); }
 
-  .trip { border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; margin-top: 10px; }
+  .trip { border-radius: 14px; padding: 12px 14px; margin-top: 10px; background: var(--well); }
+  .trip select, .item select, .item input[type=text], .item input[type=email], .item input[type=date] { background: var(--card); }
   .trip h4 { margin: 0 0 6px; font-size: .95rem; }
   .trip h4 small { color: var(--muted); font-weight: 500; margin-left: 6px; }
   .member { display: flex; align-items: center; gap: 10px; padding: 6px 0; flex-wrap: wrap; }
   .member + .member { border-top: 1px solid var(--border); }
   .member .who b { font-size: .88rem; }
   .member select { width: auto; padding: 6px 10px; font-size: .9rem; }
-  .add { display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border); }
+  .add { display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--sep); }
   .add label { flex: 0 1 150px; }
   .add select { width: 100%; padding: 8px 10px; font-size: .9rem; }
   .switchrow { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; }
@@ -72,12 +74,23 @@
   .rights-tbl { width: 100%; border-collapse: collapse; font-size: .82rem; margin: 0 0 10px; }
   .rights-tbl th { text-align: left; vertical-align: top; white-space: nowrap; padding: 6px 12px 6px 0; width: 1%; }
   .rights-tbl td { padding: 6px 0; color: var(--muted); }
-  .rights-tbl tr + tr > * { border-top: 1px dashed var(--border); }
+  .rights-tbl tr + tr > * { border-top: 1px solid var(--sep); }
+  details.card > summary { list-style: none; cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  details.card > summary::-webkit-details-marker { display: none; }
+  details.card > summary h3 { margin: 0; }
+  details.card > summary::after { content: ''; width: 8px; height: 8px; border-right: 2px solid var(--mute); border-bottom: 2px solid var(--mute); transform: rotate(45deg); transition: transform .15s; margin-right: 4px; }
+  details.card[open] > summary { margin-bottom: 10px; }
+  details.card[open] > summary::after { transform: rotate(225deg); }
+  .rights-card .rights-tbl { margin: 0; }
+  .sub { margin: 16px 0 0; font-size: 13px; font-weight: 600; color: var(--ink); }
+  #g-users .list { margin-top: 14px; }
   .app-rights { margin-bottom: 12px; }
 </style>
+<script src="shared/projects.js"></script>
+<script src="shared/settings-nav.js"></script>
 <script src="shared/ios-nav.js" defer></script>
 </head>
-<body>
+<body class="settings-page">
 
 <header>
   <div class="bar">
@@ -106,26 +119,34 @@
     </div>
   </section>
 
-  <div id="page">
-    <h1>Admin-Einstellungen</h1>
-    <p class="lead" id="who"></p>
-    <nav class="jump" id="jump" aria-label="Bereiche"></nav>
+  <div id="page" class="settings">
+    <aside class="side">
+      <h1>Admin-Einstellungen</h1>
+      <p class="lead" id="who"></p>
+      <nav class="snav" id="jump" aria-label="Bereiche"></nav>
+    </aside>
 
-    <section class="group" id="global">
-      <div class="group-head">
-        <h2>🌐 Globale Admin-Einstellungen</h2>
-        <span class="tag"><i></i>gilt für alle Apps · nur globale Admins</span>
+    <div class="panes">
+      <div id="globalBody" style="display:contents">
+        <section class="pane" id="konten">
+          <div class="pane-head" data-head="users|#007aff"><div><h2>Konten</h2><p>Globale Rollen und Zugang pro App. Nur globale Admins.</p></div></div>
+          <div id="kontenBody"><div class="card"><p class="note" style="margin:0">Lädt …</p></div></div>
+        </section>
+        <section class="pane" id="apps">
+          <div class="pane-head" data-head="apps|#34c759"><div><h2>Apps</h2><p>Apps ein- und ausschalten. Gilt für alle Konten.</p></div></div>
+          <div id="appsBody"></div>
+        </section>
+        <section class="pane" id="rechte">
+          <div class="pane-head" data-head="shield|#ff9500"><div><h2>Wer darf was?</h2><p>Was die Rollen in jeder App erlauben.</p></div></div>
+          <div id="rechteBody"></div>
+        </section>
+        <section class="pane" id="streaks">
+          <div class="pane-head" data-head="flame|#ff3b30"><div><h2>Streaks</h2><p>Aktuelle Serie und Rekord je Konto.</p></div></div>
+          <div id="streaksBody"></div>
+        </section>
       </div>
-      <div id="globalBody"></div>
-    </section>
-
-    <section class="group" id="apps">
-      <div class="group-head">
-        <h2>🧩 Individuelle Admin-Einstellungen</h2>
-        <p>Einstellungen, die nur innerhalb einer App gelten.</p>
-      </div>
-      <div id="appCards"></div>
-    </section>
+      <div id="appCards" style="display:contents"></div>
+    </div>
   </div>
 </main>
 
@@ -241,15 +262,22 @@ window.addEventListener('storage', e => { if (e.key === 'overall-theme' && e.new
 const G = { state: null, openEdit: new Set(), openUsers: new Set() };   // state = { me, roles, apps, users }
 
 function renderGlobal() {
-  $('globalBody').innerHTML = `
+  $('appsBody').innerHTML = `
     <div class="card" id="g-apps">
-      <h3>🧩 Apps</h3>
       <p class="note">Deaktivierte Apps sind nur noch für globale Admins erreichbar.</p>
       <div id="appsList"></div>
       <div class="msg" hidden></div>
-    </div>
-    <div class="card" id="g-create">
-      <h3>➕ Neues Konto</h3>
+    </div>`;
+  $('rechteBody').innerHTML = `
+    <div class="card" id="g-rights">
+      <p class="note">Kein Zugang = App gesperrt und keine Kachel im Dashboard. Globale Admins dürfen überall so viel wie ein App-Admin und verwalten zusätzlich die Konten.</p>
+      ${[{ id: 'global', name: 'Globale Rolle' }].concat(G.state.apps.filter(a => a.id === 'dashboard'), G.state.apps.filter(a => a.id !== 'dashboard'))
+        .map(a => `<details class="rights"><summary>${esc(a.name)}</summary>${rightsTable(a.id)}</details>`).join('')}
+    </div>`;
+  const createOpen = $('g-create') && $('g-create').open;
+  $('kontenBody').innerHTML = `
+    <details class="card" id="g-create"${createOpen ? ' open' : ''}>
+      <summary><h3>Neues Konto anlegen</h3></summary>
       <p class="note">Gibt es die E-Mail schon (z. B. aus einer anderen App), bekommt das bestehende Konto nur die gewählten Zugänge. Das Passwort teilst du der Person selbst mit.</p>
       <form id="createForm">
         <div class="grid">
@@ -258,21 +286,15 @@ function renderGlobal() {
           <label>Passwort (mind. 8 Zeichen)<input type="text" name="password" minlength="8" autocomplete="off"></label>
           <label>Globale Rolle<select name="role"></select></label>
         </div>
+        <p class="sub">Zugang pro App</p>
         <div class="acc" id="createAccess"></div>
         <div class="actions"><button class="btn" type="submit">Konto anlegen</button></div>
       </form>
       <div class="msg" id="createMsg" hidden></div>
-    </div>
-    <div class="card" id="g-rights">
-      <h3>📋 Wer darf was?</h3>
-      <p class="note">Was die Rollen je App erlauben. Kein Zugang = App gesperrt und keine Kachel im Dashboard. Globale Admins dürfen überall so viel wie ein App-Admin und verwalten zusätzlich die Konten.</p>
-      ${[{ id: 'global', name: 'Globale Rolle' }].concat(G.state.apps.filter(a => a.id === 'dashboard'), G.state.apps.filter(a => a.id !== 'dashboard'))
-        .map(a => `<details class="rights"><summary>${esc(a.name)}</summary>${rightsTable(a.id)}</details>`).join('')}
-    </div>
+    </details>
     <div class="card" id="g-users">
-      <h3>👥 Konten, Rollen &amp; App-Zugänge</h3>
-      <p class="note">Globale Admins dürfen in jeder App alles. Für alle anderen gilt der Zugang pro App; ohne Zugang ist die App gesperrt. Was jemand innerhalb einer App sieht (z. B. welche Reisen), steht unten bei der App.</p>
-      <input type="search" id="search" placeholder="Suchen (Name oder E-Mail)">
+      <input type="search" id="search" placeholder="Name oder E-Mail suchen" aria-label="Konten durchsuchen">
+      <p class="note" style="margin:8px 0 0">Globale Admins dürfen in jeder App alles. Für alle anderen gilt der Zugang pro App. Was jemand innerhalb einer App sieht (z. B. welche Reisen), steht im Bereich der App.</p>
       <div class="msg" id="listMsg" hidden></div>
       <div class="list" id="users"></div>
     </div>`;
@@ -335,13 +357,13 @@ async function loadGlobal() { G.state = await fn('overall-admin', 'list'); rende
 async function streakCard() {
   const card = document.createElement('div');
   card.className = 'card'; card.id = 'g-streaks';
-  card.innerHTML = '<h3>🔥 Streaks</h3><p class="note" style="margin:0">⏳ Lädt …</p>';
-  $('globalBody').appendChild(card);
+  card.innerHTML = '<p class="note" style="margin:0">Lädt …</p>';
+  $('streaksBody').replaceChildren(card);
   try {
     const rows = check(await sb.rpc('streak_admin_overview'));
     const today = r => r.today_done ? '<span class="pill strong">heute ✓</span>' : r.at_risk ? '<span class="pill">heute offen</span>' : '';
-    card.innerHTML = `<h3>🔥 Streaks</h3>
-      <p class="note">Aktuelle Serie und Rekord je Konto. Zählt vorerst nur DailyMind (gespeicherter Morgen- oder Abendeintrag); jede Person kann es in den Kontoeinstellungen ausschalten.</p>
+    card.innerHTML = `
+      <p class="note">Zählt vorerst nur DailyMind (gespeicherter Morgen- oder Abendeintrag); jede Person kann es in den Kontoeinstellungen ausschalten.</p>
       <div class="list">${rows.map(r => `
         <div class="item"><div class="item-head">
           <span class="ini">${esc(initials(r.display_name || r.email))}</span>
@@ -601,18 +623,23 @@ async function caminoAdmin(box) {
     <p class="note" style="margin:0">Bearbeiten kann nur Stefans Konto. Wer für CaminoTracker mindestens Mitglied ist, darf alles ansehen.</p>`;
 }
 
+const appIcon = app => {
+  const p = PROJECTS.find(x => x.app === app.id);
+  return Object.assign({ label: app.name }, app.id === 'dashboard' ? { img: 'icon.svg', color: '#1c1c1e' } : p ? { img: p.img, color: p.color } : { icon: 'apps', color: '#64748b' });
+};
 let CTX = null;   // { user, globalAdmin, apps: [{ app, role }] }
 async function renderApps() {
   const host = $('appCards');
   const mine = CTX.apps.filter(x => x.role === 'admin' && APP_ADMIN[x.app.id]);
   mine.sort((a, b) => (b.app.id === fromId) - (a.app.id === fromId));
-  if (!mine.length) { host.innerHTML = '<div class="card"><p class="note" style="margin:0">Du bist in keiner App Admin.</p></div>'; return; }
+  if (!mine.length) return;
   host.innerHTML = mine.map(({ app }) => {
     const m = APP_ADMIN[app.id];
-    return `<div class="card app" id="app-${esc(app.id)}" style="--app:${m.color}">
-      <h3>${m.icon} ${esc(app.name)} · ${esc(m.title)}<span class="tag"><i></i>nur ${esc(app.name)}</span></h3>
-      <details class="rights app-rights"><summary>📋 Wer darf was?</summary>${rightsTable(app.id)}</details>
-      <div class="app-body"><p class="note" style="margin:0">⏳ Lädt …</p></div></div>`;
+    return `<section class="pane" id="app-${esc(app.id)}">
+      <div class="pane-head">${SettingsNav.tile(appIcon(app))}<div><h2>${esc(app.name)}</h2><p>${esc(m.title)}</p></div></div>
+      <div class="card app-body"><p class="note" style="margin:0">Lädt …</p></div>
+      <details class="card rights-card"><summary><h3>Wer darf was in ${esc(app.name)}?</h3></summary>${rightsTable(app.id)}</details>
+    </section>`;
   }).join('');
   await Promise.all(mine.map(async ({ app }) => {
     const body = $('app-' + app.id).querySelector('.app-body');
@@ -648,14 +675,22 @@ async function start() {
   show('page');
   $('who').textContent = 'Angemeldet als ' + session.user.email + (CTX.globalAdmin ? ' · globaler Admin' : '');
   const adminApps = CTX.apps.filter(x => x.role === 'admin' && APP_ADMIN[x.app.id]);
-  $('jump').innerHTML = (CTX.globalAdmin ? '<a href="#global">🌐 Global</a><a href="#g-streaks">🔥 Streaks</a>' : '') + adminApps.map(x => `<a href="#app-${esc(x.app.id)}">${APP_ADMIN[x.app.id].icon} ${esc(x.app.name)}</a>`).join('');
-  $('global').hidden = !CTX.globalAdmin;
+  SettingsNav.build($('jump'), [
+    { title: 'Verwaltung', items: CTX.globalAdmin ? [
+      { id: 'konten', label: 'Konten', icon: 'users', color: '#007aff' },
+      { id: 'apps', label: 'Apps', icon: 'apps', color: '#34c759' },
+      { id: 'rechte', label: 'Wer darf was?', icon: 'shield', color: '#ff9500' },
+      { id: 'streaks', label: 'Streaks', icon: 'flame', color: '#ff3b30' },
+    ] : [] },
+    { title: 'Apps', items: adminApps.map(x => Object.assign(appIcon(x.app), { id: 'app-' + x.app.id })) },
+  ]);
   const jobs = [renderApps()];
-  if (CTX.globalAdmin) jobs.push(loadGlobal().catch(e => { $('globalBody').innerHTML = `<div class="card"><p class="note" style="margin:0">${esc(errText(e))}</p></div>`; }));
+  if (CTX.globalAdmin) jobs.push(loadGlobal().catch(e => { $('kontenBody').innerHTML = `<div class="card"><p class="note" style="margin:0">${esc(errText(e))}</p></div>`; }));
   await Promise.all(jobs);
-  if (location.hash) { const t = document.querySelector(location.hash.replace(/[^#\w-]/g, '')); if (t) t.scrollIntoView(); }
+  SettingsNav.refresh(); // Hash kann auf einen App-Bereich zeigen, den es erst jetzt gibt
 }
 
+document.querySelectorAll('[data-head]').forEach(h => { const [icon, color] = h.dataset.head.split('|'); h.insertAdjacentHTML('afterbegin', SettingsNav.tile({ icon, color })); });
 wireGlobal();
 $('loginForm').addEventListener('submit', async e => {
   e.preventDefault();
