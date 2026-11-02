@@ -329,7 +329,8 @@ async function dailymindCard(card, user) {
     ${reminder('morning', '☀️', 'Morgen-Erinnerung', 'Dankbarkeit, Tagesfokus und Affirmation')}
     ${reminder('evening', '🌙', 'Abend-Erinnerung', 'Kleine Erfolge, gute Taten und Stimmung')}
     <div class="row" id="dmDevice"></div>
-    <div class="msg" hidden></div>`;
+    <div class="msg" hidden></div>
+    <p class="note" style="margin:12px 0 0">Deine Einträge sind privat. Niemand sonst sieht sie, auch Admins nicht. Name, Profilbild und Hell/Dunkel übernimmt DailyMind aus diesem Konto.</p>`;
   const out = box.querySelector('.msg');
   const dev = box.querySelector('#dmDevice');
   const streakBox = box.querySelector('#dmStreak');
@@ -410,7 +411,8 @@ async function renderApps(user) {
     myApps = mine.map(x => x.app.id);
     // Reihenfolge: App, von der man kommt, zuerst
     const fromId = new URLSearchParams(location.search).get('from');
-    mine.sort((a, b) => (b.app.id === fromId) - (a.app.id === fromId));
+    // Dashboard immer zuerst, dann die App, von der man kommt
+    mine.sort((a, b) => (b.app.id === 'dashboard') - (a.app.id === 'dashboard') || (b.app.id === fromId) - (a.app.id === fromId));
     const withSettings = mine.filter(x => APP_CARDS[x.app.id]), rest = mine.filter(x => !APP_CARDS[x.app.id]);
     host.innerHTML = withSettings.map(x => appPane(x.app, x.role)).join('') + `
       <section class="pane" id="weitere">
@@ -453,7 +455,7 @@ async function start() {
       { id: 'anmeldung', label: 'Anmeldung', icon: 'key', color: '#8e8e93' },
       { id: 'darstellung', label: 'Darstellung', icon: 'display', color: '#5856d6' },
     ] },
-    { title: 'Apps', items: apps.withSettings.map(x => Object.assign(appIcon(x.app.id, x.app.name), { id: 'app-' + x.app.id }))
+    { title: 'Apps', items: apps.withSettings.map(x => Object.assign(appIcon(x.app.id, x.app.name), { id: 'app-' + x.app.id, feature: x.app.id === 'dashboard' ? 'Startseite' : '' }))
       .concat(apps.rest.length ? [{ id: 'weitere', label: 'Weitere Apps', icon: 'apps', color: '#8e8e93' }] : []) },
   ]);
   nav({ withSettings: [], rest: [] });

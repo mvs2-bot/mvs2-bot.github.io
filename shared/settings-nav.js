@@ -4,7 +4,8 @@
    wählt den Bereich; zeigt er auf ein Element in einem Bereich, wird dieser geöffnet und dorthin gescrollt.
 
    SettingsNav.build(navEl, [{ title, items: [{ id, label, icon, color, img }] }])
-     icon: Schlüssel aus SettingsNav.ICONS, img: Bild-URL (App-Icon); color: Kachelfarbe */
+     icon: Schlüssel aus SettingsNav.ICONS, img: Bild-URL (App-Icon); color: Kachelfarbe;
+     feature: kurzer Zusatz (z. B. 'Startseite') → Eintrag hervorgehoben */
 window.SettingsNav = (() => {
   const svg = d => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
   const ICONS = {
@@ -28,7 +29,7 @@ window.SettingsNav = (() => {
     nav = navEl;
     nav.innerHTML = groups.filter(g => g.items.length).map(g => `
       <div class="snav-group">${g.title ? `<p class="snav-title">${esc(g.title)}</p>` : ''}
-        ${g.items.map(it => `<a href="#${esc(it.id)}" data-pane="${esc(it.id)}">${tile(it)}<span>${esc(it.label)}</span></a>`).join('')}
+        ${g.items.map(it => `<a href="#${esc(it.id)}" data-pane="${esc(it.id)}"${it.feature ? ' class="feature"' : ''}>${tile(it)}<span>${esc(it.label)}</span>${it.feature ? `<small>${esc(it.feature)}</small>` : ''}</a>`).join('')}
       </div>`).join('');
     fromHash(true);
   }

@@ -54,15 +54,46 @@
   .trip select, .item select, .item input[type=text], .item input[type=email], .item input[type=date] { background: var(--card); }
   .trip h4 { margin: 0 0 6px; font-size: .95rem; }
   .trip h4 small { color: var(--muted); font-weight: 500; margin-left: 6px; }
-  .member { display: flex; align-items: center; gap: 10px; padding: 6px 0; flex-wrap: wrap; }
-  .member + .member { border-top: 1px solid var(--border); }
+  .trip-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+  .trip-head h4 { margin: 0; }
+  .trip-head .btn { background: var(--card); color: var(--p1); }
+  .trip-head small { color: var(--mute); font-size: 12px; }
+  ul.people { list-style: none; margin: 10px 0 0; padding: 0; }
+  .member { display: flex; align-items: center; gap: 10px; padding: 8px 0; }
+  .member .ini { width: 32px; height: 32px; font-size: 12px; background: var(--card); border: 0; }
+  .role-key { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 8px 16px; margin: 0 0 4px; }
+  .role-key div { display: flex; align-items: center; gap: 8px; }
+  .role-key small { color: var(--mute); font-size: 12px; }
+  .role-pill { font-size: 12px; font-weight: 600; border-radius: 999px; padding: 3px 10px; background: var(--card); color: var(--ink); white-space: nowrap; }
+  span.role-pill { flex: none; min-width: 64px; text-align: center; }
+  .role-pill.role-admin { background: var(--p1); color: var(--on-p1); }
+  .role-pill.role-member { background: var(--p1-soft); color: var(--p1); }
+  .role-pill.role-guest { background: var(--well); color: var(--text); box-shadow: inset 0 0 0 1px var(--sep); }
+  .trip select.role-pill { width: auto; flex: none; padding: 6px 28px 6px 12px; font-size: 13px; -webkit-appearance: none; appearance: none; cursor: pointer;
+    background-image: linear-gradient(45deg, transparent 50%, currentColor 50%), linear-gradient(135deg, currentColor 50%, transparent 50%);
+    background-position: right 13px center, right 9px center; background-size: 4px 4px; background-repeat: no-repeat; }
+  .dlg { border: 0; border-radius: var(--radius); padding: 20px; width: min(440px, calc(100vw - 32px)); background: var(--card); color: var(--text); box-shadow: 0 20px 60px rgba(0, 0, 0, .25); }
+  .dlg::backdrop { background: rgba(0, 0, 0, .35); }
+  .dlg h3 { margin: 0; font-size: 17px; color: var(--ink); }
+  .dlg label.field { max-width: none; }
+  .dlg select { width: 100%; }
+  .role-choice { border: 0; margin: 0; padding: 0; display: grid; gap: 6px; }
+  .role-choice legend { font-size: 12px; font-weight: 500; color: var(--mute); margin-bottom: 4px; padding: 0; }
+  .role-choice label { display: flex; gap: 10px; align-items: center; padding: 10px 12px; border-radius: 12px; background: var(--well); cursor: pointer; }
+  .role-choice label:has(:checked) { background: var(--p1-soft); box-shadow: inset 0 0 0 1.5px var(--p1); }
+  .role-choice input { accent-color: var(--p1); width: 18px; height: 18px; margin: 0; }
+  .role-choice b { display: block; font-size: 14px; font-weight: 600; color: var(--ink); }
+  .role-choice small { display: block; font-size: 12px; color: var(--mute); }
+  .member + .member { border-top: 1px solid var(--sep); }
   .member .who b { font-size: .88rem; }
   .member select { width: auto; padding: 6px 10px; font-size: .9rem; }
   .add { display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--sep); }
   .add label { flex: 0 1 150px; }
   .add select { width: 100%; padding: 8px 10px; font-size: .9rem; }
   .switchrow { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; }
-  .switchrow + .switchrow { border-top: 1px solid var(--border); }
+  .switchrow + .switchrow { border-top: 1px solid var(--sep); }
+  .app-line { display: flex; align-items: center; gap: 12px; }
+  .app-line b { display: block; font-weight: 500; color: var(--ink); }
   .switchrow input { width: 20px; height: 20px; accent-color: var(--accent); }
   #denied { max-width: 460px; margin: 12vh auto 0; }
   details.item > summary .item-head::after { content: '›'; flex: 0 0 auto; font-size: 1.3rem; line-height: 1; color: var(--muted); transition: transform .15s; }
@@ -308,7 +339,8 @@ function renderGlobal() {
   const s = G.state;
 
   $('appsList').innerHTML = s.apps.map(a => `
-    <label class="switchrow"><span><b>${esc(a.name)}</b><br><small class="note" style="margin:0">${esc(a.url || '')}</small></span>
+    <label class="switchrow${a.id === 'dashboard' ? ' is-home' : ''}"><span class="app-line">${SettingsNav.tile(appIcon(a))}
+      <span><b>${esc(a.name)}${a.id === 'dashboard' ? '<span class="home-tag">Startseite</span>' : ''}</b><small class="note" style="margin:0">${esc(a.url || '')}</small></span></span>
       <input type="checkbox" data-app-active="${esc(a.id)}"${a.is_active ? ' checked' : ''}></label>`).join('');
 
   $('createForm').role.innerHTML = roleOptions('guest');
@@ -357,7 +389,8 @@ function renderGlobal() {
   paintUsers();
 }
 
-async function loadGlobal() { G.state = await fn('overall-admin', 'list'); renderGlobal(); streakCard(); }
+const homeFirst = (a, b) => (b.id === 'dashboard') - (a.id === 'dashboard'); // Dashboard steht überall vor den anderen Apps
+async function loadGlobal() { G.state = await fn('overall-admin', 'list'); G.state.apps.sort(homeFirst); renderGlobal(); streakCard(); }
 
 /* Streaks aller Konten (supabase/001_streak.sql, nur globale Admins) */
 async function streakCard() {
@@ -475,33 +508,50 @@ const APP_ADMIN = {
 };
 
 /* ---------- TravelBase: wer sieht welche Reise in welcher Rolle ---------- */
+const TB_ROLE_HINT = { guest: 'Sieht Karte und Zeitraum', member: 'Sieht zusätzlich den Plan', admin: 'Sieht auch Kosten und darf bearbeiten' };
 async function travelbaseAdmin(box) {
   const d = check(await sb.rpc('travelbase_admin_overview'));
   const users = new Map(d.users.map(u => [u.id, u]));
   const name = u => u ? (u.display_name || u.email) : 'Unbekanntes Konto';
   const fmt = t => [t.start_date, t.end_date].filter(Boolean).map(fmtDate).join(' – ');
+  const roleOrder = { admin: 0, member: 1, guest: 2 };
   box.innerHTML = `
-    <p class="note">Globale Admins und TravelBase-Admins sehen jede Reise. Für alle anderen gilt die Freigabe pro Reise: <b>Gast</b> sieht Karte und Zeitraum, <b>Mitglied</b> den Plan, <b>Admin</b> zusätzlich Kosten und darf bearbeiten.</p>
+    <p class="note">Globale Admins und TravelBase-Admins sehen jede Reise. Für alle anderen gilt die Freigabe pro Reise:</p>
+    <div class="role-key">${['guest', 'member', 'admin'].map(r => `<div><span class="role-pill role-${r}">${ROLE_LABEL[r]}</span><small>${TB_ROLE_HINT[r]}</small></div>`).join('')}</div>
     ${d.trips.map(t => {
-      const members = d.members.filter(m => m.trip_id === t.id).sort((a, b) => name(users.get(a.user_id)).localeCompare(name(users.get(b.user_id))));
+      const members = d.members.filter(m => m.trip_id === t.id)
+        .sort((a, b) => roleOrder[a.role] - roleOrder[b.role] || name(users.get(a.user_id)).localeCompare(name(users.get(b.user_id))));
       const free = d.users.filter(u => u.app_role !== 'admin' && !members.some(m => m.user_id === u.id));
       return `
       <div class="trip" data-trip="${esc(t.id)}">
-        <h4>${esc((t.flags || []).join(' '))} ${esc(t.title)}<small>${esc(fmt(t))}</small></h4>
-        ${members.map(m => {
+        <div class="trip-head">
+          <div><h4>${esc((t.flags || []).join(' '))} ${esc(t.title)}</h4><small>${esc(fmt(t))}${fmt(t) ? ' · ' : ''}${members.length === 1 ? '1 Person' : members.length + ' Personen'}</small></div>
+          ${free.length ? '<button class="btn small" type="button" data-tb-open>Person hinzufügen</button>' : ''}
+        </div>
+        ${members.length ? `<ul class="people">${members.map(m => {
           const u = users.get(m.user_id);
-          return `<div class="member" data-user="${esc(m.user_id)}">
+          return `<li class="member" data-user="${esc(m.user_id)}">
+            <span class="ini">${esc(initials(name(u)))}</span>
             <div class="who"><b>${esc(name(u))}</b><small>${esc(u && u.display_name ? u.email : '')}${u && u.app_role === 'admin' ? ' · sieht als TravelBase-Admin ohnehin alles' : ''}</small></div>
-            <select data-tb-role>${roleOptions(m.role, 'Freigabe entziehen')}</select></div>`;
-        }).join('') || '<p class="note" style="margin:0">Noch niemand freigegeben.</p>'}
-        ${free.length ? `<form class="add" data-tb-add>
-          <label style="flex:1 1 180px">Person freigeben<select name="user" required><option value="">Konto wählen …</option>${free.map(u => `<option value="${esc(u.id)}">${esc(name(u))}</option>`).join('')}</select></label>
-          <label>Rolle<select name="role" class="role">${roleOptions('member')}</select></label>
-          <button class="btn small" type="submit">Freigeben</button></form>` : ''}
+            <select class="role-pill role-${esc(m.role)}" data-tb-role aria-label="Rolle von ${esc(name(u))}">${roleOptions(m.role, 'Freigabe entziehen')}</select></li>`;
+        }).join('')}</ul>` : '<p class="note" style="margin:8px 0 0">Noch niemand freigegeben.</p>'}
       </div>`;
     }).join('') || '<p class="note">Noch keine Reisen angelegt.</p>'}
-    <p class="note" style="margin:12px 0 0">Wer hier fehlt, braucht zuerst Zugang zu TravelBase (globale Admin-Einstellungen → Konten).</p>
-    <div class="msg" hidden></div>`;
+    <p class="note" style="margin:12px 0 0">Wer in der Auswahl fehlt, braucht zuerst Zugang zu TravelBase (Verwaltung → Konten).</p>
+    <div class="msg" hidden></div>
+    <dialog class="dlg" data-tb-dialog aria-labelledby="tbDlgTitle">
+      <form method="dialog" class="stack">
+        <div><h3 id="tbDlgTitle">Person hinzufügen</h3><p class="note" data-tb-trip style="margin:2px 0 0"></p></div>
+        <label class="field">Person<select name="user" required></select></label>
+        <fieldset class="role-choice"><legend>Rolle in dieser Reise</legend>
+          ${['guest', 'member', 'admin'].map(r => `<label><input type="radio" name="role" value="${r}"${r === 'member' ? ' checked' : ''}><span><b>${ROLE_LABEL[r]}</b><small>${TB_ROLE_HINT[r]}</small></span></label>`).join('')}
+        </fieldset>
+        <div class="actions" style="justify-content:flex-end;margin:0">
+          <button class="btn ghost" type="button" data-tb-cancel>Abbrechen</button>
+          <button class="btn" type="submit" value="ok">Freigeben</button>
+        </div>
+      </form>
+    </dialog>`;
   const out = () => box.querySelector(':scope > .msg');
   const set = async (trip, user, role, okText) => {
     try { await busy(box, () => sb.rpc('travelbase_admin_set_member', { p_trip: trip, p_user: user, p_role: role }).then(check)); await travelbaseAdmin(box); msg(out(), okText, true); }
@@ -509,12 +559,33 @@ async function travelbaseAdmin(box) {
   };
   box.querySelectorAll('[data-tb-role]').forEach(sel => sel.addEventListener('change', () => {
     const trip = sel.closest('.trip').dataset.trip, user = sel.closest('.member').dataset.user;
-    set(trip, user, sel.value || null, sel.value ? '✅ Rolle gespeichert.' : '✅ Freigabe entzogen.');
+    if (!sel.value && !confirm(`${sel.closest('.member').querySelector('b').textContent} sieht diese Reise dann nicht mehr. Freigabe entziehen?`)) { sel.value = d.members.find(m => m.trip_id === trip && m.user_id === user).role; return; }
+    set(trip, user, sel.value || null, sel.value ? 'Rolle gespeichert.' : 'Freigabe entzogen.');
   }));
-  box.querySelectorAll('[data-tb-add]').forEach(f => f.addEventListener('submit', e => {
+
+  // Pop-up „Person hinzufügen“: eine Dialog-Box für alle Reisen
+  const dlg = box.querySelector('[data-tb-dialog]'), form = dlg.querySelector('form');
+  let tripId = null;
+  box.querySelectorAll('[data-tb-open]').forEach(b => b.addEventListener('click', () => {
+    const t = d.trips.find(x => x.id === b.closest('.trip').dataset.trip);
+    const members = d.members.filter(m => m.trip_id === t.id);
+    const free = d.users.filter(u => u.app_role !== 'admin' && !members.some(m => m.user_id === u.id)).sort((a, b) => name(a).localeCompare(name(b)));
+    tripId = t.id;
+    dlg.querySelector('[data-tb-trip]').textContent = `${(t.flags || []).join(' ')} ${t.title}`.trim();
+    form.user.innerHTML = '<option value="">Konto wählen …</option>' + free.map(u => `<option value="${esc(u.id)}">${esc(name(u))}${u.display_name ? ' · ' + esc(u.email) : ''}</option>`).join('');
+    form.role.value = 'member';
+    dlg.showModal();
+    form.user.focus();
+  }));
+  dlg.querySelector('[data-tb-cancel]').addEventListener('click', () => dlg.close());
+  dlg.addEventListener('click', e => { if (e.target === dlg) dlg.close(); }); // Klick neben das Pop-up schließt es
+  form.addEventListener('submit', e => {
     e.preventDefault();
-    set(f.closest('.trip').dataset.trip, f.user.value, f.role.value, '✅ Reise freigegeben.');
-  }));
+    if (!form.user.value) return form.user.focus();
+    const who = form.user.selectedOptions[0].textContent.split(' · ')[0];
+    dlg.close();
+    set(tripId, form.user.value, form.role.value, `${who} freigegeben.`);
+  });
 }
 
 /* ---------- Quest Log: Spieler:innen verwalten (Edge Function gamemaster) ---------- */
@@ -634,20 +705,22 @@ const appIcon = app => {
   return Object.assign({ label: app.name }, app.id === 'dashboard' ? { img: 'icon.svg', color: '#1c1c1e' } : p ? { img: p.img, color: p.color } : { icon: 'apps', color: '#64748b' });
 };
 let CTX = null;   // { user, globalAdmin, apps: [{ app, role }] }
+// Apps mit eigenem Admin-Bereich: alle, in denen man Admin ist (globale Admins: alle). Dashboard zuerst, dann die App, von der man kommt.
+const adminApps = () => CTX.apps.filter(x => CTX.globalAdmin || x.role === 'admin')
+  .sort((a, b) => homeFirst(a.app, b.app) || (b.app.id === fromId) - (a.app.id === fromId));
 async function renderApps() {
   const host = $('appCards');
-  const mine = CTX.apps.filter(x => x.role === 'admin' && APP_ADMIN[x.app.id]);
-  mine.sort((a, b) => (b.app.id === fromId) - (a.app.id === fromId));
+  const mine = adminApps();
   if (!mine.length) return;
   host.innerHTML = mine.map(({ app }) => {
     const m = APP_ADMIN[app.id];
     return `<section class="pane" id="app-${esc(app.id)}">
-      <div class="pane-head">${SettingsNav.tile(appIcon(app))}<div><h2>${esc(app.name)}</h2><p>${esc(m.title)}</p></div></div>
-      <div class="card app-body"><p class="note" style="margin:0">Lädt …</p></div>
+      <div class="pane-head">${SettingsNav.tile(appIcon(app))}<div><h2>${esc(app.name)}</h2><p>${m ? esc(m.title) : 'Keine eigenen Admin-Einstellungen'}</p></div></div>
+      <div class="card app-body"><p class="note" style="margin:0">${m ? 'Lädt …' : `Für ${esc(app.name)} gibt es keine eigenen Admin-Einstellungen. Zugänge vergeben globale Admins unter ${CTX.globalAdmin ? '<a href="#g-users">Konten</a>' : 'Konten'}.`}</p></div>
       <details class="card rights-card"><summary><h3>Wer darf was in ${esc(app.name)}?</h3></summary>${rightsTable(app.id)}</details>
     </section>`;
   }).join('');
-  await Promise.all(mine.map(async ({ app }) => {
+  await Promise.all(mine.filter(x => APP_ADMIN[x.app.id]).map(async ({ app }) => {
     const body = $('app-' + app.id).querySelector('.app-body');
     try { await APP_ADMIN[app.id].render(body, CTX); }
     catch (e) { body.innerHTML = `<p class="note" style="margin:0">${esc(errText(e))}</p>`; }
@@ -675,12 +748,11 @@ async function start() {
     const roles = await Promise.all(apps.map(a => sb.rpc('overall_app_role', { p_app: a.id }).then(check).catch(() => null)));
     CTX = { user: session.user, globalAdmin, apps: apps.map((a, i) => ({ app: a, role: roles[i] })) };
   } catch (e) { shown = null; show('denied'); $('deniedText').textContent = errText(e); return; }
-  if (!CTX.globalAdmin && !CTX.apps.some(x => x.role === 'admin' && APP_ADMIN[x.app.id])) {
+  if (!CTX.globalAdmin && !CTX.apps.some(x => x.role === 'admin')) {
     show('denied'); $('deniedText').textContent = `Dein Konto ${session.user.email} ist in keiner App Admin.`; return;
   }
   show('page');
   $('who').textContent = 'Angemeldet als ' + session.user.email + (CTX.globalAdmin ? ' · globaler Admin' : '');
-  const adminApps = CTX.apps.filter(x => x.role === 'admin' && APP_ADMIN[x.app.id]);
   SettingsNav.build($('jump'), [
     { title: 'Verwaltung', items: CTX.globalAdmin ? [
       { id: 'konten', label: 'Konten', icon: 'users', color: '#007aff' },
@@ -688,7 +760,7 @@ async function start() {
       { id: 'rechte', label: 'Wer darf was?', icon: 'shield', color: '#ff9500' },
       { id: 'streaks', label: 'Streaks', icon: 'flame', color: '#ff3b30' },
     ] : [] },
-    { title: 'Apps', items: adminApps.map(x => Object.assign(appIcon(x.app), { id: 'app-' + x.app.id })) },
+    { title: 'Apps', items: adminApps().map(x => Object.assign(appIcon(x.app), { id: 'app-' + x.app.id, feature: x.app.id === 'dashboard' ? 'Startseite' : '' })) },
   ]);
   const jobs = [renderApps()];
   if (CTX.globalAdmin) jobs.push(loadGlobal().catch(e => { $('kontenBody').innerHTML = `<div class="card"><p class="note" style="margin:0">${esc(errText(e))}</p></div>`; }));
