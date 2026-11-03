@@ -323,7 +323,7 @@ function loadScript(src) {
 async function dailymindCard(card, user) {
   await loadScript('/DailyMind/push.js');
   const Push = window.DailyMindPush;
-  const row = check(await sb.from('dailymind_push_settings').select('morning_enabled, morning_time, evening_enabled, evening_time').eq('user_id', user.id).maybeSingle());
+  const row = check(await sb.from('dailymind_push_settings').select('morning_enabled, morning_time, evening_enabled, evening_time, tschick_enabled').eq('user_id', user.id).maybeSingle());
   const st = Object.assign({ morning_enabled: false, morning_time: '07:30', evening_enabled: false, evening_time: '21:00' }, row || {});
   // Streak-Schalter (streak_prefs, keine Zeile = an); fehlt die Tabelle noch, bleibt der Schalter weg
   const streakRow = await sb.from('streak_prefs').select('enabled').eq('user_id', user.id).eq('app', 'dailymind').maybeSingle();
@@ -346,6 +346,14 @@ async function dailymindCard(card, user) {
         <span><b>🔥 Streak zählen und anzeigen</b><small>Serie, Rekord und Wochenkalender</small></span>
       </label>
     </div>`}
+    <h4>TschickTracking</h4>
+    <p class="note">Zeigt in der Abendroutine die Frage „Wie viel hast du heute getschickt?“ mit Anzahl und Zusatzinfos.</p>
+    <div class="row">
+      <label class="switch" style="padding:0;flex:1 1 220px">
+        <input type="checkbox" id="dmTschick"${st.tschick_enabled ? ' checked' : ''}>
+        <span><b>🚬 TschickTracking</b><small>Zigaretten pro Tag festhalten</small></span>
+      </label>
+    </div>
     <h4>Tägliche Erinnerungen</h4>
     <p class="note">Eine Push-Benachrichtigung zur gewählten Uhrzeit. Hast du die Routine an dem Tag schon begonnen, kommt keine.</p>
     ${reminder('morning', '☀️', 'Morgen-Erinnerung', 'Dankbarkeit, Tagesfokus und Affirmation')}
@@ -363,6 +371,17 @@ async function dailymindCard(card, user) {
       msg(out, streakBox.checked ? '✅ Streak eingeschaltet.' : 'Streak ausgeschaltet.', true);
     } catch (err) { streakBox.checked = !streakBox.checked; msg(out, errText(err)); }
     streakBox.disabled = false;
+  });
+
+  const tschickBox = box.querySelector('#dmTschick');
+  tschickBox.addEventListener('change', async () => {
+    msg(out, ''); tschickBox.disabled = true;
+    try {
+      check(await sb.from('dailymind_push_settings').upsert({ user_id: user.id, tschick_enabled: tschickBox.checked }, { onConflict: 'user_id' }));
+      st.tschick_enabled = tschickBox.checked;
+      msg(out, tschickBox.checked ? '✅ TschickTracking eingeschaltet.' : 'TschickTracking ausgeschaltet.', true);
+    } catch (err) { tschickBox.checked = !tschickBox.checked; msg(out, errText(err)); }
+    tschickBox.disabled = false;
   });
 
   // Status dieses Geräts: bekommt es Erinnerungen?
