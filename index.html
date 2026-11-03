@@ -184,21 +184,27 @@
   .spin { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--line); border-top-color: var(--mute); animation: spin .8s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  /* Kontomenü oben rechts */
-  .pm-menu { position: fixed; z-index: 30; min-width: 260px; max-width: calc(100vw - 20px); padding: 6px; color: var(--text); border-radius: 14px; box-shadow: var(--pop);
+  /* Kontomenü oben rechts (einheitlich in allen Apps, Vorlage: JobTracker) */
+  .pm-menu { position: fixed; z-index: 30; width: 290px; max-width: calc(100vw - 32px); padding: 6px; color: var(--text); border-radius: 14px; box-shadow: var(--pop);
     background: color-mix(in srgb, var(--card) 88%, transparent); -webkit-backdrop-filter: saturate(1.8) blur(20px); backdrop-filter: saturate(1.8) blur(20px); }
   .pm-menu[hidden] { display: none; }
-  .pm-head { display: flex; gap: 10px; align-items: center; padding: 8px 10px 10px; margin-bottom: 4px; border-bottom: 1px solid var(--sep); }
-  .pm-head b { display: block; font-size: 14px; font-weight: 600; color: var(--ink); }
-  .pm-head small { display: block; font-size: 12px; color: var(--mute); word-break: break-all; }
-  .pm-ava { flex: 0 0 40px; width: 40px; height: 40px; border-radius: 50%; overflow: hidden; display: grid; place-items: center; background: var(--well); color: var(--mute); }
+  .pm-head { display: flex; gap: 10px; align-items: center; padding: 8px 10px 10px; min-width: 0; }
+  .pm-head > div { min-width: 0; }
+  .pm-head b { display: block; font-size: 14px; font-weight: 600; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .pm-head small { display: block; font-size: 12px; color: var(--mute); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .pm-ava { flex: 0 0 40px; width: 40px; height: 40px; border-radius: 50%; overflow: hidden; display: grid; place-items: center; color: #fff; font-size: 14px; font-weight: 600; background: var(--well); }
   .pm-ava img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .pm-ava .ic { width: 22px; height: 22px; }
+  .pm-sync { display: flex; align-items: center; gap: 8px; margin: 0 4px 6px; padding: 8px 10px; border-radius: 10px; background: var(--well); font-size: 12px; color: var(--text); }
+  .pm-sync i { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); flex: none; }
+  .pm-sync i.pending { background: var(--warn, #ff9f0a); }
+  .pm-sync span { min-width: 0; }
+  .pm-sync b { font-weight: 600; color: var(--ink); }
+  .pm-role { display: inline-block; margin-top: 3px; padding: 1px 7px; border-radius: 999px; font-size: 11px; font-weight: 600; background: var(--p1-soft); color: var(--p1); }
   .pm-item { display: flex; width: 100%; align-items: center; gap: 10px; min-height: 40px; padding: 8px 10px; border: 0; border-radius: 8px;
     background: none; color: var(--ink); font-size: 14px; font-weight: 500; text-align: left; text-decoration: none; }
-  .pm-item .ic { width: 18px; height: 18px; color: var(--mute); }
+  .pm-item .ic { width: 18px; height: 18px; color: var(--mute); flex: none; }
   .pm-item:hover, .pm-item:focus-visible { background: var(--hover); outline: none; }
-  .pm-item small { margin-left: auto; font-size: 11px; color: var(--mute); }
+  .pm-item small { margin-left: auto; font-size: 11px; color: var(--mute); white-space: nowrap; }
   .pm-item.danger, .pm-item.danger .ic { color: var(--danger); }
   .pm-sep { height: 1px; margin: 4px 6px; background: var(--sep); }
 
@@ -609,7 +615,22 @@ const profileMenu = (() => {
   const btn = document.getElementById('profileBtn');
   const ADMIN_URL = 'admin.html?from=dashboard';
   const CACHE_KEY = 'dash-profile';
-  let user = null, profile = {}, photo = null, menu = null, onLogout = () => {};
+  let user = null, profile = {}, photo = null, menu = null, onLogout = () => {}, lastSync = null;
+  const AVATAR_COLORS = ['#0b6e79', '#4a7356', '#b25000', '#5856d6', '#0066cc', '#a2453a'];
+  const ROLE_LABELS = { admin: 'Admin', member: 'Mitglied', guest: 'Gast' };
+  const myRole = () => profile.role === 'admin' ? 'admin' : (profile.app_role || null);
+  function menuAva() {
+    if (photo) return `<span class="pm-ava"><img src="${photo}" alt=""></span>`;
+    const n = shownName();
+    let h = 0; for (const c of n) h = (h * 31 + c.codePointAt(0)) >>> 0;
+    const ini = n.trim().split(/\s+/).slice(0, 2).map(w => w[0]).join('').toUpperCase() || '?';
+    return `<span class="pm-ava" style="background:${AVATAR_COLORS[h % AVATAR_COLORS.length]}">${esc(ini)}</span>`;
+  }
+  function syncHtml() {
+    const off = !navigator.onLine;
+    const text = off ? 'Offline' : lastSync ? 'Verbunden · zuletzt ' + lastSync.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) : 'Verbunden';
+    return `<div class="pm-sync" role="status"><i class="${off ? 'pending' : ''}"></i><span><b>Cloud-Sync</b> · ${esc(text)}</span></div>`;
+  }
 
   const shownName = () => (profile.display_name || '').trim() || (user && user.email) || '';
   const avatarHtml = () => photo ? `<img src="${photo}" alt="">` : IC.person;
@@ -628,11 +649,12 @@ const profileMenu = (() => {
   function renderMenu() {
     menu.innerHTML = `
       <div class="pm-head">
-        <span class="pm-ava">${avatarHtml()}</span>
-        <div><b>${esc(shownName())}</b><small>${esc(user.email)}</small></div>
+        ${menuAva()}
+        <div><b>${esc(shownName())}</b><small>${esc(user.email)}</small>${myRole() ? `<span class="pm-role">${esc(ROLE_LABELS[myRole()] || myRole())}</span>` : ''}</div>
       </div>
+      ${syncHtml()}
       <a class="pm-item" role="menuitem" href="konto.html?from=dashboard">${IC.gear}Kontoeinstellungen</a>
-      ${profile.role === 'admin' ? '<a class="pm-item" role="menuitem" href="' + ADMIN_URL + '">' + IC.shield + 'Admin-Einstellungen<small>nur Admins</small></a>' : ''}
+      ${myRole() === 'admin' ? '<a class="pm-item" role="menuitem" href="' + ADMIN_URL + '">' + IC.shield + 'Admin-Einstellungen<small>nur Admins</small></a>' : ''}
       <a class="pm-item colors" role="menuitem" href="colors.html">${IC.drop}Farbarchitektur</a>
       <div class="pm-sep"></div>
       <button class="pm-item danger" type="button" role="menuitem" data-act="logout">${IC.logout}Abmelden</button>`;
@@ -676,11 +698,15 @@ const profileMenu = (() => {
     profile = (c && c.profile) || {}; photo = (c && c.photo) || null;
     paint();
     try {
-      const { data, error } = await sb.from('overall_profiles').select('display_name, avatar_path, role').eq('id', user.id).maybeSingle();
+      const [{ data, error }, appRole] = await Promise.all([
+        sb.from('overall_profiles').select('display_name, avatar_path, role').eq('id', user.id).maybeSingle(),
+        sb.rpc('overall_app_role', { p_app: 'dashboard' }).then(r => r.data || null, () => null),
+      ]);
       if (error) throw error;
       const path = data && data.avatar_path;
       if (path !== profile.avatar_path || !photo) photo = path ? await OverallAccount.loadPhoto(sb, path) : null;
-      profile = data || {};
+      profile = { ...(data || {}), app_role: appRole };
+      lastSync = new Date();
       save(); paint();
     } catch (e) { if (navigator.onLine) console.warn('Profil laden', e); }
   }
