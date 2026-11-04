@@ -217,9 +217,11 @@ async function travelbaseCard(card) {
     <p class="note" style="margin:12px 0 0">Wer welche Reise sieht, legen Admins fest. Eigene TravelBase-Einstellungen gibt es noch nicht.</p>`;
 }
 
-/* Dashboard-Anzeige: was ausgeschaltet ist, steht in user_metadata.dash_hidden (gilt fürs Konto, auf allen Geräten).
+/* Dashboard-Anzeige: was ausgeschaltet ist, steht in user_metadata.dash_hidden, die Reihenfolge der Apps
+   in user_metadata.dash_order (App-URLs; gilt fürs Konto, auf allen Geräten).
    Apps aus shared/projects.js, Schnellzugriff und Mini-Tools direkt aus dem Dashboard-HTML. */
 let myApps = []; // App-IDs mit Rolle (aus renderApps)
+const UP = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 15 6-6 6 6"/></svg>';
 async function dashboardVisibility(box) {
   const doc = new DOMParser().parseFromString(await fetch('./').then(r => r.text()), 'text/html');
   const items = sel => [...doc.querySelectorAll(sel)].map(el => ({
@@ -227,19 +229,26 @@ async function dashboardVisibility(box) {
     name: el.querySelector('.ql') ? el.querySelector('.ql').textContent : el.getAttribute('aria-label'),
     icon: el.querySelector('.qi') ? el.querySelector('.qi').outerHTML : '',
   }));
-  const apps = PROJECTS.filter(it => !it.app || myApps.includes(it.app)).map(it => ({
-    key: it.url, name: it.name, desc: it.badge ? 'Mit Login' : 'Ohne Login', icon: SettingsNav.tile({ label: it.name, img: it.img, color: it.color }),
+  const meta = (await sb.auth.getUser()).data.user.user_metadata;
+  let hidden = meta.dash_hidden || [], order = meta.dash_order || [];
+  // Wie im Dashboard: erst „Mit Login“, dann „Ohne Login“, darin nach dash_order (Neue hinten)
+  const rank = it => (it.badge === 'Login' ? 0 : 1e4) + (order.includes(it.url) ? order.indexOf(it.url) : 1e3 + PROJECTS.indexOf(it));
+  const apps = () => PROJECTS.filter(it => !it.app || myApps.includes(it.app)).sort((a, b) => rank(a) - rank(b)).map(it => ({
+    key: it.url, group: it.badge || '', name: it.name, desc: it.badge ? 'Mit Login' : 'Ohne Login', icon: SettingsNav.tile({ label: it.name, img: it.img, color: it.color }),
   }));
-  let hidden = (await sb.auth.getUser()).data.user.user_metadata.dash_hidden || [];
-  const list = (title, note, rows) => `
+  const list = (title, note, rows, move) => `
     <p class="card-label">${title}</p>
-    <div class="card"><p class="note">${note}</p><div class="toggles">${rows.map(r => `
+    <div class="card"><p class="note">${note}</p><div class="toggles">${rows.map((r, i) => `
       <label class="switch"><input type="checkbox" data-hide="${esc(r.key)}"${hidden.includes(r.key) ? '' : ' checked'}>
-        <span>${r.icon}<span><b>${esc(r.name)}</b>${r.desc ? `<small>${esc(r.desc)}</small>` : ''}</span></span></label>`).join('')}</div>
+        <span>${r.icon}<span><b>${esc(r.name)}</b>${r.desc ? `<small>${esc(r.desc)}</small>` : ''}</span>${move ? `<span class="ord">
+          <button type="button" data-move="-1" aria-label="${esc(r.name)} nach vorne"${rows[i - 1] && rows[i - 1].group === r.group ? '' : ' disabled'}>${UP}</button>
+          <button type="button" data-move="1" aria-label="${esc(r.name)} nach hinten"${rows[i + 1] && rows[i + 1].group === r.group ? '' : ' disabled'}>${UP}</button></span>` : ''}</span></label>`).join('')}</div>
       <div class="msg" hidden></div></div>`;
-  box.innerHTML = list('Apps', 'Ausgeschaltete Apps erscheinen nicht im Dashboard und nicht in der Suche.', apps)
+  const paintApps = () => { box.querySelector('[data-apps]').innerHTML = list('Apps', 'Ausgeschaltete Apps erscheinen nicht im Dashboard und nicht in der Suche. Mit den Pfeilen änderst du die Reihenfolge innerhalb von „Mit Login“ und „Ohne Login“.', apps(), true); };
+  box.innerHTML = '<div data-apps></div>'
     + list('Schnellzugriff', 'Welche Links im Schnellzugriff stehen.', items('[aria-labelledby="quickH"] .quick > a'))
     + list('Mini-Tools', 'Welche Mini-Tools angezeigt werden.', items('[aria-labelledby="toolsH"] .quick > button'));
+  paintApps();
   box.addEventListener('change', async e => {
     const cb = e.target.closest('[data-hide]'); if (!cb) return;
     const out = cb.closest('.card').querySelector('.msg'), before = hidden;
@@ -247,6 +256,20 @@ async function dashboardVisibility(box) {
     msg(out, '');
     try { check(await sb.auth.updateUser({ data: { dash_hidden: hidden } })); msg(out, 'Gespeichert. Gilt auf allen Geräten.', true); }
     catch (err) { hidden = before; cb.checked = !cb.checked; msg(out, errText(err)); }
+  });
+  box.addEventListener('click', async e => {
+    const b = e.target.closest('[data-move]'); if (!b) return;
+    e.preventDefault(); // nicht den Schalter im selben Label umlegen
+    const key = b.closest('.switch').querySelector('[data-hide]').dataset.hide, dir = +b.dataset.move;
+    const keys = apps().map(r => r.key), i = keys.indexOf(key), before = order;
+    [keys[i], keys[i + dir]] = [keys[i + dir], keys[i]];
+    order = keys.concat(order.filter(k => !keys.includes(k))); // Apps ohne Zugang behalten ihren Platz
+    paintApps();
+    const moved = box.querySelector(`[data-apps] [data-hide="${CSS.escape(key)}"]`).closest('.switch').querySelector(`[data-move="${dir}"]`);
+    (moved.disabled ? moved.parentNode.querySelector('button:not(:disabled)') : moved)?.focus();
+    const out = box.querySelector('[data-apps] .msg');
+    try { check(await sb.auth.updateUser({ data: { dash_order: order } })); msg(out, 'Gespeichert. Gilt auf allen Geräten.', true); }
+    catch (err) { order = before; paintApps(); msg(box.querySelector('[data-apps] .msg'), errText(err)); }
   });
 }
 

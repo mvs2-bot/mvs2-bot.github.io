@@ -382,9 +382,22 @@ function paintHidden() {
   });
 }
 paintHidden();
+/* Reihenfolge der Apps aus den Kontoeinstellungen: user_metadata.dash_order (App-URLs), neue Apps hinten. Lokal gemerkt. */
+const ORDER_KEY = 'dash-order';
+let order = [];
+try { order = JSON.parse(localStorage.getItem(ORDER_KEY)) || []; } catch (e) {}
+const rank = it => order.includes(it.url) ? order.indexOf(it.url) : 1e3 + PROJECTS.indexOf(it);
+const sorted = list => list.sort((a, b) => rank(a) - rank(b));
+function setOrder(list) {
+  list = Array.isArray(list) ? list : [];
+  try { localStorage.setItem(ORDER_KEY, JSON.stringify(list)); } catch (e) {}
+  const changed = String(list) !== String(order);
+  order = list;
+  if (changed && started) render();
+}
 const SECTIONS = [
-  { title: 'Mit Login',  get items() { return PROJECTS.filter(it => it.badge === 'Login' && visible(it)); } },
-  { title: 'Ohne Login', get items() { return PROJECTS.filter(it => it.badge !== 'Login' && visible(it)); } },
+  { title: 'Mit Login',  get items() { return sorted(PROJECTS.filter(it => it.badge === 'Login' && visible(it))); } },
+  { title: 'Ohne Login', get items() { return sorted(PROJECTS.filter(it => it.badge !== 'Login' && visible(it))); } },
 ];
 
 const GITHUB_USER = 'mvs2-bot';
@@ -776,8 +789,9 @@ const gate = (() => {
     profileMenu.refresh(session);
     if (!session) { remember(null); show('loginForm'); return; }
     setHidden(session.user.user_metadata.dash_hidden);
+    setOrder(session.user.user_metadata.dash_order);
     // Gespeicherte Sitzung kann veraltet sein (auf anderem Gerät geändert): frisch vom Server holen
-    sb.auth.getUser().then(({ data }) => { if (data && data.user) setHidden(data.user.user_metadata.dash_hidden); }).catch(() => {});
+    sb.auth.getUser().then(({ data }) => { if (data && data.user) { setOrder(data.user.user_metadata.dash_order); setHidden(data.user.user_metadata.dash_hidden); } }).catch(() => {});
     try {
       const { data, error } = await sb.rpc('overall_has_app_role', { p_app: 'dashboard', p_min_role: 'member' });
       if (error) throw error;
