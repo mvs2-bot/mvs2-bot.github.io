@@ -120,6 +120,7 @@ const FROM = {
   dailymind:  { label: 'DailyMind',  url: '/DailyMind/' },
   migralog:   { label: 'Migräne Tracker', url: '/MigraLog/' },
   jobtracker: { label: 'Job Tracker', url: '/JobTracker/' },
+  yearinpixels: { label: 'YearInPixels', url: '/YearInPixels/' },
 };
 const from = FROM[new URLSearchParams(location.search).get('from')] || FROM.dashboard;
 $('backLink').textContent = '← ' + from.label;
@@ -149,6 +150,7 @@ const APP_CARDS = {
   dailymind:  { render: dailymindCard, label: 'Streak und Erinnerungen' },
   migralog:   { render: migralogCard, label: 'Cloud-Sync und Datenschutz' },
   jobtracker: { render: jobtrackerCard, label: 'Cloud-Sync und Datenschutz' },
+  yearinpixels: { render: yearinpixelsCard, label: 'Quellen, Cloud-Sync und Datenschutz' },
 };
 const appIcon = (id, name) => {
   const p = PROJECTS.find(x => x.app === id);
@@ -308,6 +310,37 @@ async function jobtrackerCard(card, user) {
       <div><b>Auf diesem Gerät</b><small>${waiting ? `⏳ ${waiting} offline ${waiting === 1 ? 'gemachte Änderung wartet' : 'gemachte Änderungen warten'} auf die Übertragung. Öffne den Job Tracker mit Internet, dann wird automatisch nachgeschickt.` : 'Alles übertragen, nichts wartet.'}</small></div>
     </div>
     <p class="note" style="margin:12px 0 0">Deine Bewerbungen sind privat. Niemand sonst sieht sie, auch Admins nicht. Passwörter für Bewerberportale speichert der Job Tracker nicht. Name, Profilbild und Hell/Dunkel übernimmt er aus diesem Konto.</p>`;
+}
+
+/* YearInPixels: liest nur die eigenen Einträge aus DailyMind, Migräne Tracker, PegelTracker und TravelBase.
+   Eigene Daten: nur yearinpixels_settings. Letzter Stand offline unter 'yearinpixels-cache-<user>',
+   wartende Einstellungen unter 'yearinpixels-queue-<user>'. */
+async function yearinpixelsCard(card, user) {
+  const box = card.querySelector('.app-body');
+  const SRC = [['DailyMind', 'dailymind_is_member'], ['Migräne Tracker', 'migralog_is_member'], ['PegelTracker', 'pegel_is_member']];
+  const t0 = performance.now();
+  const [settings, ...acc] = await Promise.all([
+    sb.from('yearinpixels_settings').select('updated_at').eq('user_id', user.id).maybeSingle(),
+    ...SRC.map(s => sb.rpc(s[1])),
+  ]);
+  const ms = Math.round(performance.now() - t0);
+  let waiting = 0, cache = null;
+  try { waiting = Object.keys(JSON.parse(localStorage.getItem('yearinpixels-queue-' + user.id)) || {}).length; } catch (e) {}
+  try { cache = JSON.parse(localStorage.getItem('yearinpixels-cache-' + user.id)); } catch (e) {}
+  const error = settings.error || acc.find(r => r.error)?.error;
+  const srcRows = SRC.map((s, i) => `${acc[i].data === true ? '🟢' : '⚪️'} ${s[0]}: ${acc[i].data === true ? 'verbunden' : 'kein Zugang'}`)
+    .concat('🟢 TravelBase: deine eigenen und geteilten Reisen').join('<br>');
+  box.innerHTML = `
+    <div class="row">
+      <div><b>${error ? '🔴 Datenbank nicht erreichbar' : '🟢 Cloud-Sync verbunden'}</b><small>${error ? esc(errText(error)) : `Antwort in ${ms} ms · ${settings.data ? 'Ebenen zuletzt geändert am ' + new Date(settings.data.updated_at).toLocaleDateString('de-DE') : 'Ebenen noch wie voreingestellt'}`}</small></div>
+    </div>
+    <div class="row">
+      <div><b>Quellen</b><small>${error ? '–' : srcRows}</small></div>
+    </div>
+    <div class="row">
+      <div><b>Auf diesem Gerät</b><small>${cache ? `${cache.days ?? 0} Tage mit Daten · Stand ${new Date(cache.at).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' })}. ` : 'Noch kein Stand gespeichert. '}${waiting ? '⏳ Eine Änderung an den Ebenen wartet auf die Übertragung. Öffne YearInPixels mit Internet, dann wird automatisch nachgeschickt.' : 'Alles übertragen, nichts wartet.'}</small></div>
+    </div>
+    <p class="note" style="margin:12px 0 0">YearInPixels liest nur deine eigenen Einträge und speichert keine Tageswerte. Niemand sonst sieht dein Jahr, auch Admins nicht. Name, Profilbild und Hell/Dunkel übernimmt YearInPixels aus diesem Konto.</p>`;
 }
 
 /* DailyMind: tägliche Push-Erinnerungen. Das Gerät-Abo verwaltet /DailyMind/push.js (Repo DailyMind). */
