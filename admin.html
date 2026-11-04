@@ -58,6 +58,9 @@
   .trip-head h4 { margin: 0; }
   .trip-head .btn { background: var(--card); color: var(--p1); }
   .trip-head small { color: var(--mute); font-size: 12px; }
+  .trip-tentative { display: flex; align-items: center; gap: 8px; margin-top: 8px; font-size: 13px; cursor: pointer; }
+  .trip-tentative input { width: 18px; height: 18px; accent-color: var(--accent); }
+  .trip-tentative small { color: var(--mute); font-size: 12px; }
   ul.people { list-style: none; margin: 10px 0 0; padding: 0; }
   .member { display: flex; align-items: center; gap: 10px; padding: 8px 0; }
   .member .ini { width: 32px; height: 32px; font-size: 12px; background: var(--card); border: 0; }
@@ -540,6 +543,7 @@ async function travelbaseAdmin(box) {
           <div><h4>${esc((t.flags || []).join(' '))} ${esc(t.title)}</h4><small>${esc(fmt(t))}${fmt(t) ? ' · ' : ''}${members.length === 1 ? '1 Person' : members.length + ' Personen'}</small></div>
           ${free.length ? '<button class="btn small" type="button" data-tb-open>Person hinzufügen</button>' : ''}
         </div>
+        <label class="trip-tentative"><input type="checkbox" data-tb-tentative${t.tentative ? ' checked' : ''}><span>Nur vielleicht <small>Variante oder Idee, zählt nicht als gereist</small></span></label>
         ${members.length ? `<ul class="people">${members.map(m => {
           const u = users.get(m.user_id);
           return `<li class="member" data-user="${esc(m.user_id)}">
@@ -569,6 +573,10 @@ async function travelbaseAdmin(box) {
     try { await busy(box, () => sb.rpc('travelbase_admin_set_member', { p_trip: trip, p_user: user, p_role: role }).then(check)); await travelbaseAdmin(box); msg(out(), okText, true); }
     catch (e) { await travelbaseAdmin(box).catch(() => {}); msg(out(), errText(e)); }
   };
+  box.querySelectorAll('[data-tb-tentative]').forEach(cb => cb.addEventListener('change', async () => {
+    try { await busy(box, () => sb.rpc('travelbase_admin_set_trip_tentative', { p_trip: cb.closest('.trip').dataset.trip, p_tentative: cb.checked }).then(check)); await travelbaseAdmin(box); msg(out(), cb.checked ? 'Als „vielleicht“ markiert.' : 'Als feste Reise markiert.', true); }
+    catch (e) { await travelbaseAdmin(box).catch(() => {}); msg(out(), errText(e)); }
+  }));
   box.querySelectorAll('[data-tb-role]').forEach(sel => sel.addEventListener('change', () => {
     const trip = sel.closest('.trip').dataset.trip, user = sel.closest('.member').dataset.user;
     if (!sel.value && !confirm(`${sel.closest('.member').querySelector('b').textContent} sieht diese Reise dann nicht mehr. Freigabe entziehen?`)) { sel.value = d.members.find(m => m.trip_id === trip && m.user_id === user).role; return; }
