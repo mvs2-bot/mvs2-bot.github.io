@@ -19,7 +19,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="shared/overall-account.js"></script>
 <script src="shared/projects.js"></script>
-<link rel="stylesheet" href="shared/hub.css">
+<link rel="stylesheet" href="shared/hub.css?v=2">
 <script src="shared/settings-nav.js"></script>
 <script src="shared/ios-nav.js" defer></script>
 </head>
@@ -221,7 +221,8 @@ async function travelbaseCard(card) {
    in user_metadata.dash_order (App-URLs; gilt fürs Konto, auf allen Geräten).
    Apps aus shared/projects.js, Schnellzugriff und Mini-Tools direkt aus dem Dashboard-HTML. */
 let myApps = []; // App-IDs mit Rolle (aus renderApps)
-const UP = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 15 6-6 6 6"/></svg>';
+const ARROW = d => `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${d}"/></svg>`;
+const UP = ARROW('m6 15 6-6 6 6'), DOWN = ARROW('m6 9 6 6 6-6');
 async function dashboardVisibility(box) {
   const doc = new DOMParser().parseFromString(await fetch('./').then(r => r.text()), 'text/html');
   const items = sel => [...doc.querySelectorAll(sel)].map(el => ({
@@ -241,8 +242,8 @@ async function dashboardVisibility(box) {
     <div class="card"><p class="note">${note}</p><div class="toggles">${rows.map((r, i) => `
       <label class="switch"><input type="checkbox" data-hide="${esc(r.key)}"${hidden.includes(r.key) ? '' : ' checked'}>
         <span>${r.icon}<span><b>${esc(r.name)}</b>${r.desc ? `<small>${esc(r.desc)}</small>` : ''}</span>${move ? `<span class="ord">
-          <button type="button" data-move="-1" aria-label="${esc(r.name)} nach vorne"${rows[i - 1] && rows[i - 1].group === r.group ? '' : ' disabled'}>${UP}</button>
-          <button type="button" data-move="1" aria-label="${esc(r.name)} nach hinten"${rows[i + 1] && rows[i + 1].group === r.group ? '' : ' disabled'}>${UP}</button></span>` : ''}</span></label>`).join('')}</div>
+          <button type="button" data-move="-1" aria-label="${esc(r.name)} nach vorne"${rows[i - 1] && rows[i - 1].group === r.group ? '' : ' aria-disabled="true"'}>${UP}</button>
+          <button type="button" data-move="1" aria-label="${esc(r.name)} nach hinten"${rows[i + 1] && rows[i + 1].group === r.group ? '' : ' aria-disabled="true"'}>${DOWN}</button></span>` : ''}</span></label>`).join('')}</div>
       <div class="msg" hidden></div></div>`;
   const paintApps = () => { box.querySelector('[data-apps]').innerHTML = list('Apps', 'Ausgeschaltete Apps erscheinen nicht im Dashboard und nicht in der Suche. Mit den Pfeilen änderst du die Reihenfolge innerhalb von „Mit Login“ und „Ohne Login“.', apps(), true); };
   box.innerHTML = '<div data-apps></div>'
@@ -258,15 +259,16 @@ async function dashboardVisibility(box) {
     catch (err) { hidden = before; cb.checked = !cb.checked; msg(out, errText(err)); }
   });
   box.addEventListener('click', async e => {
-    const b = e.target.closest('[data-move]'); if (!b) return;
-    e.preventDefault(); // nicht den Schalter im selben Label umlegen
+    if (!e.target.closest('.ord')) return;
+    e.preventDefault(); // Tippen auf/zwischen die Pfeile legt nie den Schalter im selben Label um
+    const b = e.target.closest('[data-move]'); if (!b || b.getAttribute('aria-disabled')) return;
     const key = b.closest('.switch').querySelector('[data-hide]').dataset.hide, dir = +b.dataset.move;
     const keys = apps().map(r => r.key), i = keys.indexOf(key), before = order;
     [keys[i], keys[i + dir]] = [keys[i + dir], keys[i]];
     order = keys.concat(order.filter(k => !keys.includes(k))); // Apps ohne Zugang behalten ihren Platz
     paintApps();
     const moved = box.querySelector(`[data-apps] [data-hide="${CSS.escape(key)}"]`).closest('.switch').querySelector(`[data-move="${dir}"]`);
-    (moved.disabled ? moved.parentNode.querySelector('button:not(:disabled)') : moved)?.focus();
+    (moved.getAttribute('aria-disabled') ? moved.parentNode.querySelector('button:not([aria-disabled])') : moved)?.focus();
     const out = box.querySelector('[data-apps] .msg');
     try { check(await sb.auth.updateUser({ data: { dash_order: order } })); msg(out, 'Gespeichert. Gilt auf allen Geräten.', true); }
     catch (err) { order = before; paintApps(); msg(box.querySelector('[data-apps] .msg'), errText(err)); }
