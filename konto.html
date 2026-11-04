@@ -381,7 +381,7 @@ function loadScript(src) {
 async function dailymindCard(card, user) {
   await loadScript('/DailyMind/push.js');
   const Push = window.DailyMindPush;
-  const row = check(await sb.from('dailymind_push_settings').select('morning_enabled, morning_time, evening_enabled, evening_time, tschick_enabled').eq('user_id', user.id).maybeSingle());
+  const row = check(await sb.from('dailymind_push_settings').select('morning_enabled, morning_time, evening_enabled, evening_time, tschick_enabled, drinks_enabled').eq('user_id', user.id).maybeSingle());
   const st = Object.assign({ morning_enabled: false, morning_time: '07:30', evening_enabled: false, evening_time: '21:00' }, row || {});
   // Streak-Schalter (streak_prefs, keine Zeile = an); fehlt die Tabelle noch, bleibt der Schalter weg
   const streakRow = await sb.from('streak_prefs').select('enabled').eq('user_id', user.id).eq('app', 'dailymind').maybeSingle();
@@ -412,6 +412,14 @@ async function dailymindCard(card, user) {
         <span><b>🚬 TschickTracking</b><small>Zigaretten pro Tag festhalten</small></span>
       </label>
     </div>
+    <h4>TrinkTracking</h4>
+    <p class="note">Zeigt in der Abendroutine die Frage „Heute genug getrunken?“ mit „Leider, nein“, „Ja, klar doch“ und „+alkoholisch“. YearInPixels erkennt daran trockene Tage.</p>
+    <div class="row">
+      <label class="switch" style="padding:0;flex:1 1 220px">
+        <input type="checkbox" id="dmDrinks"${st.drinks_enabled ? ' checked' : ''}>
+        <span><b>💧 TrinkTracking</b><small>Genug getrunken und Alkohol festhalten</small></span>
+      </label>
+    </div>
     <h4>Tägliche Erinnerungen</h4>
     <p class="note">Eine Push-Benachrichtigung zur gewählten Uhrzeit. Hast du die Routine an dem Tag schon begonnen, kommt keine.</p>
     ${reminder('morning', '☀️', 'Morgen-Erinnerung', 'Dankbarkeit, Tagesfokus und Affirmation')}
@@ -440,6 +448,17 @@ async function dailymindCard(card, user) {
       msg(out, tschickBox.checked ? '✅ TschickTracking eingeschaltet.' : 'TschickTracking ausgeschaltet.', true);
     } catch (err) { tschickBox.checked = !tschickBox.checked; msg(out, errText(err)); }
     tschickBox.disabled = false;
+  });
+
+  const drinksBox = box.querySelector('#dmDrinks');
+  drinksBox.addEventListener('change', async () => {
+    msg(out, ''); drinksBox.disabled = true;
+    try {
+      check(await sb.from('dailymind_push_settings').upsert({ user_id: user.id, drinks_enabled: drinksBox.checked }, { onConflict: 'user_id' }));
+      st.drinks_enabled = drinksBox.checked;
+      msg(out, drinksBox.checked ? '✅ TrinkTracking eingeschaltet.' : 'TrinkTracking ausgeschaltet.', true);
+    } catch (err) { drinksBox.checked = !drinksBox.checked; msg(out, errText(err)); }
+    drinksBox.disabled = false;
   });
 
   // Status dieses Geräts: bekommt es Erinnerungen?
