@@ -149,11 +149,9 @@ body.settings-page .wrap, body.settings-page .bar { max-width: 1040px; }
 .toggles .switch, .toggles .switch + .switch { border-top: 0; border-bottom: 1px solid var(--sep); }
 .toggles .switch b small { display: inline; }
 /* Pfeile für die Reihenfolge (Apps im Dashboard) */
-.switch .ord { display: flex; gap: 2px; margin-left: auto; }
-.switch .ord button { width: 30px; height: 30px; padding: 0; border: 0; border-radius: 50%; background: var(--well); color: var(--ink); display: grid; place-items: center; cursor: pointer; }
-.switch .ord button:last-child svg { transform: rotate(180deg); }
-.switch .ord button:disabled { opacity: .3; cursor: default; }
-.switch .ord svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+.switch .ord { display: flex; gap: 4px; margin-left: auto; padding-left: 4px; cursor: default; }
+.switch .ord button { -webkit-appearance: none; appearance: none; width: 32px; height: 32px; padding: 0; border: 0; border-radius: 50%; background: var(--well); color: var(--ink); display: grid; place-items: center; cursor: pointer; touch-action: manipulation; }
+.switch .ord button[aria-disabled] { opacity: .3; cursor: default; }
 
 @media (max-width: 860px) {
   .settings { display: block; margin-top: 16px; }
