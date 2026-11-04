@@ -45,6 +45,7 @@
     --radius: 18px; --radius-s: 12px; --shadow: 0 1px 2px rgba(0, 0, 0, .04), 0 4px 14px rgba(0, 0, 0, .04);
     --pop: 0 12px 40px rgba(0, 0, 0, .18), 0 0 0 .5px rgba(0, 0, 0, .06);
     --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro", system-ui, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+    --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
     /* Namen, die das gemeinsame Konto-Modul (shared/overall-account.js) und ios-nav.js erwarten */
     --border: var(--line); --accent: var(--p1); --card-hover: var(--hover); --muted: var(--mute);
     color-scheme: light;
@@ -89,10 +90,9 @@
   @media (max-width: 420px) { .icon-btn.colors { display: none; } .pm-item.colors { display: flex; } h1 { font-size: 20px; } }
 
   /* Gruppen und Projektkarten */
-  .group { margin-top: 18px; }
-  .group-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin: 0 4px 8px; }
-  h2 { margin: 0; font-size: 16px; font-weight: 600; letter-spacing: -.01em; color: var(--ink); display: flex; align-items: center; gap: 6px; }
-  h2 .ic { width: 16px; height: 16px; color: var(--star); }
+  .group { margin-top: 32px; }
+  .group-head { display: flex; align-items: baseline; gap: 8px; margin: 0 4px 12px; }
+  h2 { margin: 0; font-size: 15px; font-weight: 600; letter-spacing: -.01em; color: var(--ink); display: flex; align-items: center; gap: 6px; }
   /* Einklappbare Bereiche: Überschrift ist ein Knopf, kleiner Pfeil daneben */
   .fold { border: 0; background: none; padding: 0; margin: 0; font: inherit; color: inherit; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; border-radius: 6px; }
   .fold .chev { width: 14px; height: 14px; color: var(--mute); opacity: .55; transition: transform .2s ease-out, opacity .15s; }
@@ -101,41 +101,44 @@
   .group.collapsed > :not(.group-head) { display: none; }
   .group.collapsed .group-head { margin-bottom: 0; }
   @media (prefers-reduced-motion: reduce) { .fold .chev { transition: none; } }
-  .count { font-size: 12px; font-weight: 600; color: var(--mute); font-variant-numeric: tabular-nums; }
-  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 10px; }
+  .count { font-family: var(--mono); font-size: 12px; color: var(--mute); font-variant-numeric: tabular-nums; }
+  /* Ein Supabase-Status für alle Login-Apps (alle nutzen dasselbe Projekt): grau = wird geprüft/offline, grün = erreichbar, rot = pausiert */
+  .live { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--mute); text-decoration: none; border-radius: 6px; }
+  .live:hover { color: var(--ink); }
+  .live i { width: 6px; height: 6px; border-radius: 50%; background: var(--mute); }
+  .live.ok i { background: var(--ok); }
+  .live.bad { color: var(--danger); }
+  .live.bad i { background: var(--danger); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px; }
+  @media (min-width: 980px) { .grid { grid-template-columns: repeat(3, 1fr); } }
   .tile { display: flex; flex-direction: column; background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); min-width: 0; transition: background .15s; }
   .tile:has(.main:hover) { background: color-mix(in srgb, var(--card) 70%, var(--hover)); }
-  .tile .main { flex: 1; display: flex; gap: 12px; align-items: center; padding: 14px 14px 12px; color: inherit; text-decoration: none; min-width: 0; border-radius: var(--radius) var(--radius) 0 0; }
+  .tile .main { flex: 1; display: flex; gap: 12px; align-items: center; padding: 16px 16px 12px; color: inherit; text-decoration: none; min-width: 0; border-radius: var(--radius) var(--radius) 0 0; }
   .tile .main:active { opacity: .7; }
   .ico { position: relative; overflow: hidden; flex: 0 0 44px; width: 44px; height: 44px; border-radius: 10px; display: grid; place-items: center; font-size: 22px; }
   .ico svg { width: 26px; height: 26px; }
   .ico img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
   .ico::after { content: ""; position: absolute; inset: 0; border-radius: inherit; box-shadow: inset 0 0 0 .5px rgba(0, 0, 0, .1); pointer-events: none; }
   .tile .txt { min-width: 0; flex: 1; }
-  .tile .name { display: block; font-size: 14px; font-weight: 600; color: var(--ink); line-height: 1.3; }
-  .tile .desc { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: 12px; color: var(--mute); margin-top: 1px; hyphens: auto; -webkit-hyphens: auto; }
+  .tile .name { display: block; font-size: 15px; font-weight: 500; color: var(--ink); line-height: 1.3; }
+  .tile .desc { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: 12px; color: var(--mute); margin-top: 2px; }
   .tile .chev { color: var(--mute); opacity: .55; width: 16px; height: 16px; }
-  .tile .foot { display: flex; align-items: center; gap: 6px; margin: 0 14px; padding: 8px 0 10px; border-top: 1px solid var(--sep); }
-  .tile .meta { flex: 1; min-width: 0; font-size: 11px; font-weight: 500; color: var(--mute); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
-  .badge { display: inline-flex; align-items: center; gap: 3px; margin-left: 6px; vertical-align: 1px; font-size: 11px; font-weight: 600; padding: 1px 7px; border-radius: 999px; background: var(--well); color: var(--mute); }
-  .badge .ic { width: 10px; height: 10px; stroke-width: 2.2; }
-  /* Kleine runde Knöpfe: Stern / GitHub / Supabase */
-  .mini { position: relative; flex: none; width: 32px; height: 32px; border-radius: 50%; border: 0; padding: 0; background: var(--well); color: var(--mute);
+  .tile .foot { display: flex; align-items: center; gap: 4px; margin: 0 16px; padding: 8px 0 12px; border-top: 1px solid var(--sep); }
+  .tile .meta { flex: 1; min-width: 0; font-family: var(--mono); font-size: 11px; color: var(--mute); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+  /* Kleine Knöpfe: Stern / GitHub (leerer Stern erst beim Drüberfahren, gesetzter bleibt sichtbar) */
+  .mini { position: relative; flex: none; width: 28px; height: 28px; border-radius: 8px; border: 0; padding: 0; background: none; color: var(--mute);
     display: inline-grid; place-items: center; text-decoration: none; transition: background .15s, color .15s; }
-  .mini:hover { background: var(--hover); color: var(--ink); }
+  .mini:hover { background: var(--well); color: var(--ink); }
   .mini svg { width: 15px; height: 15px; }
-  .mini.fav.on { color: var(--star); }
+  .mini.fav.on { color: var(--ink); }
   .mini.fav.on svg { fill: currentColor; }
-  /* Supabase-Status: grau = wird geprüft/offline, grün = erreichbar, rot = pausiert/nicht erreichbar */
-  .mini .dot { position: absolute; top: 0; right: 0; width: 9px; height: 9px; border-radius: 50%; background: #8e8e93; box-shadow: 0 0 0 2px var(--card); }
-  .mini .dot.ok { background: var(--ok); }
-  .mini .dot.bad { background: var(--danger); }
+  @media (hover: hover) { .mini.fav:not(.on) { opacity: 0; transition: opacity .15s; } .tile:hover .mini.fav, .mini.fav:focus-visible { opacity: 1; } }
   /* Streak an der Kachel (shared/streak.css), so hoch wie die runden Knöpfe */
-  .foot .streak-chip { height: 32px; padding: 0 10px 0 7px; background: var(--well); box-shadow: none; font-size: 13px; }
+  .foot .streak-chip { height: 28px; padding: 0 8px 0 6px; background: none; box-shadow: none; font-size: 13px; }
   .foot .streak-chip .ic { width: 16px; height: 16px; }
 
   /* Schnellzugriff: Symbole mit Namen wie auf dem Home-Bildschirm */
-  .box { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); padding: 14px 10px 10px; }
+  .box { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px 12px 12px; }
   .quick { display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 4px; }
   .quick a, .quick button { border: 0; background: none; font: inherit; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 6px 2px 8px; border-radius: var(--radius-s); color: var(--text); text-decoration: none; min-width: 0; transition: background .15s; }
   .quick a:hover, .quick button:hover { background: var(--well); }
@@ -145,8 +148,19 @@
   .quick .qi .ic { width: 26px; height: 26px; fill: none; }
   .tool-out { margin: 6px 6px 2px; font-size: 13px; color: var(--text); font-variant-numeric: tabular-nums; }
   .quick svg { width: 26px; height: 26px; fill: currentColor; }
-  .quick .ql { font-size: 11px; font-weight: 500; line-height: 1.2; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  footer { margin-top: 24px; text-align: center; font-size: 12px; font-weight: 500; color: var(--mute); }
+  .quick .ql { font-size: 12px; color: var(--mute); line-height: 1.2; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  footer { margin-top: 40px; text-align: center; font-family: var(--mono); font-size: 11px; color: var(--mute); }
+
+  /* Handy: Apps als gruppierte Liste wie in den iOS-Einstellungen statt einzelner Karten (Icons bleiben unverändert) */
+  @media (max-width: 640px) {
+    .grid { display: block; background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
+    .tile { position: relative; flex-direction: row; align-items: center; border-radius: 0; box-shadow: none; background: none; }
+    .tile + .tile::before { content: ""; position: absolute; top: 0; left: 72px; right: 0; border-top: 1px solid var(--sep); }
+    .tile .main { padding: 12px 0 12px 16px; border-radius: 0; }
+    .tile .main > .chev, .tile .meta { display: none; }
+    .tile .foot { border: 0; margin: 0; padding: 0 12px 0 4px; }
+    .tile .desc { -webkit-line-clamp: 1; }
+  }
 
   /* Suche */
   .search-dlg { width: min(560px, calc(100vw - 32px)); max-height: min(70vh, 560px); margin: 10vh auto auto; padding: 0; border: 0; border-radius: 20px;
@@ -333,14 +347,14 @@
   <section class="group" aria-labelledby="toolsH" data-fold="tools">
     <div class="group-head"><h2 id="toolsH"><button class="fold" type="button" aria-expanded="true">Mini-Tools<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button></h2></div>
     <div class="box"><div class="quick">
-      <button type="button" id="sunBtn" title="Sonnenauf- und -untergang am Standort"><span class="qi" style="color:#f59e0b"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M17 18a5 5 0 0 0-10 0M12 2v7M4.2 10.2l1.4 1.4M1 18h2M21 18h2M18.4 11.6l1.4-1.4M23 22H1M8 6l4-4 4 4"/></svg></span><span class="ql">Sonne</span></button>
-      <button type="button" id="coinBtn" title="Münzwurf"><span class="qi" style="color:#ca8a04"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9.5 9.5h3.5a1.5 1.5 0 0 1 0 3H11a1.5 1.5 0 0 0 0 3h3.5"/></svg></span><span class="ql">Münze</span></button>
-      <button type="button" id="diceBtn" title="Würfel (1–6)"><span class="qi" style="color:#dc2626"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3"/><circle cx="9" cy="9" r=".8"/><circle cx="15" cy="15" r=".8"/><circle cx="12" cy="12" r=".8"/></svg></span><span class="ql">Würfel</span></button>
-      <button type="button" id="wxBtn" title="Wetter am Standort"><span class="qi" style="color:#0ea5e9"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 18a4 4 0 1 1 .9-7.9A6 6 0 0 1 19 12a3 3 0 0 1-1 6z"/></svg></span><span class="ql">Wetter</span></button>
-      <button type="button" id="timerBtn" title="Timer: Minuten eingeben"><span class="qi" style="color:#7c3aed"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2M9 2h6"/></svg></span><span class="ql">Timer</span></button>
-      <button type="button" id="swBtn" title="Stoppuhr starten/stoppen"><span class="qi" style="color:#16a34a"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="14" r="7"/><path d="M12 14V10M10 3h4M18 7l1.5-1.5"/></svg></span><span class="ql">Stoppuhr</span></button>
-      <button type="button" id="tripBtn" title="Countdown zu den Reisen 2027"><span class="qi" style="color:#2563eb"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 16l20-6-3-2-6 2-6-5-2 1 4 6-4 1-2-2-1 1z"/><path d="M3 21h18"/></svg></span><span class="ql">Urlaub</span></button>
-      <button type="button" id="moonBtn" title="Aktuelle Mondphase"><span class="qi" style="color:#64748b"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg></span><span class="ql">Mond</span></button>
+      <button type="button" id="sunBtn" title="Sonnenauf- und -untergang am Standort"><span class="qi"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M17 18a5 5 0 0 0-10 0M12 2v7M4.2 10.2l1.4 1.4M1 18h2M21 18h2M18.4 11.6l1.4-1.4M23 22H1M8 6l4-4 4 4"/></svg></span><span class="ql">Sonne</span></button>
+      <button type="button" id="coinBtn" title="Münzwurf"><span class="qi"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9.5 9.5h3.5a1.5 1.5 0 0 1 0 3H11a1.5 1.5 0 0 0 0 3h3.5"/></svg></span><span class="ql">Münze</span></button>
+      <button type="button" id="diceBtn" title="Würfel (1–6)"><span class="qi"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3"/><circle cx="9" cy="9" r=".8"/><circle cx="15" cy="15" r=".8"/><circle cx="12" cy="12" r=".8"/></svg></span><span class="ql">Würfel</span></button>
+      <button type="button" id="wxBtn" title="Wetter am Standort"><span class="qi"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 18a4 4 0 1 1 .9-7.9A6 6 0 0 1 19 12a3 3 0 0 1-1 6z"/></svg></span><span class="ql">Wetter</span></button>
+      <button type="button" id="timerBtn" title="Timer: Minuten eingeben"><span class="qi"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2M9 2h6"/></svg></span><span class="ql">Timer</span></button>
+      <button type="button" id="swBtn" title="Stoppuhr starten/stoppen"><span class="qi"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="14" r="7"/><path d="M12 14V10M10 3h4M18 7l1.5-1.5"/></svg></span><span class="ql">Stoppuhr</span></button>
+      <button type="button" id="tripBtn" title="Countdown zu den Reisen 2027"><span class="qi"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 16l20-6-3-2-6 2-6-5-2 1 4 6-4 1-2-2-1 1z"/><path d="M3 21h18"/></svg></span><span class="ql">Urlaub</span></button>
+      <button type="button" id="moonBtn" title="Aktuelle Mondphase"><span class="qi"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg></span><span class="ql">Mond</span></button>
     </div><p class="tool-out" id="toolOut" aria-live="polite" hidden></p><p class="tool-out" id="clockOut" aria-live="polite" hidden></p></div>
   </section>
 
@@ -424,7 +438,6 @@ const IC = {
   star:   '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true" style="fill:currentColor;stroke:none"><path d="m12 3.5 2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/></svg>',
 };
 
-const SB_ICON = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13.2 2.3c.5-.6 1.5-.3 1.5.5v7.7h6.4c.8 0 1.3 1 .8 1.6l-9.1 9.6c-.5.6-1.5.3-1.5-.5v-7.7H4.9c-.8 0-1.3-1-.8-1.6z"/></svg>';
 
 const ICONS = {
   globePin: '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.8 3.8 5.8 3.8 9s-1.3 6.2-3.8 9c-2.5-2.8-3.8-5.8-3.8-9S9.5 5.8 12 3z"/></svg>',
@@ -484,7 +497,7 @@ function toggleFav(url) {
   render();
 }
 
-function tileHtml(it, showBadge) {
+function tileHtml(it) {
   const ico = iconHtml(it);
   const gh = repoUrl(it);
   const fav = isFav(it);
@@ -493,7 +506,7 @@ function tileHtml(it, showBadge) {
           <a class="main" href="${esc(it.url)}">
             <span class="ico" style="background:${esc(it.color || '#334155')}">${ico}</span>
             <span class="txt">
-              <span class="name">${esc(it.name)}${showBadge && it.badge ? `<span class="badge">${IC.lock}${esc(it.badge)}</span>` : ''}</span>
+              <span class="name">${esc(it.name)}</span>
               <span class="desc">${esc(it.desc)}</span>
             </span>
             ${IC.chev}
@@ -503,7 +516,6 @@ function tileHtml(it, showBadge) {
             ${it.streak ? `<button class="streak-chip" type="button" data-streak="${esc(it.streak)}" hidden></button>` : ''}
             <button class="mini fav${fav ? ' on' : ''}" type="button" data-fav="${esc(it.url)}" aria-pressed="${fav}" aria-label="${esc(it.name)} ${fav ? 'aus Favoriten entfernen' : 'zu Favoriten'}" title="${fav ? 'Aus Favoriten entfernen' : 'Als Favorit oben anheften'}">${STAR_ICON}</button>
             ${gh ? `<a class="mini" href="${esc(gh)}" target="_blank" rel="noopener" aria-label="${esc(it.name)} auf GitHub" title="Repo auf GitHub">${GH_ICON}</a>` : ''}
-            ${it.supabase ? `<a class="mini" href="https://supabase.com/dashboard/project/${esc(it.supabase)}" target="_blank" rel="noopener" aria-label="${esc(it.name)} in Supabase" title="Supabase-Dashboard">${SB_ICON}${it.supabaseKey ? `<span class="dot" data-sb="${esc(it.supabase)}"></span>` : ''}</a>` : ''}
           </div>
         </div>`;
 }
@@ -515,13 +527,16 @@ function render() {
   const top = favs.map(u => all.find(it => it.url === u)).filter(Boolean);
   const groups = [{ title: 'Favoriten', items: top, fav: true }]
     .concat(SECTIONS.map(sec => ({ title: sec.title, items: sec.items.filter(it => !isFav(it)) })));
+  // Supabase-Status einmal: bei „Mit Login“, sonst bei der ersten Gruppe mit einer Supabase-App
+  const hasSb = sec => sec.items.some(it => it.supabase && it.supabaseKey);
+  const live = groups.find(sec => !sec.fav && hasSb(sec)) || groups.find(hasSb);
   let html = '';
   for (const sec of groups) {
     if (!sec.items.length) continue;
     html += sec.fav
-      ? `<section class="group"><div class="group-head"><h2>${IC.star}${esc(sec.title)}</h2><span class="count">${sec.items.length}</span></div><div class="grid">`
-      : `<section class="group${folded.includes(sec.title) ? ' collapsed' : ''}" data-fold="${esc(sec.title)}"><div class="group-head"><h2><button class="fold" type="button" aria-expanded="${!folded.includes(sec.title)}">${esc(sec.title)}${CHEV_ICON}</button></h2><span class="count">${sec.items.length}</span></div><div class="grid">`;
-    for (const it of sec.items) html += tileHtml(it, sec.fav);
+      ? `<section class="group"><div class="group-head"><h2>${esc(sec.title)}</h2><span class="count">${sec.items.length}</span>${sec === live ? LIVE_HTML(sec) : ''}</div><div class="grid">`
+      : `<section class="group${folded.includes(sec.title) ? ' collapsed' : ''}" data-fold="${esc(sec.title)}"><div class="group-head"><h2><button class="fold" type="button" aria-expanded="${!folded.includes(sec.title)}">${esc(sec.title)}${CHEV_ICON}</button></h2><span class="count">${sec.items.length}</span>${sec === live ? LIVE_HTML(sec) : ''}</div><div class="grid">`;
+    for (const it of sec.items) html += tileHtml(it);
     html += `</div></section>`;
   }
   host.innerHTML = html;
@@ -587,11 +602,15 @@ async function loadPushed() {
 
 /* ---------------- Supabase-Status ---------------- */
 const sbStatus = {}; // id → 'ok' | 'bad'
+const LIVE_HTML = sec => {
+  const id = sec.items.find(it => it.supabase && it.supabaseKey).supabase;
+  return `<a class="live" data-sb="${esc(id)}" href="https://supabase.com/dashboard/project/${esc(id)}" target="_blank" rel="noopener" title="Supabase-Dashboard"><i></i><span></span></a>`;
+};
 function paintStatus() {
-  document.querySelectorAll('.dot[data-sb]').forEach(el => {
+  document.querySelectorAll('.live[data-sb]').forEach(el => {
     const st = sbStatus[el.dataset.sb];
-    el.className = 'dot' + (st ? ' ' + st : '');
-    el.parentElement.title = st === 'ok' ? 'Supabase: erreichbar' : st === 'bad' ? 'Supabase: pausiert oder nicht erreichbar' : 'Supabase-Dashboard';
+    el.className = 'live' + (st ? ' ' + st : '');
+    el.lastChild.textContent = st === 'ok' ? 'Supabase erreichbar' : st === 'bad' ? 'Supabase nicht erreichbar' : 'Supabase';
   });
 }
 async function checkSupabase() {
