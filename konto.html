@@ -118,7 +118,7 @@ const FROM = {
   matchboard: { label: 'MatchBoard', url: '/MatchBoard/' },
   pegeltracker: { label: 'PegelTracker', url: '/PegelTracker/' },
   dailymind:  { label: 'DailyMind',  url: '/DailyMind/' },
-  migralog:   { label: 'Migräne Tracker', url: '/MigraLog/' },
+  migralog:   { label: 'KopfschmerzTracker', url: '/MigraLog/' },
   jobtracker: { label: 'Job Tracker', url: '/JobTracker/' },
   yearinpixels: { label: 'YearInPixels', url: '/YearInPixels/' },
 };
@@ -297,7 +297,7 @@ async function dashboardCard(card) {
   paint();
 }
 
-/* Migräne Tracker: Cloud-Sync-Status. Einträge liegen in migralog_entries (strikt privat);
+/* KopfschmerzTracker: Cloud-Sync-Status. Einträge liegen in migralog_entries (strikt privat);
    Einträge, die offline erfasst wurden, wartet die App unter localStorage 'migralog-queue-<user>' ab. */
 async function migralogCard(card, user) {
   const box = card.querySelector('.app-body');
@@ -312,9 +312,9 @@ async function migralogCard(card, user) {
       <div><b>${error ? '🔴 Datenbank nicht erreichbar' : '🟢 Cloud-Sync verbunden'}</b><small>${error ? esc(errText(error)) : `Antwort in ${ms} ms · ${count ?? 0} Einträge · letzter am ${last}`}</small></div>
     </div>
     <div class="row">
-      <div><b>Auf diesem Gerät</b><small>${waiting ? `⏳ ${waiting} offline erfasste ${waiting === 1 ? 'Eintrag wartet' : 'Einträge warten'} auf die Übertragung. Öffne den Migräne Tracker mit Internet, dann wird automatisch nachgeschickt.` : 'Alles übertragen, nichts wartet.'}</small></div>
+      <div><b>Auf diesem Gerät</b><small>${waiting ? `⏳ ${waiting} offline erfasste ${waiting === 1 ? 'Eintrag wartet' : 'Einträge warten'} auf die Übertragung. Öffne den KopfschmerzTracker mit Internet, dann wird automatisch nachgeschickt.` : 'Alles übertragen, nichts wartet.'}</small></div>
     </div>
-    <p class="note" style="margin:12px 0 0">Deine Einträge sind privat. Niemand sonst sieht sie, auch Admins nicht. Name, Profilbild und Hell/Dunkel übernimmt der Migräne Tracker aus diesem Konto.</p>`;
+    <p class="note" style="margin:12px 0 0">Deine Einträge sind privat. Niemand sonst sieht sie, auch Admins nicht. Name, Profilbild und Hell/Dunkel übernimmt der KopfschmerzTracker aus diesem Konto.</p>`;
 }
 
 /* Job Tracker: Cloud-Sync-Status. Bewerbungen liegen in jobtracker_applications (strikt privat);
@@ -337,12 +337,12 @@ async function jobtrackerCard(card, user) {
     <p class="note" style="margin:12px 0 0">Deine Bewerbungen sind privat. Niemand sonst sieht sie, auch Admins nicht. Passwörter für Bewerberportale speichert der Job Tracker nicht. Name, Profilbild und Hell/Dunkel übernimmt er aus diesem Konto.</p>`;
 }
 
-/* YearInPixels: liest nur die eigenen Einträge aus DailyMind, Migräne Tracker, PegelTracker und TravelBase.
+/* YearInPixels: liest nur die eigenen Einträge aus DailyMind, KopfschmerzTracker, PegelTracker und TravelBase.
    Eigene Daten: nur yearinpixels_settings. Letzter Stand offline unter 'yearinpixels-cache-<user>',
    wartende Einstellungen unter 'yearinpixels-queue-<user>'. */
 async function yearinpixelsCard(card, user) {
   const box = card.querySelector('.app-body');
-  const SRC = [['DailyMind', 'dailymind_is_member'], ['Migräne Tracker', 'migralog_is_member'], ['PegelTracker', 'pegel_is_member']];
+  const SRC = [['DailyMind', 'dailymind_is_member'], ['KopfschmerzTracker', 'migralog_is_member'], ['PegelTracker', 'pegel_is_member']];
   const t0 = performance.now();
   const [settings, ...acc] = await Promise.all([
     sb.from('yearinpixels_settings').select('updated_at').eq('user_id', user.id).maybeSingle(),

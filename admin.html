@@ -208,7 +208,7 @@ const RIGHTS = {
   global: {
     guest: 'Nur mit dem Zugang pro App. Ohne App-Zugang ist jede Login-App gesperrt.',
     member: 'Gleich wie Gast. Die globale Rolle Mitglied gibt allein keinen Zugang, es zählt der Zugang pro App.',
-    admin: 'Darf in jeder App alles, was ein App-Admin darf. Verwaltet zusätzlich Konten, globale Rollen, App-Zugänge und Apps hier auf der Admin-Seite. Ausnahmen: fremde DailyMind- und Migräne-Tracker-Einträge, fremde Job-Tracker-Bewerbungen und fremde YearInPixels-Jahre sieht niemand, CaminoTracker bearbeiten kann nur Stefan.',
+    admin: 'Darf in jeder App alles, was ein App-Admin darf. Verwaltet zusätzlich Konten, globale Rollen, App-Zugänge und Apps hier auf der Admin-Seite. Ausnahmen: fremde DailyMind- und KopfschmerzTracker-Einträge, fremde Job-Tracker-Bewerbungen und fremde YearInPixels-Jahre sieht niemand, CaminoTracker bearbeiten kann nur Stefan.',
   },
   dashboard: {
     guest: 'Kein Zugang.',
@@ -237,7 +237,7 @@ const RIGHTS = {
   },
   migralog: {
     guest: 'Kein Zugang.',
-    member: 'Eigene Migräne-Einträge erfassen, auswerten und exportieren. Niemand sonst sieht die Einträge.',
+    member: 'Eigene Kopfschmerz-Einträge erfassen, auswerten und exportieren. Niemand sonst sieht die Einträge.',
     admin: 'Wie Mitglied, dazu der Link zu den Admin-Einstellungen in der App. Auch Admins sehen keine fremden Einträge.',
   },
   jobtracker: {
@@ -247,7 +247,7 @@ const RIGHTS = {
   },
   yearinpixels: {
     guest: 'Kein Zugang.',
-    member: 'Das eigene Jahr aus DailyMind, Migräne Tracker, PegelTracker und TravelBase ansehen. Gezeigt wird nur, wofür auch in der Quell-App Zugang besteht. Niemand sonst sieht das Jahr.',
+    member: 'Das eigene Jahr aus DailyMind, KopfschmerzTracker, PegelTracker und TravelBase ansehen. Gezeigt wird nur, wofür auch in der Quell-App Zugang besteht. Niemand sonst sieht das Jahr.',
     admin: 'Wie Mitglied, dazu der Link zu den Admin-Einstellungen in der App. Auch Admins sehen kein fremdes Jahr.',
   },
   pegeltracker: {
@@ -290,7 +290,7 @@ const FROM = {
   matchboard: { label: 'MatchBoard', url: '/MatchBoard/' },
   pegeltracker: { label: 'PegelTracker', url: '/PegelTracker/' },
   dailymind:  { label: 'DailyMind',  url: '/DailyMind/' },
-  migralog:   { label: 'Migräne Tracker', url: '/MigraLog/' },
+  migralog:   { label: 'KopfschmerzTracker', url: '/MigraLog/' },
   jobtracker: { label: 'Job Tracker', url: '/JobTracker/' },
   yearinpixels: { label: 'YearInPixels', url: '/YearInPixels/' },
 };
