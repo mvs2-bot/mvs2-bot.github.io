@@ -255,7 +255,6 @@
     <div class="acts">
 
       <button class="icon-btn" id="searchBtn" type="button" aria-label="Projekt suchen" title="Suchen (/)"><svg class="ic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></button>
-      <button class="icon-btn" id="themeBtn" type="button" aria-label="Hell/Dunkel umschalten" title="Hell/Dunkel"></button>
       <button class="icon-btn" id="profileBtn" type="button" aria-label="Konto-Menü öffnen" aria-haspopup="menu" aria-expanded="false"></button>
     </div>
   </div>
@@ -948,21 +947,18 @@ document.addEventListener('visibilitychange', () => { if (document.visibilitySta
 
 /* ---------------- Hell/Dunkel ---------------- */
 (function () {
-  const btn = document.getElementById('themeBtn');
   const meta = document.querySelector('meta[name="theme-color"]');
   function apply(t) {
     document.documentElement.setAttribute('data-theme', t);
-    btn.innerHTML = t === 'dark' ? IC.sun : IC.moon;
     meta.setAttribute('content', t === 'dark' ? '#000000' : '#f2f2f7');
   }
   apply(document.documentElement.getAttribute('data-theme') || 'light');
-  // Auch aus dem Kontomenü aufrufbar
+  // Umschalten nur über das Kontomenü
   window.dashToggleTheme = () => {
     const t = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
     apply(t);
     try { localStorage.setItem('overall-theme', t); } catch (e) {}
   };
-  btn.addEventListener('click', window.dashToggleTheme);
 })();
 
 /* ---------------- Mini-Tools: Sonnenauf-/-untergang ----------------
