@@ -280,18 +280,25 @@ async function dashboardCard(card) {
   box.insertAdjacentHTML('afterend', '<div class="dash-vis"><p class="note">Lädt …</p></div>');
   const vis = card.querySelector('.dash-vis');
   dashboardVisibility(vis).catch(e => { vis.innerHTML = `<p class="note">${esc(errText(e))}</p>`; });
-  const favs = () => { try { return JSON.parse(localStorage.getItem('dash-favs')) || []; } catch (e) { return []; } };
+  // Favoriten liegen in user_metadata.dash_favs (gilt fürs Konto); ältere nur lokal gespeicherte zählen, bis das Dashboard sie übernimmt
+  const local = () => { try { return JSON.parse(localStorage.getItem('dash-favs')) || []; } catch (e) { return []; } };
+  let favs = (await sb.auth.getUser()).data.user.user_metadata.dash_favs;
+  if (!Array.isArray(favs)) favs = local();
   const paint = () => {
-    const n = favs().length;
+    const n = favs.length;
     box.innerHTML = `
       <div class="row">
-        <div><b>Favoriten</b><small>${n ? `${n} angeheftet` : 'Keine angeheftet'} · nur auf diesem Gerät gespeichert</small></div>
+        <div><b>Favoriten</b><small>${n ? `${n} angeheftet` : 'Keine angeheftet'} · gilt auf allen Geräten</small></div>
         <button class="btn ghost" type="button"${n ? '' : ' disabled'}>Zurücksetzen</button>
-      </div>`;
-    box.querySelector('button').addEventListener('click', () => {
+      </div>
+      <div class="msg" hidden></div>`;
+    box.querySelector('button').addEventListener('click', async () => {
       if (!confirm('Alle Favoriten im Dashboard entfernen?')) return;
-      try { localStorage.removeItem('dash-favs'); } catch (e) {}
-      paint();
+      try {
+        check(await sb.auth.updateUser({ data: { dash_favs: [] } }));
+        try { localStorage.removeItem('dash-favs'); } catch (e) {}
+        favs = []; paint();
+      } catch (err) { msg(box.querySelector('.msg'), errText(err)); }
     });
   };
   paint();
