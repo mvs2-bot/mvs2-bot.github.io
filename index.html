@@ -85,9 +85,7 @@
   .icon-btn:hover { background: var(--hover); }
   .icon-btn .ic { width: 18px; height: 18px; }
   #profileBtn img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
-  /* Handy: Farbarchitektur wandert ins Kontomenü, damit die Begrüßung Platz hat */
-  .pm-item.colors { display: none; }
-  @media (max-width: 420px) { .icon-btn.colors { display: none; } .pm-item.colors { display: flex; } h1 { font-size: 20px; } }
+  @media (max-width: 420px) { h1 { font-size: 20px; } }
 
   /* Gruppen und Projektkarten */
   .group { margin-top: 32px; }
@@ -255,12 +253,6 @@
       <div class="sub"><span id="today"></span><time id="clock"></time></div>
     </div>
     <div class="acts">
-
-      <a class="icon-btn colors" href="colors.html" aria-label="Farbarchitektur" title="Farbarchitektur-Übersicht">
-  <svg class="ic" viewBox="0 0 24 24" aria-hidden="true">
-    <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
-  </svg>
-</a>
 
       <button class="icon-btn" id="searchBtn" type="button" aria-label="Projekt suchen" title="Suchen (/)"><svg class="ic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></button>
       <button class="icon-btn" id="themeBtn" type="button" aria-label="Hell/Dunkel umschalten" title="Hell/Dunkel"></button>
@@ -486,15 +478,27 @@ document.addEventListener('click', e => {
 });
 paintFolded();
 
+/* Favoriten: user_metadata.dash_favs im Konto (App-URLs, gilt auf allen Geräten). Lokal gemerkt für offline. */
 const FAV_KEY = 'dash-favs';
 try { localStorage.removeItem('dash-usage'); } catch (e) {} // Altlast von „Häufig benutzt“
 let favs = [];
 try { favs = JSON.parse(localStorage.getItem(FAV_KEY)) || []; } catch (e) {}
 const isFav = it => favs.includes(it.url);
-function toggleFav(url) {
-  favs = favs.includes(url) ? favs.filter(u => u !== url) : favs.concat(url);
-  try { localStorage.setItem(FAV_KEY, JSON.stringify(favs)); } catch (e) {}
-  render();
+function setFavs(list) {
+  // Noch nie im Konto gespeichert: bisherige Favoriten dieses Geräts einmalig ins Konto übernehmen
+  if (!Array.isArray(list)) { if (favs.length && sb) sb.auth.updateUser({ data: { dash_favs: favs } }).catch(() => {}); return; }
+  try { localStorage.setItem(FAV_KEY, JSON.stringify(list)); } catch (e) {}
+  const changed = String(list) !== String(favs);
+  favs = list;
+  if (changed && started) render();
+}
+async function toggleFav(url) {
+  const before = favs;
+  setFavs(favs.includes(url) ? favs.filter(u => u !== url) : favs.concat(url));
+  try {
+    const { error } = await sb.auth.updateUser({ data: { dash_favs: favs } });
+    if (error) throw error;
+  } catch (e) { console.warn('Favorit speichern', e); setFavs(before); }
 }
 
 function tileHtml(it) {
@@ -683,6 +687,7 @@ const profileMenu = (() => {
   let user = null, profile = {}, photo = null, menu = null, onLogout = () => {}, lastSync = null;
   const AVATAR_COLORS = ['#0b6e79', '#4a7356', '#b25000', '#5856d6', '#0066cc', '#a2453a'];
   const ROLE_LABELS = { admin: 'Admin', member: 'Mitglied', guest: 'Gast' };
+  const dark = () => document.documentElement.getAttribute('data-theme') === 'dark';
   const myRole = () => profile.role === 'admin' ? 'admin' : (profile.app_role || null);
   function menuAva() {
     if (photo) return `<span class="pm-ava"><img src="${photo}" alt=""></span>`;
@@ -719,8 +724,9 @@ const profileMenu = (() => {
       </div>
       ${syncHtml()}
       <a class="pm-item" role="menuitem" href="konto.html?from=dashboard">${IC.gear}Kontoeinstellungen</a>
-      ${myRole() === 'admin' ? '<a class="pm-item" role="menuitem" href="' + ADMIN_URL + '">' + IC.shield + 'Admin-Einstellungen<small>nur Admins</small></a>' : ''}
-      <a class="pm-item colors" role="menuitem" href="colors.html">${IC.drop}Farbarchitektur</a>
+      ${myRole() === 'admin' ? '<a class="pm-item" role="menuitem" href="' + ADMIN_URL + '">' + IC.shield + 'Admin-Einstellungen<small>nur Admins</small></a>'
+        + '<a class="pm-item" role="menuitem" href="colors.html">' + IC.drop + 'Farbarchitektur &amp; Design-Token<small>nur Admins</small></a>' : ''}
+      <button class="pm-item" type="button" role="menuitem" data-act="theme">${dark() ? IC.sun + 'Helles Design' : IC.moon + 'Dunkles Design'}</button>
       <div class="pm-sep"></div>
       <button class="pm-item danger" type="button" role="menuitem" data-act="logout">${IC.logout}Abmelden</button>`;
   }
@@ -732,6 +738,7 @@ const profileMenu = (() => {
       menu.className = 'pm-menu'; menu.setAttribute('role', 'menu'); menu.hidden = true;
       menu.addEventListener('click', e => {
         const b = e.target.closest('[data-act]'); if (!b) return;
+        if (b.dataset.act === 'theme') { e.stopPropagation(); window.dashToggleTheme(); renderMenu(); menu.querySelector('[data-act="theme"]').focus(); return; }
         close();
         if (b.dataset.act === 'logout') onLogout();
       });
@@ -807,10 +814,10 @@ const gate = (() => {
     document.body.classList.toggle('signed-in', !!session);
     profileMenu.refresh(session);
     if (!session) { remember(null); show('loginForm'); return; }
-    setHidden(session.user.user_metadata.dash_hidden);
-    setOrder(session.user.user_metadata.dash_order);
+    const applyMeta = m => { setOrder(m.dash_order); setHidden(m.dash_hidden); setFavs(m.dash_favs); };
+    applyMeta(session.user.user_metadata);
     // Gespeicherte Sitzung kann veraltet sein (auf anderem Gerät geändert): frisch vom Server holen
-    sb.auth.getUser().then(({ data }) => { if (data && data.user) { setOrder(data.user.user_metadata.dash_order); setHidden(data.user.user_metadata.dash_hidden); } }).catch(() => {});
+    sb.auth.getUser().then(({ data }) => { if (data && data.user) applyMeta(data.user.user_metadata); }).catch(() => {});
     try {
       const { data, error } = await sb.rpc('overall_has_app_role', { p_app: 'dashboard', p_min_role: 'member' });
       if (error) throw error;
@@ -949,11 +956,13 @@ document.addEventListener('visibilitychange', () => { if (document.visibilitySta
     meta.setAttribute('content', t === 'dark' ? '#000000' : '#f2f2f7');
   }
   apply(document.documentElement.getAttribute('data-theme') || 'light');
-  btn.addEventListener('click', () => {
+  // Auch aus dem Kontomenü aufrufbar
+  window.dashToggleTheme = () => {
     const t = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
     apply(t);
     try { localStorage.setItem('overall-theme', t); } catch (e) {}
-  });
+  };
+  btn.addEventListener('click', window.dashToggleTheme);
 })();
 
 /* ---------------- Mini-Tools: Sonnenauf-/-untergang ----------------
