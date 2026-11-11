@@ -1,0 +1,3 @@
+# GitHub Pages (Jekyll) lässt Ordner mit Punkt sonst weg.
+# .well-known/assetlinks.json verknüpft die Android-App QuicKniff mit dieser Domain (ohne Adressleiste).
+include: [".well-known"]
