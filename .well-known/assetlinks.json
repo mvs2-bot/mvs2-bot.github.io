@@ -1,0 +1,11 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "io.github.mvs2_bot.quickniff",
+    "sha256_cert_fingerprints": [
+      "D9:FA:7C:45:88:65:AE:7A:D5:7C:B2:80:B5:A3:0F:32:E3:C5:24:8F:F8:57:01:46:94:7C:73:D9:55:70:44:F4",
+      "55:48:5E:9C:77:9B:CB:06:53:1E:D9:A9:AB:31:5B:3B:C4:F1:86:17:69:4C:29:1F:7F:77:EE:77:DA:EB:2D:B8"
+    ]
+  }
+}]
