@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>mvs2 · Nutzung &amp; Limits</title>
+<meta name="theme-color" content="#f4f6fb">
+<link rel="icon" href="favicon.ico" sizes="16x16 32x32 48x48">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png" sizes="180x180">
+<script>
+  (function () {
+    var t = 'light';
+    try { t = localStorage.getItem('overall-theme') || localStorage.getItem('dash-theme') || 'light'; } catch (e) {}
+    document.documentElement.setAttribute('data-theme', t);
+  })();
+</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<link rel="stylesheet" href="shared/hub.css?v=2">
+<style>
+  :root { --warn: #b25000; --warn-soft: #fff1e0; }
+  [data-theme="dark"] { --warn: #ffb340; --warn-soft: #3a2a0f; }
+  .wrap, .bar { max-width: 860px; }
+  .top { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .top .btn { align-self: auto; background: var(--card); box-shadow: var(--shadow); }
+  .meter { padding: 12px 0; }
+  .meter + .meter { border-top: 1px solid var(--sep); }
+  .meter-head { display: flex; align-items: baseline; justify-content: space-between; gap: 2px 12px; flex-wrap: wrap; }
+  .meter-head b { color: var(--ink); font-weight: 600; }
+  .meter-head span { font-variant-numeric: tabular-nums; color: var(--mute); font-size: 13px; margin-left: auto; text-align: right; }
+  .meter-head span strong { color: var(--ink); }
+  .track { height: 8px; border-radius: 999px; background: var(--well); margin-top: 8px; overflow: hidden; }
+  .fill { height: 100%; border-radius: 999px; background: var(--ok); min-width: 2px; }
+  .lvl-warn .fill { background: var(--warn); }
+  .lvl-bad .fill { background: var(--danger); }
+  .lvl-warn .meter-head span strong { color: var(--warn); }
+  .lvl-bad .meter-head span strong { color: var(--danger); }
+  .meter small { display: block; margin-top: 6px; color: var(--mute); font-size: 12px; }
+  .meter.ext .meter-head span a { font-weight: 600; text-decoration: none; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+  th { text-align: left; font-weight: 600; color: var(--mute); font-size: 12px; padding: 6px 8px 6px 0; }
+  td { padding: 7px 8px 7px 0; border-top: 1px solid var(--sep); }
+  td.num, th.num { text-align: right; padding-right: 0; white-space: nowrap; }
+  td code { font-size: 12px; overflow-wrap: anywhere; }
+  .hint { font-size: 12px; border-radius: 10px; padding: 8px 12px; margin: 0 0 12px; background: var(--warn-soft); color: var(--warn); }
+  .hint code { font-size: 11px; }
+</style>
+<script src="shared/ios-nav.js" defer></script>
+</head>
+<body>
+
+<header>
+  <div class="bar">
+    <a class="home" href="./"><img src="icon.svg" alt=""><span>mvs2</span></a>
+    <span class="spacer"></span>
+    <a class="back" href="./">← Dashboard</a>
+    <button class="icon-btn" id="themeBtn" type="button" aria-label="Hell/Dunkel umschalten" title="Hell/Dunkel">🌙</button>
+  </div>
+</header>
+
+<main class="wrap">
+  <section id="gate">
+    <div class="card" id="gateBusy"><p class="note" style="margin:0">Anmeldung wird geprüft …</p></div>
+    <form class="card" id="loginForm" hidden>
+      <h3>Anmelden</h3>
+      <p class="note">Nutzung &amp; Limits ist nur für globale Admins.</p>
+      <label>E-Mail<input type="email" id="loginEmail" autocomplete="username" required></label>
+      <label>Passwort<input type="password" id="loginPassword" autocomplete="current-password" required></label>
+      <button class="btn" type="submit">Anmelden</button>
+      <div class="msg" id="loginMsg" hidden></div>
+    </form>
+    <div class="card" id="denied" hidden>
+      <h3>⛔ Kein Zugang</h3>
+      <p class="note" id="deniedText">Dieser Bereich ist nur für globale Admins.</p>
+      <a class="btn ghost" href="./">Zum Dashboard</a>
+    </div>
+  </section>
+
+  <div id="page">
+    <div class="top">
+      <div><h1>Nutzung &amp; Limits</h1><p class="lead" id="stamp">Lädt …</p></div>
+      <button class="btn ghost" id="reload" type="button">Neu laden</button>
+    </div>
+
+    <section class="group">
+      <div class="group-head"><h2>Supabase · Free Plan</h2><p>Projekt „core“, gilt für alle Apps zusammen</p></div>
+      <div class="card" id="sbLimits"><p class="note" style="margin:0">Lädt …</p></div>
+      <div class="card" id="sbTables" hidden></div>
+    </section>
+
+    <section class="group">
+      <div class="group-head"><h2>GitHub · Free</h2><p id="ghUser"></p></div>
+      <div class="card" id="ghLimits"><p class="note" style="margin:0">Lädt …</p></div>
+      <div class="card" id="ghRepos" hidden></div>
+    </section>
+
+    <p class="note" style="margin:16px 4px 0">Grün bis 80 %, gelb ab 80 %, rot ab 95 % des kostenlosen Kontingents.
+      Supabase pausiert ein Free-Projekt nach 7 Tagen ohne Aktivität; bei dauerhaftem Überschreiten drosselt Supabase den Dienst.</p>
+  </div>
+</main>
+
+<script>
+const CORE = { url: 'https://syaonnedmidaipwjjmio.supabase.co', key: 'sb_publishable_a3tggKZJmotlFtIqKKdSYg_cNsazRkX', ref: 'syaonnedmidaipwjjmio' };
+const SB_USAGE_URL = 'https://supabase.com/dashboard/project/' + CORE.ref + '/settings/usage';
+const GH_BILLING_URL = 'https://github.com/settings/billing/usage';
+const sb = window.supabase ? window.supabase.createClient(CORE.url, CORE.key, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } }) : null;
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const check = ({ data, error }) => { if (error) throw error; return data; };
+function msg(el, text) { el.textContent = text || ''; el.hidden = !text; }
+function errText(e) {
+  const m = String(e && (e.message || e));
+  if (/invalid login credentials/i.test(m)) return 'E-Mail oder Passwort ist falsch.';
+  if (/nur für admins|permission denied/i.test(m)) return 'Dieser Bereich ist nur für globale Admins.';
+  if (/could not find the function/i.test(m)) return 'Die Datenbank-Funktion overall_usage() ist noch nicht eingespielt.';
+  if (!navigator.onLine || /failed to fetch|network|load failed/i.test(m)) return 'Keine Verbindung zum Server. Bist du online?';
+  return m;
+}
+
+/* ---------------- Formatieren ---------------- */
+const nf = new Intl.NumberFormat('de-DE');
+function bytes(n) {
+  n = Number(n) || 0;
+  const u = ['B', 'KB', 'MB', 'GB']; let i = 0;
+  while (n >= 1024 && i < u.length - 1) { n /= 1024; i++; }
+  return (i === 0 ? nf.format(n) : n.toLocaleString('de-DE', { maximumFractionDigits: n < 10 ? 1 : 0 })) + ' ' + u[i];
+}
+const MB = 1024 ** 2, GB = 1024 ** 3;
+const when = d => new Date(d).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+/* Ein Balken je Limit: grün, ab 80 % gelb, ab 95 % rot */
+function meter({ label, used, limit, fmt = v => nf.format(v), note = '' }) {
+  const pct = limit ? used / limit * 100 : 0;
+  const lvl = pct >= 95 ? 'lvl-bad' : pct >= 80 ? 'lvl-warn' : '';
+  const p = pct < 1 && used > 0 ? '< 1' : nf.format(Math.round(pct));
+  return `<div class="meter ${lvl}" role="group" aria-label="${esc(label)}">
+    <div class="meter-head"><b>${esc(label)}</b><span><strong>${p} %</strong> · ${esc(fmt(used))} von ${esc(fmt(limit))}</span></div>
+    <div class="track"><div class="fill" style="width:${Math.min(100, pct).toFixed(2)}%"></div></div>
+    ${note ? `<small>${note}</small>` : ''}</div>`;
+}
+// Limit, dessen Verbrauch nur der Anbieter selbst kennt
+const external = (label, limit, url, note) => `<div class="meter ext"><div class="meter-head"><b>${esc(label)}</b>
+  <span>Limit ${esc(limit)} · <a href="${url}" target="_blank" rel="noopener">ansehen ↗</a></span></div>${note ? `<small>${note}</small>` : ''}</div>`;
+const failed = (el, text) => { el.innerHTML = `<p class="note" style="margin:0">${esc(text)}</p>`; };
+
+/* ---------------- Supabase (RPC overall_usage, nur globale Admins) ---------------- */
+async function loadSupabase() {
+  try {
+    const u = check(await sb.rpc('overall_usage'));
+    const buckets = (u.buckets || []).map(b => `${esc(b.id)} ${bytes(b.bytes)}`).join(' · ');
+    $('sbLimits').innerHTML =
+      meter({ label: 'Datenbank', used: u.db_bytes, limit: 500 * MB, fmt: bytes, note: 'Ab 500 MB schaltet Supabase die Datenbank auf nur lesen.' }) +
+      meter({ label: 'Datei-Storage', used: u.storage_bytes, limit: 1 * GB, fmt: bytes, note: buckets ? 'Buckets: ' + buckets : 'Noch keine Dateien.' }) +
+      meter({ label: 'Aktive Konten diesen Monat', used: u.mau, limit: 50000, note: `${nf.format(u.users)} Konten insgesamt. Gezählt: diesen Monat angemeldet.` }) +
+      meter({ label: 'DB-Verbindungen gerade', used: u.connections, limit: 60, note: 'Direkte Verbindungen der kleinsten Instanz, inkl. Supabase-eigener Dienste.' }) +
+      external('Egress (Traffic)', '5 GB / Monat', SB_USAGE_URL, 'Daten, die an Browser und Apps rausgehen. Zählt nur Supabase selbst.') +
+      external('Edge-Function-Aufrufe', '500.000 / Monat', SB_USAGE_URL) +
+      external('Realtime', '200 Verbindungen, 2 Mio. Nachrichten / Monat', SB_USAGE_URL);
+    const t = u.tables || [];
+    $('sbTables').hidden = !t.length;
+    $('sbTables').innerHTML = `<h3>Größte Tabellen</h3><p class="note">Inkl. Indizes. Zeilen sind Schätzwerte von Postgres.</p>
+      <table><thead><tr><th>Tabelle</th><th class="num">Zeilen</th><th class="num">Größe</th></tr></thead><tbody>${t.map(r =>
+        `<tr><td><code>${esc(r.name)}</code></td><td class="num">${nf.format(r.rows)}</td><td class="num">${bytes(r.bytes)}</td></tr>`).join('')}</tbody></table>`;
+    return u.at;
+  } catch (e) { failed($('sbLimits'), errText(e)); $('sbTables').hidden = true; return null; }
+}
+
+/* ---------------- GitHub (Edge Function overall-usage, Token bleibt in Supabase) ---------------- */
+async function loadGithub() {
+  let g;
+  try {
+    const { data, error } = await sb.functions.invoke('overall-usage', { body: {} });
+    if (error) {
+      let text = error.message;
+      try { const j = await error.context.json(); if (j && j.error) text = j.error; } catch (e) {}
+      if (/failed to send|not found|404/i.test(text)) text = 'Die Edge Function overall-usage ist noch nicht eingespielt.';
+      throw new Error(text);
+    }
+    g = data;
+  } catch (e) { failed($('ghLimits'), errText(e)); $('ghRepos').hidden = true; return null; }
+
+  $('ghUser').textContent = 'Konto ' + g.user;
+  const err = g.errors || {};
+  const repos = g.repos || [];
+  const priv = repos.filter(r => r.private);
+  const pages = repos.filter(r => r.pages);
+  let html = g.token ? '' : `<p class="hint">Ohne Token nur öffentliche Repos und keine Actions-/Packages-Zahlen. In Supabase das Secret <code>GITHUB_USAGE_TOKEN</code> setzen.</p>`;
+
+  if (g.actions) html += meter({ label: 'Actions-Minuten diesen Monat', used: g.actions.minutes, limit: g.actions.limit, fmt: v => nf.format(v) + ' min',
+    note: `Zählen nur private Repos (${priv.length}); öffentliche Repos sind gratis. Windows ×2, macOS ×10.` });
+  else html += external('Actions-Minuten', '2.000 min / Monat', GH_BILLING_URL, esc(err.billing || '') + ' Zählen nur private Repos.');
+
+  if (g.packages) html += meter({ label: 'Packages-Speicher', used: g.packages.gb * GB, limit: 500 * MB, fmt: bytes, note: 'Durchschnitt diesen Monat. Öffentliche Packages sind gratis.' });
+  else html += external('Packages-Speicher', '500 MB', GH_BILLING_URL);
+
+  for (const r of pages) html += meter({ label: 'Pages: ' + r.name, used: r.size_kb * 1024, limit: 1 * GB, fmt: bytes,
+    note: 'Repo-Größe inkl. Verlauf (die veröffentlichte Seite ist kleiner). Dazu ca. 100 GB Traffic / Monat und 10 Builds / Stunde.' });
+
+  if (g.rate) html += meter({ label: 'API-Anfragen diese Stunde', used: g.rate.used ?? (g.rate.limit - g.rate.remaining), limit: g.rate.limit,
+    note: 'Setzt sich ' + new Date(g.rate.reset * 1000).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) + ' Uhr zurück.' + (g.token ? '' : ' Ohne Token gilt das Limit der Supabase-Server-Adresse.') });
+  else if (err.rate) html += `<p class="note">API-Limit: ${esc(err.rate)}</p>`;
+  $('ghLimits').innerHTML = html;
+
+  $('ghRepos').hidden = !repos.length;
+  $('ghRepos').innerHTML = `<h3>Repos nach Größe</h3><p class="note">${nf.format(repos.length)} Repos, davon ${nf.format(priv.length)} privat. GitHub empfiehlt unter 1 GB je Repo.${err.repos ? ' ' + esc(err.repos) : ''}</p>
+    <table><thead><tr><th>Repo</th><th class="num">Größe</th></tr></thead><tbody>${repos.slice(0, 12).map(r =>
+      `<tr><td><a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.name)}</a>${r.private ? ' 🔒' : ''}${r.pages ? ' <span class="tag">Pages</span>' : ''}</td><td class="num">${bytes(r.size_kb * 1024)}</td></tr>`).join('')}</tbody></table>`;
+  return g.at;
+}
+
+async function loadAll() {
+  $('reload').disabled = true; $('stamp').textContent = 'Lädt …';
+  const [a, b] = await Promise.all([loadSupabase(), loadGithub()]);
+  const at = a || b;
+  $('stamp').textContent = at ? 'Stand ' + when(at) : 'Keine Daten';
+  $('reload').disabled = false;
+}
+
+/* ---------------- Darstellung ---------------- */
+function applyTheme(t, save) {
+  document.documentElement.setAttribute('data-theme', t);
+  $('themeBtn').textContent = t === 'dark' ? '☀️' : '🌙';
+  document.querySelector('meta[name="theme-color"]').setAttribute('content', t === 'dark' ? '#000000' : '#f4f6fb');
+  if (save) { try { localStorage.setItem('overall-theme', t); } catch (e) {} }
+}
+applyTheme(document.documentElement.getAttribute('data-theme') || 'light', false);
+$('themeBtn').addEventListener('click', () => applyTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark', true));
+
+/* ---------------- Start: nur globale Admins ---------------- */
+let shown = null;
+function show(view) {
+  document.body.classList.toggle('ready', view === 'page');
+  $('gateBusy').hidden = view !== 'busy'; $('loginForm').hidden = view !== 'login'; $('denied').hidden = view !== 'denied';
+}
+async function start() {
+  if (!sb) { show('login'); msg($('loginMsg'), 'Keine Verbindung zum Server. Bist du online?'); return; }
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) { shown = null; show('login'); return; }
+  if (shown === session.user.id) return;
+  shown = session.user.id;
+  show('busy');
+  let admin = false;
+  try { admin = check(await sb.rpc('overall_is_admin')); }
+  catch (e) { shown = null; show('denied'); $('deniedText').textContent = errText(e); return; }
+  if (!admin) { show('denied'); $('deniedText').textContent = `Dein Konto ${session.user.email} ist kein globaler Admin.`; return; }
+  show('page');
+  loadAll();
+}
+$('reload').addEventListener('click', loadAll);
+$('loginForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const b = e.target.querySelector('.btn'); b.disabled = true; msg($('loginMsg'), '');
+  try {
+    check(await sb.auth.signInWithPassword({ email: $('loginEmail').value.trim(), password: $('loginPassword').value }));
+    $('loginPassword').value = '';
+    await start();
+  } catch (err) { msg($('loginMsg'), errText(err)); }
+  finally { b.disabled = false; }
+});
+if (sb) sb.auth.onAuthStateChange(ev => { if (ev === 'SIGNED_OUT') { shown = null; setTimeout(start, 0); } });
+start();
+</script>
+</body>
+</html>
