@@ -424,6 +424,7 @@ const IC = {
   shield: '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 5 6v5c0 4.5 3 8.3 7 10 4-1.7 7-5.5 7-10V6z"/><path d="m9 12 2 2 4-4"/></svg>',
   logout: '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 17l5-5-5-5M15 12H4"/></svg>',
   lock:   '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>',
+  gauge:  '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 18a8.5 8.5 0 1 1 15 0"/><path d="m12 13.5 4-4.5"/><circle cx="12" cy="14" r="1.3"/></svg>',
   drop:   '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>',
   chev:   '<svg class="ic chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>',
   star:   '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true" style="fill:currentColor;stroke:none"><path d="m12 3.5 2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/></svg>',
@@ -724,6 +725,7 @@ const profileMenu = (() => {
       ${syncHtml()}
       <a class="pm-item" role="menuitem" href="konto.html?from=dashboard">${IC.gear}Kontoeinstellungen</a>
       ${myRole() === 'admin' ? '<a class="pm-item" role="menuitem" href="' + ADMIN_URL + '">' + IC.shield + 'Admin-Einstellungen<small>nur Admins</small></a>'
+        + '<a class="pm-item" role="menuitem" href="usage.html">' + IC.gauge + 'Nutzung &amp; Limits<small>nur Admins</small></a>'
         + '<a class="pm-item" role="menuitem" href="colors.html">' + IC.drop + 'Farbarchitektur &amp; Design-Token<small>nur Admins</small></a>' : ''}
       <button class="pm-item" type="button" role="menuitem" data-act="theme">${dark() ? IC.sun + 'Helles Design' : IC.moon + 'Dunkles Design'}</button>
       <div class="pm-sep"></div>
