@@ -43,6 +43,8 @@
   td { padding: 7px 8px 7px 0; border-top: 1px solid var(--sep); }
   td.num, th.num { text-align: right; padding-right: 0; white-space: nowrap; }
   td code { font-size: 12px; overflow-wrap: anywhere; }
+  details.more { margin-top: 12px; }
+  details.more > summary { cursor: pointer; font-weight: 600; color: var(--p1); padding: 4px 0; }
   .hint { font-size: 12px; border-radius: 10px; padding: 8px 12px; margin: 0 0 12px; background: var(--warn-soft); color: var(--warn); }
   .hint code { font-size: 11px; }
 </style>
@@ -102,6 +104,8 @@
 
 <script>
 const CORE = { url: 'https://syaonnedmidaipwjjmio.supabase.co', key: 'sb_publishable_a3tggKZJmotlFtIqKKdSYg_cNsazRkX', ref: 'syaonnedmidaipwjjmio' };
+const APPS = { overall: 'Konten & Rollen', travelbase: 'TravelBase', questlog: 'Quest Log', matchboard: 'MatchBoard', pegel: 'PegelTracker',
+  dailymind: 'DailyMind', streak: 'Streaks', camino: 'CaminoTracker', migralog: 'KopfschmerzTracker', jobtracker: 'Job Tracker', yearinpixels: 'YearInPixels' };
 const SB_USAGE_URL = 'https://supabase.com/dashboard/project/' + CORE.ref + '/settings/usage';
 const GH_BILLING_URL = 'https://github.com/settings/billing/usage';
 const sb = window.supabase ? window.supabase.createClient(CORE.url, CORE.key, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } }) : null;
@@ -158,10 +162,21 @@ async function loadSupabase() {
       external('Edge-Function-Aufrufe', '500.000 / Monat', SB_USAGE_URL) +
       external('Realtime', '200 Verbindungen, 2 Mio. Nachrichten / Monat', SB_USAGE_URL);
     const t = u.tables || [];
+    // Platz je App: Tabellen nach Präfix (travelbase_, dailymind_ …), Supabase-eigene nach Schema
+    const groups = new Map();
+    for (const r of t) {
+      const [schema, rel] = r.name.includes('.') ? r.name.split('.') : ['public', r.name];
+      const key = schema !== 'public' ? 'Supabase intern: ' + schema : (APPS[rel.split('_')[0]] || rel.split('_')[0]);
+      const g = groups.get(key) || { name: key, bytes: 0, rows: 0, tables: 0 };
+      g.bytes += r.bytes; g.rows += r.rows; g.tables++; groups.set(key, g);
+    }
+    const byApp = [...groups.values()].sort((a, b) => b.bytes - a.bytes);
+    const row = (name, rows, size, code) => `<tr><td>${code ? `<code>${esc(name)}</code>` : esc(name)}</td><td class="num">${nf.format(rows)}</td><td class="num">${bytes(size)}</td></tr>`;
     $('sbTables').hidden = !t.length;
-    $('sbTables').innerHTML = `<h3>Größte Tabellen</h3><p class="note">Inkl. Indizes. Zeilen sind Schätzwerte von Postgres.</p>
-      <table><thead><tr><th>Tabelle</th><th class="num">Zeilen</th><th class="num">Größe</th></tr></thead><tbody>${t.map(r =>
-        `<tr><td><code>${esc(r.name)}</code></td><td class="num">${nf.format(r.rows)}</td><td class="num">${bytes(r.bytes)}</td></tr>`).join('')}</tbody></table>`;
+    $('sbTables').innerHTML = `<h3>Platz je App</h3><p class="note">Summe aller Tabellen inkl. Indizes. Auch leere Tabellen belegen ein paar KB für Struktur und Indizes.</p>
+      <table><thead><tr><th>App</th><th class="num">Zeilen</th><th class="num">Größe</th></tr></thead><tbody>${byApp.map(g => row(g.name + ` (${g.tables})`, g.rows, g.bytes)).join('')}</tbody></table>
+      <details class="more"><summary>Alle ${nf.format(t.length)} Tabellen</summary>
+      <table><thead><tr><th>Tabelle</th><th class="num">Zeilen</th><th class="num">Größe</th></tr></thead><tbody>${t.map(r => row(r.name, r.rows, r.bytes, true)).join('')}</tbody></table></details>`;
     return u.at;
   } catch (e) { failed($('sbLimits'), errText(e)); $('sbTables').hidden = true; return null; }
 }
@@ -194,8 +209,9 @@ async function loadGithub() {
   if (g.packages) html += meter({ label: 'Packages-Speicher', used: g.packages.gb * GB, limit: 500 * MB, fmt: bytes, note: 'Durchschnitt diesen Monat. Öffentliche Packages sind gratis.' });
   else html += external('Packages-Speicher', '500 MB', GH_BILLING_URL);
 
-  for (const r of pages) html += meter({ label: 'Pages: ' + r.name, used: r.size_kb * 1024, limit: 1 * GB, fmt: bytes,
-    note: 'Repo-Größe inkl. Verlauf (die veröffentlichte Seite ist kleiner). Dazu ca. 100 GB Traffic / Monat und 10 Builds / Stunde.' });
+  // Pages: Limit gilt je Seite, also zählt die größte
+  if (pages.length) html += meter({ label: 'Pages: größte Seite (' + pages[0].name + ')', used: pages[0].size_kb * 1024, limit: 1 * GB, fmt: bytes,
+    note: `${pages.length} Seiten, jede darf 1 GB haben. Gemessen ist die Repo-Größe inkl. Verlauf, die veröffentlichte Seite ist kleiner. Dazu ca. 100 GB Traffic / Monat und 10 Builds / Stunde je Seite.` });
 
   if (g.rate) html += meter({ label: 'API-Anfragen diese Stunde', used: g.rate.used ?? (g.rate.limit - g.rate.remaining), limit: g.rate.limit,
     note: 'Setzt sich ' + new Date(g.rate.reset * 1000).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) + ' Uhr zurück.' + (g.token ? '' : ' Ohne Token gilt das Limit der Supabase-Server-Adresse.') });
@@ -203,8 +219,8 @@ async function loadGithub() {
   $('ghLimits').innerHTML = html;
 
   $('ghRepos').hidden = !repos.length;
-  $('ghRepos').innerHTML = `<h3>Repos nach Größe</h3><p class="note">${nf.format(repos.length)} Repos, davon ${nf.format(priv.length)} privat. GitHub empfiehlt unter 1 GB je Repo.${err.repos ? ' ' + esc(err.repos) : ''}</p>
-    <table><thead><tr><th>Repo</th><th class="num">Größe</th></tr></thead><tbody>${repos.slice(0, 12).map(r =>
+  $('ghRepos').innerHTML = `<h3>Repos nach Größe</h3><p class="note">${nf.format(repos.length)} Repos, davon ${nf.format(priv.length)} privat${priv.length ? ': ' + priv.map(r => esc(r.name)).join(', ') : ''}. GitHub empfiehlt unter 1 GB je Repo.${err.repos ? ' ' + esc(err.repos) : ''}</p>
+    <table><thead><tr><th>Repo</th><th class="num">Größe</th></tr></thead><tbody>${repos.map(r =>
       `<tr><td><a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.name)}</a>${r.private ? ' 🔒' : ''}${r.pages ? ' <span class="tag">Pages</span>' : ''}</td><td class="num">${bytes(r.size_kb * 1024)}</td></tr>`).join('')}</tbody></table>`;
   return g.at;
 }
