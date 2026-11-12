@@ -19,34 +19,36 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <link rel="stylesheet" href="shared/hub.css?v=2">
 <style>
-  :root { --warn: #b25000; --warn-soft: #fff1e0; }
-  [data-theme="dark"] { --warn: #ffb340; --warn-soft: #3a2a0f; }
-  .wrap, .bar { max-width: 860px; }
-  .top { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-  .top .btn { align-self: auto; background: var(--card); box-shadow: var(--shadow); }
-  .meter { padding: 12px 0; }
-  .meter + .meter { border-top: 1px solid var(--sep); }
-  .meter-head { display: flex; align-items: baseline; justify-content: space-between; gap: 2px 12px; flex-wrap: wrap; }
-  .meter-head b { color: var(--ink); font-weight: 600; }
-  .meter-head span { font-variant-numeric: tabular-nums; color: var(--mute); font-size: 13px; margin-left: auto; text-align: right; }
-  .meter-head span strong { color: var(--ink); }
-  .track { height: 8px; border-radius: 999px; background: var(--well); margin-top: 8px; overflow: hidden; }
-  .fill { height: 100%; border-radius: 999px; background: var(--ok); min-width: 2px; }
-  .lvl-warn .fill { background: var(--warn); }
-  .lvl-bad .fill { background: var(--danger); }
-  .lvl-warn .meter-head span strong { color: var(--warn); }
-  .lvl-bad .meter-head span strong { color: var(--danger); }
-  .meter small { display: block; margin-top: 6px; color: var(--mute); font-size: 12px; }
-  .meter.ext .meter-head span a { font-weight: 600; text-decoration: none; }
-  table { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
-  th { text-align: left; font-weight: 600; color: var(--mute); font-size: 12px; padding: 6px 8px 6px 0; }
-  td { padding: 7px 8px 7px 0; border-top: 1px solid var(--sep); }
-  td.num, th.num { text-align: right; padding-right: 0; white-space: nowrap; }
-  td code { font-size: 12px; overflow-wrap: anywhere; }
-  details.more { margin-top: 12px; }
-  details.more > summary { cursor: pointer; font-weight: 600; color: var(--p1); padding: 4px 0; }
-  .hint { font-size: 12px; border-radius: 10px; padding: 8px 12px; margin: 0 0 12px; background: var(--warn-soft); color: var(--warn); }
-  .hint code { font-size: 11px; }
+  :root { --warn: #b25000; }
+  [data-theme="dark"] { --warn: #ffb340; }
+  .wrap, .bar { max-width: 680px; }
+  .crumb { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 16px 2px 10px; font-size: 12px; color: var(--mute); }
+  .crumb button { white-space: nowrap; border: 0; background: none; color: var(--p1); font: inherit; font-weight: 600; cursor: pointer; padding: 4px 0; }
+  .crumb button:disabled { opacity: .5; cursor: wait; }
+  .panel { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; margin-bottom: 12px; font-size: 13px; }
+  .panel h2 { margin: 0 0 8px; font-size: 16px; font-weight: 700; color: var(--ink); }
+  .lim { padding: 5px 0; }
+  .lim-head { display: flex; justify-content: space-between; align-items: baseline; gap: 4px 12px; flex-wrap: wrap; }
+  .lim-head b { font-weight: 500; color: var(--ink); }
+  .lim-head span { margin-left: auto; color: var(--mute); font-variant-numeric: tabular-nums; text-align: right; }
+  .lim-bar { height: 8px; border-radius: 999px; background: var(--well); margin-top: 5px; overflow: hidden; }
+  .lim-fill { height: 100%; border-radius: 999px; background: var(--ok); min-width: 4px; }
+  .lvl-warn .lim-fill { background: var(--warn); }
+  .lvl-bad .lim-fill { background: var(--danger); }
+  .lvl-warn .lim-head span { color: var(--warn); }
+  .lvl-bad .lim-head span { color: var(--danger); font-weight: 600; }
+  .ln { margin: 8px 0 0; color: var(--mute); font-size: 12px; }
+  .ln a { text-decoration: none; font-weight: 600; }
+  .hint { margin: 0 0 6px; font-size: 12px; color: var(--warn); }
+  details.more { margin-top: 8px; border-top: 1px solid var(--sep); padding-top: 6px; }
+  details.more > summary { cursor: pointer; font-size: 12px; font-weight: 600; color: var(--p1); padding: 2px 0; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; font-variant-numeric: tabular-nums; margin-top: 4px; }
+  th { text-align: left; font-weight: 500; color: var(--mute); padding: 4px 0; }
+  td { padding: 4px 0; border-top: 1px solid var(--sep); }
+  th.num, td.num { text-align: right; white-space: nowrap; padding-left: 24px; width: 1%; }
+  td.dim { color: var(--mute); }
+  td code { font-size: 11px; overflow-wrap: anywhere; }
+  .legend { margin: 4px 2px 0; font-size: 11px; color: var(--mute); }
 </style>
 <script src="shared/ios-nav.js" defer></script>
 </head>
@@ -80,25 +82,10 @@
   </section>
 
   <div id="page">
-    <div class="top">
-      <div><h1>Nutzung &amp; Limits</h1><p class="lead" id="stamp">Lädt …</p></div>
-      <button class="btn ghost" id="reload" type="button">Neu laden</button>
-    </div>
-
-    <section class="group">
-      <div class="group-head"><h2>Supabase · Free Plan</h2><p>Projekt „core“, gilt für alle Apps zusammen</p></div>
-      <div class="card" id="sbLimits"><p class="note" style="margin:0">Lädt …</p></div>
-      <div class="card" id="sbTables" hidden></div>
-    </section>
-
-    <section class="group">
-      <div class="group-head"><h2>GitHub · Free</h2><p id="ghUser"></p></div>
-      <div class="card" id="ghLimits"><p class="note" style="margin:0">Lädt …</p></div>
-      <div class="card" id="ghRepos" hidden></div>
-    </section>
-
-    <p class="note" style="margin:16px 4px 0">Grün bis 80 %, gelb ab 80 %, rot ab 95 % des kostenlosen Kontingents.
-      Supabase pausiert ein Free-Projekt nach 7 Tagen ohne Aktivität; bei dauerhaftem Überschreiten drosselt Supabase den Dienst.</p>
+    <div class="crumb"><span id="stamp">Admin / Nutzung · lädt …</span><button id="reload" type="button">Neu laden</button></div>
+    <section class="panel" id="sb"><h2>Supabase (Free)</h2><div id="sbBody"><p class="ln">Lädt …</p></div></section>
+    <section class="panel" id="gh"><h2>GitHub (Free)</h2><div id="ghBody"><p class="ln">Lädt …</p></div></section>
+    <p class="legend">Grün bis 80 %, gelb ab 80 %, rot ab 95 %. Supabase pausiert ein Free-Projekt nach 7 Tagen ohne Aktivität.</p>
   </div>
 </main>
 
@@ -131,54 +118,46 @@ function bytes(n) {
   return (i === 0 ? nf.format(n) : n.toLocaleString('de-DE', { maximumFractionDigits: n < 10 ? 1 : 0 })) + ' ' + u[i];
 }
 const MB = 1024 ** 2, GB = 1024 ** 3;
-const when = d => new Date(d).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+const when = d => new Date(d).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) + ' Uhr';
 
-/* Ein Balken je Limit: grün, ab 80 % gelb, ab 95 % rot */
-function meter({ label, used, limit, fmt = v => nf.format(v), note = '' }) {
+/* Eine Zeile je Limit: links Name, rechts "18 MB / 500 MB · 4 %", darunter Balken (grün, ab 80 % gelb, ab 95 % rot) */
+function meter({ label, used, limit, fmt = v => nf.format(v), tip = '' }) {
   const pct = limit ? used / limit * 100 : 0;
   const lvl = pct >= 95 ? 'lvl-bad' : pct >= 80 ? 'lvl-warn' : '';
   const p = pct < 1 && used > 0 ? '< 1' : nf.format(Math.round(pct));
-  return `<div class="meter ${lvl}" role="group" aria-label="${esc(label)}">
-    <div class="meter-head"><b>${esc(label)}</b><span><strong>${p} %</strong> · ${esc(fmt(used))} von ${esc(fmt(limit))}</span></div>
-    <div class="track"><div class="fill" style="width:${Math.min(100, pct).toFixed(2)}%"></div></div>
-    ${note ? `<small>${note}</small>` : ''}</div>`;
+  return `<div class="lim ${lvl}"${tip ? ` title="${esc(tip)}"` : ''}>
+    <div class="lim-head"><b>${esc(label)}</b><span>${esc(fmt(used))} / ${esc(fmt(limit))} · ${p} %</span></div>
+    <div class="lim-bar"><div class="lim-fill" style="width:${Math.min(100, pct).toFixed(2)}%"></div></div></div>`;
 }
-// Limit, dessen Verbrauch nur der Anbieter selbst kennt
-const external = (label, limit, url, note) => `<div class="meter ext"><div class="meter-head"><b>${esc(label)}</b>
-  <span>Limit ${esc(limit)} · <a href="${url}" target="_blank" rel="noopener">ansehen ↗</a></span></div>${note ? `<small>${note}</small>` : ''}</div>`;
-const failed = (el, text) => { el.innerHTML = `<p class="note" style="margin:0">${esc(text)}</p>`; };
+const failed = (el, text) => { el.innerHTML = `<p class="ln">${esc(text)}</p>`; };
+const table = (head, rows) => `<table><thead><tr>${head.map((h, i) => `<th${i ? ' class="num"' : ''}>${h}</th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table>`;
 
 /* ---------------- Supabase (RPC overall_usage, nur globale Admins) ---------------- */
 async function loadSupabase() {
   try {
     const u = check(await sb.rpc('overall_usage'));
-    const buckets = (u.buckets || []).map(b => `${esc(b.id)} ${bytes(b.bytes)}`).join(' · ');
-    $('sbLimits').innerHTML =
-      meter({ label: 'Datenbank', used: u.db_bytes, limit: 500 * MB, fmt: bytes, note: 'Ab 500 MB schaltet Supabase die Datenbank auf nur lesen.' }) +
-      meter({ label: 'Datei-Storage', used: u.storage_bytes, limit: 1 * GB, fmt: bytes, note: buckets ? 'Buckets: ' + buckets : 'Noch keine Dateien.' }) +
-      meter({ label: 'Aktive Konten diesen Monat', used: u.mau, limit: 50000, note: `${nf.format(u.users)} Konten insgesamt. Gezählt: diesen Monat angemeldet.` }) +
-      meter({ label: 'DB-Verbindungen gerade', used: u.connections, limit: 60, note: 'Direkte Verbindungen der kleinsten Instanz, inkl. Supabase-eigener Dienste.' }) +
-      external('Egress (Traffic)', '5 GB / Monat', SB_USAGE_URL, 'Daten, die an Browser und Apps rausgehen. Zählt nur Supabase selbst.') +
-      external('Edge-Function-Aufrufe', '500.000 / Monat', SB_USAGE_URL) +
-      external('Realtime', '200 Verbindungen, 2 Mio. Nachrichten / Monat', SB_USAGE_URL);
     const t = u.tables || [];
     // Platz je App: Tabellen nach Präfix (travelbase_, dailymind_ …), Supabase-eigene nach Schema
     const groups = new Map();
     for (const r of t) {
       const [schema, rel] = r.name.includes('.') ? r.name.split('.') : ['public', r.name];
-      const key = schema !== 'public' ? 'Supabase intern: ' + schema : (APPS[rel.split('_')[0]] || rel.split('_')[0]);
-      const g = groups.get(key) || { name: key, bytes: 0, rows: 0, tables: 0 };
-      g.bytes += r.bytes; g.rows += r.rows; g.tables++; groups.set(key, g);
+      const key = schema !== 'public' ? 'Supabase intern (' + schema + ')' : (APPS[rel.split('_')[0]] || rel.split('_')[0]);
+      const g = groups.get(key) || { name: key, bytes: 0, rows: 0 };
+      g.bytes += r.bytes; g.rows += r.rows; groups.set(key, g);
     }
     const byApp = [...groups.values()].sort((a, b) => b.bytes - a.bytes);
-    const row = (name, rows, size, code) => `<tr><td>${code ? `<code>${esc(name)}</code>` : esc(name)}</td><td class="num">${nf.format(rows)}</td><td class="num">${bytes(size)}</td></tr>`;
-    $('sbTables').hidden = !t.length;
-    $('sbTables').innerHTML = `<h3>Platz je App</h3><p class="note">Summe aller Tabellen inkl. Indizes. Auch leere Tabellen belegen ein paar KB für Struktur und Indizes.</p>
-      <table><thead><tr><th>App</th><th class="num">Zeilen</th><th class="num">Größe</th></tr></thead><tbody>${byApp.map(g => row(g.name + ` (${g.tables})`, g.rows, g.bytes)).join('')}</tbody></table>
-      <details class="more"><summary>Alle ${nf.format(t.length)} Tabellen</summary>
-      <table><thead><tr><th>Tabelle</th><th class="num">Zeilen</th><th class="num">Größe</th></tr></thead><tbody>${t.map(r => row(r.name, r.rows, r.bytes, true)).join('')}</tbody></table></details>`;
+    const row = (name, rows, size, code) => `<tr><td>${code ? `<code>${esc(name)}</code>` : esc(name)}</td><td class="num dim">${nf.format(rows)}</td><td class="num">${bytes(size)}</td></tr>`;
+    $('sbBody').innerHTML =
+      meter({ label: 'Datenbank', used: u.db_bytes, limit: 500 * MB, fmt: bytes, tip: 'Ab 500 MB schaltet Supabase die Datenbank auf nur lesen.' }) +
+      meter({ label: 'Storage', used: u.storage_bytes, limit: 1 * GB, fmt: bytes, tip: (u.buckets || []).map(b => `${b.id}: ${bytes(b.bytes)}`).join(', ') }) +
+      meter({ label: 'Aktive Konten (MAU)', used: u.mau, limit: 50000, tip: `${u.users} Konten insgesamt, gezählt: diesen Monat angemeldet` }) +
+      meter({ label: 'DB-Verbindungen', used: u.connections, limit: 60, tip: 'Gerade offen, inkl. Supabase-eigener Dienste' }) +
+      `<p class="ln">Größte Apps: ${byApp.filter(g => !g.name.startsWith('Supabase')).slice(0, 3).map(g => `${esc(g.name)} ${bytes(g.bytes)}`).join(' · ')}</p>
+      <p class="ln">Egress (5 GB), Edge Functions (500.000) und Realtime zählt nur Supabase: <a href="${SB_USAGE_URL}" target="_blank" rel="noopener">ansehen ↗</a></p>
+      <details class="more"><summary>Platz je App</summary>${table(['App', 'Zeilen', 'Größe'], byApp.map(g => row(g.name, g.rows, g.bytes)))}</details>
+      <details class="more"><summary>Alle ${nf.format(t.length)} Tabellen</summary>${table(['Tabelle', 'Zeilen', 'Größe'], t.map(r => row(r.name, r.rows, r.bytes, true)))}</details>`;
     return u.at;
-  } catch (e) { failed($('sbLimits'), errText(e)); $('sbTables').hidden = true; return null; }
+  } catch (e) { failed($('sbBody'), errText(e)); return null; }
 }
 
 /* ---------------- GitHub (Edge Function overall-usage, Token bleibt in Supabase) ---------------- */
@@ -193,43 +172,37 @@ async function loadGithub() {
       throw new Error(text);
     }
     g = data;
-  } catch (e) { failed($('ghLimits'), errText(e)); $('ghRepos').hidden = true; return null; }
+  } catch (e) { failed($('ghBody'), errText(e)); return null; }
 
-  $('ghUser').textContent = 'Konto ' + g.user;
   const err = g.errors || {};
   const repos = g.repos || [];
   const priv = repos.filter(r => r.private);
   const pages = repos.filter(r => r.pages);
-  let html = g.token ? '' : `<p class="hint">Ohne Token nur öffentliche Repos und keine Actions-/Packages-Zahlen. In Supabase das Secret <code>GITHUB_USAGE_TOKEN</code> setzen.</p>`;
-
-  if (g.actions) html += meter({ label: 'Actions-Minuten diesen Monat', used: g.actions.minutes, limit: g.actions.limit, fmt: v => nf.format(v) + ' min',
-    note: `Zählen nur private Repos (${priv.length}); öffentliche Repos sind gratis. Windows ×2, macOS ×10.` });
-  else html += external('Actions-Minuten', '2.000 min / Monat', GH_BILLING_URL, esc(err.billing || '') + ' Zählen nur private Repos.');
-
-  if (g.packages) html += meter({ label: 'Packages-Speicher', used: g.packages.gb * GB, limit: 500 * MB, fmt: bytes, note: 'Durchschnitt diesen Monat. Öffentliche Packages sind gratis.' });
-  else html += external('Packages-Speicher', '500 MB', GH_BILLING_URL);
-
-  // Pages: Limit gilt je Seite, also zählt die größte
-  if (pages.length) html += meter({ label: 'Pages: größte Seite (' + pages[0].name + ')', used: pages[0].size_kb * 1024, limit: 1 * GB, fmt: bytes,
-    note: `${pages.length} Seiten, jede darf 1 GB haben. Gemessen ist die Repo-Größe inkl. Verlauf, die veröffentlichte Seite ist kleiner. Dazu ca. 100 GB Traffic / Monat und 10 Builds / Stunde je Seite.` });
-
-  if (g.rate) html += meter({ label: 'API-Anfragen diese Stunde', used: g.rate.used ?? (g.rate.limit - g.rate.remaining), limit: g.rate.limit,
-    note: 'Setzt sich ' + new Date(g.rate.reset * 1000).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) + ' Uhr zurück.' + (g.token ? '' : ' Ohne Token gilt das Limit der Supabase-Server-Adresse.') });
-  else if (err.rate) html += `<p class="note">API-Limit: ${esc(err.rate)}</p>`;
-  $('ghLimits').innerHTML = html;
-
-  $('ghRepos').hidden = !repos.length;
-  $('ghRepos').innerHTML = `<h3>Repos nach Größe</h3><p class="note">${nf.format(repos.length)} Repos, davon ${nf.format(priv.length)} privat${priv.length ? ': ' + priv.map(r => esc(r.name)).join(', ') : ''}. GitHub empfiehlt unter 1 GB je Repo.${err.repos ? ' ' + esc(err.repos) : ''}</p>
-    <table><thead><tr><th>Repo</th><th class="num">Größe</th></tr></thead><tbody>${repos.map(r =>
-      `<tr><td><a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.name)}</a>${r.private ? ' 🔒' : ''}${r.pages ? ' <span class="tag">Pages</span>' : ''}</td><td class="num">${bytes(r.size_kb * 1024)}</td></tr>`).join('')}</tbody></table>`;
+  const time = s => new Date(s * 1000).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+  let html = g.token ? '' : `<p class="hint">Ohne Secret <code>GITHUB_USAGE_TOKEN</code> nur öffentliche Repos, keine Actions/Packages.</p>`;
+  if (g.actions) html += meter({ label: 'Actions-Minuten', used: g.actions.minutes, limit: g.actions.limit, tip: 'Nur private Repos zählen. Windows ×2, macOS ×10.' });
+  if (g.packages) html += meter({ label: 'Packages', used: g.packages.gb * GB, limit: 500 * MB, fmt: bytes, tip: 'Durchschnitt diesen Monat' });
+  if (pages.length) html += meter({ label: 'Pages-Größe (' + pages[0].name + ')', used: pages[0].size_kb * 1024, limit: 1 * GB, fmt: bytes,
+    tip: 'Größte von ' + pages.length + ' Seiten, Repo inkl. Verlauf. Limit gilt je Seite.' });
+  if (g.rate) {
+    const used = g.rate.used ?? (g.rate.limit - g.rate.remaining);
+    html += meter({ label: 'API-Anfragen · Reset ' + time(g.rate.reset), used, limit: g.rate.limit });
+  }
+  html += `<p class="ln">${nf.format(repos.length)} Repos, ${nf.format(priv.length)} privat${priv.length ? ': ' + priv.map(r => esc(r.name)).join(', ') : ''}.
+    Actions zählen nur bei privaten Repos.${['billing', 'rate', 'repos'].filter(k => err[k] && (k !== 'billing' || g.token)).map(k => ' ' + esc(err[k])).join('')}</p>`;
+  if (repos.length) html += `<details class="more"><summary>Repos nach Größe</summary>${table(['Repo', 'Größe'], repos.map(r =>
+    `<tr><td><a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.name)}</a>${r.private ? ' 🔒' : ''}${r.pages ? ' <span class="tag">Pages</span>' : ''}</td><td class="num">${bytes(r.size_kb * 1024)}</td></tr>`))}</details>`;
+  $('ghBody').innerHTML = html;
   return g.at;
 }
 
 async function loadAll() {
-  $('reload').disabled = true; $('stamp').textContent = 'Lädt …';
+  $('reload').disabled = true; $('stamp').textContent = 'Admin / Nutzung · lädt …';
   const [a, b] = await Promise.all([loadSupabase(), loadGithub()]);
-  const at = a || b;
-  $('stamp').textContent = at ? 'Stand ' + when(at) : 'Keine Daten';
+  const at = a || b, d = new Date();
+  const month = d.toLocaleDateString('de-DE', { month: 'short' }).replace('.', '');
+  const last = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+  $('stamp').textContent = 'Admin / Nutzung · ' + (at ? 'Stand ' + when(at) : 'keine Daten') + ` · Zeitraum 1.–${last}. ${month}`;
   $('reload').disabled = false;
 }
 
