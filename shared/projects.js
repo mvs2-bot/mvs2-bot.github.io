@@ -29,5 +29,5 @@ const PROJECTS = [
   { name: 'QuicKniff',           desc: 'Der schnelle digitale Kniffel-Block',        url: '/QuicKniff/', img: '/QuicKniff/icon.svg',                         icon: 'dice',     color: '#a63a32' },
   { name: 'DepotDuell',         desc: 'Altersvorsorgedepot, Riester oder ETF?',      url: '/DepotDuell/', img: '/DepotDuell/icon.svg',                       icon: 'bars',     color: '#0f7a5c' },
   { name: 'Erste Hilfe',        desc: 'Notfall-Schritte schnell zur Hand',           url: '/ErsteHilfe/', img: '/ErsteHilfe/icon.svg',                       icon: 'firstAid', color: '#c62828' },
-  { name: 'X100VI',             desc: 'Kamerakarte: alle Tasten & Räder erklärt',    url: '/Fujifilm-X100VI/', img: '/Fujifilm-X100VI/icon.svg',             icon: 'camera',   color: '#0f1210' },
+  { name: 'X100VI',             desc: 'Kamerakarte: alle Tasten & Räder erklärt',    url: '/Fujifilm-X100VI/', img: '/Fujifilm-X100VI/icon.svg',             icon: 'camera',   color: '#e8850c' },
 ];
