@@ -159,6 +159,59 @@
     .foot .kpi { height: auto; line-height: 1.3; padding: 0 2px; background: none; color: var(--mute); }
   }
 
+  /* Ansicht aus den Kontoeinstellungen: user_metadata.dash_view → Klassen an #sections (shared/dashboard.js paintView) */
+  .v-no-name .tile .name, .v-no-desc .tile .desc { display: none; }
+  .v-no-name .tile .desc { margin-top: 0; font-size: 13px; color: var(--text); }
+  .v-no-changed .tile .meta { visibility: hidden; }
+  .v-no-kpi .tile .kpi, .v-no-kpi .tile .streak-chip, .v-no-github .tile .mini.gh { display: none !important; }
+  .v-no-counts .group-head .count, .v-no-status .live { display: none; }
+  /* Ohne Fußzeilen-Inhalt: Stern und Griff rücken neben den Namen, keine leere Zeile */
+  .v-no-foot .tile { flex-direction: row; align-items: center; }
+  .v-no-foot .tile .main { padding-bottom: 16px; }
+  .v-no-foot .tile .foot { border: 0; margin: 0; padding: 0 12px 0 0; }
+  .v-no-foot .tile .meta { display: none; }
+  /* Kompakt: kleinere Symbole, eine Zeile Beschreibung, mehr Kacheln pro Reihe */
+  .v-compact .grid { gap: 8px; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+  .v-compact .tile .main { gap: 10px; padding: 10px 12px 8px; }
+  .v-compact.v-no-foot .tile .main { padding-bottom: 10px; }
+  .v-compact .ico { flex-basis: 34px; width: 34px; height: 34px; border-radius: 8px; font-size: 18px; }
+  .v-compact .ico svg { width: 20px; height: 20px; }
+  .v-compact .tile .name { font-size: 14px; }
+  .v-compact .tile .desc { -webkit-line-clamp: 1; }
+  .v-compact .tile .foot { margin: 0 12px; padding: 4px 0 6px; }
+  .v-compact.v-no-foot .tile .foot { margin: 0; padding: 0 8px 0 0; }
+  @media (min-width: 980px) { .v-compact .grid { grid-template-columns: repeat(4, 1fr); } }
+  /* Nur Symbole (Name und Beschreibung aus): Raster wie der Schnellzugriff, auch am Handy */
+  .v-icons .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 10px; background: none; box-shadow: none; overflow: visible; border-radius: 0; }
+  .v-icons .tile, .v-icons.v-no-foot .tile { flex-direction: column; align-items: stretch; border-radius: var(--radius); box-shadow: var(--shadow); background: var(--card); }
+  .v-icons .tile + .tile::before, .v-icons .tile .txt, .v-icons .tile .main > .chev, .v-icons .tile .meta { display: none; }
+  .v-icons .tile .main { justify-content: center; border-radius: var(--radius) var(--radius) 0 0; }
+  .v-icons .ico { flex-basis: 52px; width: 52px; height: 52px; border-radius: 12px; font-size: 26px; }
+  .v-icons .ico svg { width: 30px; height: 30px; }
+  .v-icons .tile .main { flex: none; }
+  .v-icons .tile .foot { justify-content: center; border: 0; margin-top: auto; }
+  .v-icons .foot .kpi { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; padding: 0 6px; }
+  /* Stern als kleines Abzeichen oben rechts statt eigener Zeile */
+  .v-icons .tile { position: relative; }
+  .v-icons .tile .mini.fav { position: absolute; top: 4px; right: 4px; }
+  .v-icons.v-compact .grid { grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); gap: 8px; }
+  .v-icons.v-compact .ico { flex-basis: 40px; width: 40px; height: 40px; border-radius: 10px; font-size: 20px; }
+  .v-icons.v-compact .ico svg { width: 24px; height: 24px; }
+  @media (max-width: 640px) {
+    .v-compact .tile .main { padding: 8px 0 8px 16px; }
+    .v-compact .tile + .tile::before { left: 60px; }
+    .v-compact .tile .foot, .v-compact.v-no-foot .tile .foot { margin: 0; padding: 0 12px 0 4px; }
+    .v-no-foot .tile .main { padding-bottom: 12px; }
+    .v-compact.v-no-foot .tile .main { padding-bottom: 8px; }
+  }
+  /* Abstände der Symbol-Ansicht gewinnen gegen Kompakt/Handy (ID-Selektor) */
+  #sections.v-icons .tile .main { padding: 14px 8px 10px; }
+  #sections.v-icons.v-compact .tile .main { padding: 10px 6px 8px; }
+  #sections.v-icons .tile .foot { margin: 0 8px; padding: 0 0 8px; }
+  #sections.v-icons.v-no-foot .tile .foot { padding: 0; }
+  #sections.v-icons.v-no-foot .tile .main { padding-bottom: 14px; }
+  #sections.v-icons.v-no-foot.v-compact .tile .main { padding-bottom: 10px; }
+
   /* Suche */
   .search-dlg { width: min(560px, calc(100vw - 32px)); max-height: min(70vh, 560px); margin: 10vh auto auto; padding: 0; border: 0; border-radius: 20px;
     background: var(--card); color: var(--text); box-shadow: var(--pop); overflow: hidden; }
