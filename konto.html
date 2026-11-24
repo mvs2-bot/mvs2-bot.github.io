@@ -393,6 +393,10 @@ async function dailymindCard(card, user) {
   const st = Object.assign({ morning_enabled: false, morning_time: '07:30', evening_enabled: false, evening_time: '21:00' }, row || {});
   // Streak-Schalter (streak_prefs, keine Zeile = an); fehlt die Tabelle noch, bleibt der Schalter weg
   const streakRow = await sb.from('streak_prefs').select('enabled').eq('user_id', user.id).eq('app', 'dailymind').maybeSingle();
+  // Streak-Erinnerung (streak_enabled/streak_time); fehlen die Spalten noch, bleibt sie weg
+  const streakPush = await sb.from('dailymind_push_settings').select('streak_enabled, streak_time').eq('user_id', user.id).maybeSingle();
+  const hasStreakPush = !streakPush.error;
+  if (hasStreakPush) Object.assign(st, { streak_enabled: false, streak_time: '21:00' }, streakPush.data || {});
   const hhmm = t => String(t).slice(0, 5);
   const box = card.querySelector('.app-body');
   const reminder = (kind, icon, label, hint) => `
@@ -432,6 +436,7 @@ async function dailymindCard(card, user) {
     <p class="note">Eine Push-Benachrichtigung zur gewählten Uhrzeit. Hast du die Routine an dem Tag schon begonnen, kommt keine.</p>
     ${reminder('morning', '☀️', 'Morgen-Erinnerung', 'Dankbarkeit, Tagesfokus und Affirmation')}
     ${reminder('evening', '🌙', 'Abend-Erinnerung', 'Kleine Erfolge, gute Taten und Stimmung')}
+    ${hasStreakPush ? reminder('streak', '🔥', 'Streak-Erinnerung', 'Nur wenn deine Serie heute noch offen ist') : ''}
     <div class="row" id="dmDevice"></div>
     <div class="msg" hidden></div>
     <p class="note" style="margin:12px 0 0">Deine Einträge sind privat. Niemand sonst sieht sie, auch Admins nicht. Name, Profilbild und Hell/Dunkel übernimmt DailyMind aus diesem Konto.</p>`;
@@ -501,6 +506,7 @@ async function dailymindCard(card, user) {
     user_id: user.id,
     morning_enabled: st.morning_enabled, morning_time: hhmm(st.morning_time),
     evening_enabled: st.evening_enabled, evening_time: hhmm(st.evening_time),
+    ...(hasStreakPush ? { streak_enabled: st.streak_enabled, streak_time: hhmm(st.streak_time) } : {}),
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/Berlin',
   }, { onConflict: 'user_id' }).then(check);
 
