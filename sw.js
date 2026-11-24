@@ -1,7 +1,7 @@
 // Service Worker für das Dashboard (nur Root-Seite, Unterprojekte haben eigene SWs).
 // Einzige Versionsnummer der Root-Seiten: bei jeder Änderung an einer Datei aus ASSETS hochzählen.
 // HTML/CSS/JS brauchen keine ?v=…-Parameter: der SW holt sie immer frisch (Revalidierung per ETag).
-const CACHE = 'mvs2-dashboard-v49';
+const CACHE = 'mvs2-dashboard-v50';
 const ASSETS = [
   './', './index.html', './konto.html', './admin.html', './usage.html', './colors.html', './manifest.json',
   './shared/tokens.css', './shared/hub.css', './shared/streak.css',
