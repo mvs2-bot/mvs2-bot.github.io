@@ -1,12 +1,12 @@
 // Service Worker für das Dashboard (nur Root-Seite, Unterprojekte haben eigene SWs).
 // Einzige Versionsnummer der Root-Seiten: bei jeder Änderung an einer Datei aus ASSETS hochzählen.
 // HTML/CSS/JS brauchen keine ?v=…-Parameter: der SW holt sie immer frisch (Revalidierung per ETag).
-const CACHE = 'mvs2-dashboard-v48';
+const CACHE = 'mvs2-dashboard-v49';
 const ASSETS = [
   './', './index.html', './konto.html', './admin.html', './usage.html', './colors.html', './manifest.json',
   './shared/tokens.css', './shared/hub.css', './shared/streak.css',
   './shared/dashboard.js', './shared/tools.js', './shared/projects.js', './shared/overall-account.js',
-  './shared/ios-nav.js', './shared/streak.js', './shared/settings-nav.js',
+  './shared/ios-nav.js', './shared/streak.js', './shared/kpi.js', './shared/settings-nav.js',
   './icon.svg', './favicon.ico', './icons/icon-192.png', './icons/icon-512.png', './icons/icon-maskable-512.png',
   './icons/apple-touch-icon.png', './icons/favicon-32.png',
 ];
