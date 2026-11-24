@@ -302,9 +302,11 @@ const ACCESS_KEY = 'dash-access'; // User-ID der letzten erfolgreichen Prüfung,
 const sb = window.supabase ? window.supabase.createClient(CORE.url, CORE.key, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } }) : null;
 let started = false;
 
-/* Login-Kacheln nur für Apps mit Zugriff: je Kachel overall_has_app_role(app, min)
-   (globale Admins sehen alles). Ergebnis pro Konto zwischengespeichert, damit es offline und ohne Flackern geht. */
+/* Login-Kacheln nur für Apps mit Zugriff: alle Rollen in einem Aufruf overall_my_apps(),
+   Mindestrolle je Kachel per Rang (guest 1, member 2, admin 3; globale Admins sehen alles).
+   Fallback, solange die RPC live fehlt: je Kachel overall_has_app_role(app, min). Ergebnis pro Konto zwischengespeichert, damit es offline und ohne Flackern geht. */
 const APPS_KEY = 'dash-apps';
+const ROLE_RANK = { guest: 1, member: 2, admin: 3 };
 let syncedAt = null, syncFailed = false; // Zeitpunkt des letzten erfolgreichen Abgleichs (für den Offline-Hinweis)
 function cachedApps(id) {
   try {
@@ -314,13 +316,20 @@ function cachedApps(id) {
     return c.apps;
   } catch (e) { return null; }
 }
+async function allowedApps(tiles) {
+  const { data, error } = await sb.rpc('overall_my_apps');
+  if (!error) {
+    const rank = Object.fromEntries((data || []).map(r => [r.app_id, r.rank]));
+    return tiles.filter(it => (rank[it.app] || 0) >= ROLE_RANK[it.min || 'member']).map(it => it.app);
+  }
+  const res = await Promise.all(tiles.map(it => sb.rpc('overall_has_app_role', { p_app: it.app, p_min_role: it.min || 'member' })));
+  const err = res.find(r => r.error);
+  if (err) throw err.error;
+  return tiles.filter((it, i) => res[i].data).map(it => it.app);
+}
 async function loadAllowed(id) {
-  const tiles = PROJECTS.filter(it => it.app), apps = tiles.map(it => it.app);
   try {
-    const res = await Promise.all(tiles.map(it => sb.rpc('overall_has_app_role', { p_app: it.app, p_min_role: it.min || 'member' })));
-    const err = res.find(r => r.error);
-    if (err) throw err.error;
-    const list = apps.filter((app, i) => res[i].data);
+    const list = await allowedApps(PROJECTS.filter(it => it.app));
     syncedAt = new Date(); syncFailed = false;
     try { localStorage.setItem(APPS_KEY, JSON.stringify({ id, apps: list, t: syncedAt.getTime() })); } catch (e) {}
     if (String(list) !== String(allowed)) { allowed = list; render(); }
