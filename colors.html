@@ -18,24 +18,8 @@
     document.documentElement.setAttribute('data-theme', t);
   })();
 </script>
+<link rel="stylesheet" href="shared/tokens.css">
 <style>
-  :root {
-    --bg: #f2f2f7; --card: #fff; --well: #f2f2f7; --hover: #e9e9ef; --line: #e2e2e7; --sep: rgba(60, 60, 67, .14);
-    --ink: #1c1c1e; --text: #3a3a3c; --mute: #6c6c70;
-    --p1: #0066cc; --p1-soft: #e6f0fd; --on-p1: #fff;
-    --ok: #248a3d; --ok-soft: #e4f5e9; --danger: #d70015; --danger-soft: #ffe6e8; --star: #b25000;
-    --radius: 18px; --radius-s: 12px; --shadow: 0 1px 2px rgba(0, 0, 0, .04), 0 4px 14px rgba(0, 0, 0, .04);
-    --pop: 0 12px 40px rgba(0, 0, 0, .18), 0 0 0 .5px rgba(0, 0, 0, .06);
-    --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro", system-ui, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
-    color-scheme: light;
-  }
-  [data-theme="dark"] {
-    color-scheme: dark; --bg: #000; --card: #1c1c1e; --well: #2c2c2e; --hover: #3a3a3c; --line: #38383a; --sep: rgba(84, 84, 88, .55);
-    --ink: #f5f5f7; --text: #d1d1d6; --mute: #98989f;
-    --p1: #409cff; --p1-soft: #0b2540; --on-p1: #001a33;
-    --ok: #30d158; --ok-soft: #0f2a17; --danger: #ff6961; --danger-soft: #3a1412; --star: #ffb340;
-    --shadow: none; --pop: 0 16px 48px rgba(0, 0, 0, .6), 0 0 0 .5px rgba(255, 255, 255, .08);
-  }
   * { box-sizing: border-box; }
   body { margin: 0; min-height: 100vh; font-family: var(--font); background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.45; }
   header { position: sticky; top: 0; z-index: 20; padding-top: env(safe-area-inset-top, 0px); background: color-mix(in srgb, var(--bg) 82%, transparent); -webkit-backdrop-filter: saturate(1.8) blur(18px); backdrop-filter: saturate(1.8) blur(18px); border-bottom: 1px solid var(--sep); }

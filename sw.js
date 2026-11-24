@@ -1,7 +1,17 @@
 // Service Worker für das Dashboard (nur Root-Seite, Unterprojekte haben eigene SWs).
-// Bei Änderungen an index.html die Versionsnummer erhöhen.
-const CACHE = 'mvs2-dashboard-v48';
-const ASSETS = ['./', './index.html', './konto.html', './admin.html', './shared/hub.css', './manifest.json', './icon.svg', './favicon.ico', './shared/overall-account.js', './shared/ios-nav.js', './shared/streak.js', './shared/streak.css', './shared/projects.js', './shared/settings-nav.js', './icons/icon-192.png', './icons/icon-512.png', './icons/icon-maskable-512.png', './icons/apple-touch-icon.png', './icons/favicon-32.png'];
+// Einzige Versionsnummer der Root-Seiten: bei jeder Änderung an einer Datei aus ASSETS hochzählen.
+// HTML/CSS/JS brauchen keine ?v=…-Parameter: der SW holt sie immer frisch (Revalidierung per ETag).
+const CACHE = 'mvs2-dashboard-v50';
+const ASSETS = [
+  './', './index.html', './konto.html', './admin.html', './usage.html', './colors.html', './manifest.json',
+  './shared/tokens.css', './shared/hub.css', './shared/streak.css',
+  './shared/dashboard.js', './shared/tools.js', './shared/projects.js', './shared/overall-account.js',
+  './shared/ios-nav.js', './shared/streak.js', './shared/settings-nav.js',
+  './icon.svg', './favicon.ico', './icons/icon-192.png', './icons/icon-512.png', './icons/icon-maskable-512.png',
+  './icons/apple-touch-icon.png', './icons/favicon-32.png',
+];
+// Dieselbe Liste entscheidet, welche Anfragen der SW bedient (Pfade relativ zum Scope, z. B. '/shared/hub.css').
+const PATHS = new Set(ASSETS.map(a => new URL(a, self.registration.scope).pathname));
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
@@ -20,17 +30,14 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
   // Nur eigene Root-Dateien bedienen – Unterprojekte (/TravelBase/, /QuickTools/ …) nicht anfassen.
-  if (e.request.method !== 'GET' || url.origin !== location.origin) return;
-  const path = url.pathname;
-  const isRootAsset = path === '/' || ['/index.html', '/konto.html', '/admin.html', '/shared/hub.css', '/manifest.json', '/icon.svg', '/favicon.ico'].includes(path) || path.startsWith('/icons/') || path === '/shared/overall-account.js' || path === '/shared/ios-nav.js' || path === '/shared/streak.js' || path === '/shared/streak.css' || path === '/shared/projects.js' || path === '/shared/settings-nav.js';
-  if (!isRootAsset) return;
+  if (e.request.method !== 'GET' || url.origin !== location.origin || !PATHS.has(url.pathname)) return;
 
-  // Network-first: immer aktuell, offline aus dem Cache.
+  // Network-first: immer aktuell, offline aus dem Cache. no-cache = am Browser-Cache vorbei beim Server nachfragen.
+  const req = e.request.mode === 'navigate' ? e.request : new Request(e.request, { cache: 'no-cache' });
   e.respondWith(
-    fetch(e.request)
+    fetch(req)
       .then(res => {
-        const copy = res.clone();
-        caches.open(CACHE).then(c => c.put(e.request, copy));
+        if (res.ok) { const copy = res.clone(); caches.open(CACHE).then(c => c.put(e.request, copy)); }
         return res;
       })
       .catch(() => caches.match(e.request, { ignoreSearch: true }).then(r => r || caches.match('./index.html')))
