@@ -22,6 +22,7 @@ Tages-Serie nach dem Prinzip von Duolingo. Liegt im gemeinsamen Supabase-Core-Pr
 9. **Anzeige ohne Schreiben** (`streak_status`): Serie gilt als gebrochen (0), wenn mehr Tage fehlen als Freezes da sind. `at_risk` = Serie läuft, heute fehlt noch (Erinnerungspunkt am Chip). Gespeichert wird der Bruch erst beim nächsten aktiven Tag.
 10. **Persönlicher Schalter** (`streak_prefs`, Kontoeinstellungen → DailyMind): aus = Aktivitäten dieser App zählen nicht, die App und die Kachel zeigen nichts. Keine Zeile = an. Die Serie läuft beim Ausschalten nicht weiter; nach dem Einschalten gelten die normalen Regeln.
 11. **Löschen zählt mit**: Wird ein DailyMind-Eintrag gelöscht oder ganz geleert (beide Routinen leer), verliert sein Eintragsdatum den DailyMind-Anteil. Der Stand des Kontos wird dann aus den verbleibenden aktiven Tagen neu aufgebaut (`streak_rebuild`): Serie, Rekord und Freezes werden neu gerechnet, gefrorene Tage neu vergeben.
+12. **Reparatur** (Migration `…_streak_repair`): Ist die Serie gerissen (1–3 Tage verpasst, alte Serie ≥ 2, letzte Reparatur > 30 Tage her), liefern die RPCs `repair: { prev, missed }`. Speichert das Konto heute Morgen- **und** Abendroutine in DailyMind, wird die Serie auf `prev + 1` gesetzt (`repaired = true`), die verpassten Tage gelten als überbrückt (`r`, zugleich `f`). Anzeige: Hinweis im Dialog und in DailyMind, Meldung „Serie repariert“.
 
 ## Randfälle
 
@@ -51,11 +52,11 @@ const st = await Streak.status(sb, 'questlog');   // RPC streak_status(p_tz, p_a
 Streak.chip(document.getElementById('streakBtn'), st, sb);  // Flamme + Zahl, Klick = Detailansicht
 ```
 
-Rückgabe beider RPCs: `{ current, best, last_day, freezes, today, tz, today_done, at_risk, missed, days: [{ d, f, apps }], enabled }`; `streak_log` zusätzlich `counted`, `reason` (`rule`/`off`), `new_day`, `earned_freeze`.
+Rückgabe beider RPCs: `{ current, best, last_day, freezes, today, tz, today_done, at_risk, missed, days: [{ d, f, r, apps }], enabled, next_freeze_in, repair, repaired }` (`next_freeze_in` = Tage bis zum nächsten Freeze oder `null`; der Client verträgt fehlende neue Felder); `streak_log` zusätzlich `counted`, `reason` (`rule`/`off`), `new_day`, `earned_freeze`.
 
 Admins: `streak_admin_overview()` liefert alle Konten (nur globale Admins), Regeln in `streak_rules` können Admins an-/ausschalten (`active`).
 
-Einbinden: `shared/streak.js` und `shared/streak.css` (Kopie in DailyMind unter `shared/`, Änderungen im Dashboard-Repo machen und kopieren). Farben kommen aus den Seiten-Tokens `--star` (Flamme), `--card`, `--well`, `--ink`, `--mute`; Freeze-Farbe `--streak-ice`.
+Einbinden: `shared/streak.js` und `shared/streak.css` (Kopie in DailyMind unter `shared/`, Änderungen im Dashboard-Repo machen und kopieren). Farben kommen aus den Seiten-Tokens `--star` (Flamme), `--card`, `--well`, `--ink`, `--mute`; Freeze-Farbe `--streak-ice`, Reparatur `--streak-repair`. Zusätzlich `Streak.nextFreeze(st)` und `Streak.repairText(st)` für eigene Anzeigen. Streak-Erinnerung (Migration `…_dailymind_push_streak`): `dailymind_push_settings.streak_enabled`/`streak_time`, Push nur wenn die Serie an dem Tag noch offen ist (Kontoeinstellungen → DailyMind).
 
 ## Tests
 
