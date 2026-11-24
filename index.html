@@ -15,6 +15,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" defer></script>
 <script src="shared/overall-account.js" defer></script>
 <script src="shared/streak.js" defer></script>
+<script src="shared/kpi.js" defer></script>
 <script src="shared/projects.js" defer></script>
 <link rel="stylesheet" href="shared/tokens.css">
 <link rel="stylesheet" href="shared/streak.css">
@@ -125,6 +126,8 @@
   /* Streak an der Kachel (shared/streak.css), so hoch wie die runden Knöpfe */
   .foot .streak-chip { height: 28px; padding: 0 8px 0 6px; background: none; box-shadow: none; font-size: 13px; }
   .foot .streak-chip .ic { width: 16px; height: 16px; }
+  /* Kennzahl an der Kachel (shared/kpi.js) */
+  .foot .kpi { flex: none; height: 22px; line-height: 22px; padding: 0 8px; border-radius: 999px; background: var(--well); color: var(--text); font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
 
   /* Schnellzugriff: Symbole mit Namen wie auf dem Home-Bildschirm */
   .box { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px 12px 12px; }

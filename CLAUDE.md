@@ -27,6 +27,7 @@ Kein Build, kein npm: reines HTML/CSS/JS, supabase-js per CDN. Sprache in UI, Ko
 | `shared/ios-nav.js` | **Original** der iOS-Navigationsleiste; andere Repos haben Kopien |
 | `shared/settings-nav.js` | Seitennavigation der Einstellungsseiten (`SettingsNav.build`, `<section class="pane">`) |
 | `shared/streak.js`, `shared/streak.css` | Streak-Client (Chip, Dialog, Cache `localStorage streak:<uid>`), Doku `docs/STREAK.md` |
+| `shared/kpi.js` | Kennzahl-Chip an Login-Kacheln (`kpi: true` in `PROJECTS`), RPC `overall_tile_kpis`, Cache `kpi:<uid>` |
 | `sw.js` | Service Worker (nur Root), network-first. `ASSETS` ist die einzige Dateiliste. **Bei Änderungen `CACHE` (`mvs2-dashboard-vNN`) hochzählen.** Keine `?v=`-Parameter nötig. |
 | `manifest.json`, `icon.svg`, `favicon.ico`, `icons/` | PWA |
 | `_config.yml`, `.well-known/assetlinks.json` | Jekyll-Include für `.well-known` (Android-App QuicKniff) |
@@ -37,7 +38,7 @@ Kein Build, kein npm: reines HTML/CSS/JS, supabase-js per CDN. Sprache in UI, Ko
 - **Schema liegt ausschließlich im Repo `supabase-core`** (Migrationen). Schemaänderung = dort neue Migration, eigener PR.
 - Genutzte RPCs: `overall_is_admin`, `overall_app_role(p_app)`, `overall_has_app_role(p_app, p_min_role)`,
   `overall_my_apps` (Kachel-Sichtbarkeit, Fallback `overall_has_app_role`), `overall_usage`, `streak_admin_overview`, `travelbase_admin_overview`, `travelbase_admin_set_member`,
-  `travelbase_admin_set_trip_tentative`, `travelbase_my_trips`.
+  `travelbase_admin_set_trip_tentative`, `travelbase_my_trips`, `overall_tile_kpis(p_tz)`.
 - Edge Functions via `sb.functions.invoke`: `overall-admin` (`{ action, … }`), `overall-usage`.
 - Kachel-Sichtbarkeit: `app` + `min` aus `PROJECTS` gegen Rang aus `overall_my_apps()`; nur Anzeige, Schutz macht RLS.
 

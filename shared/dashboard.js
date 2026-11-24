@@ -160,6 +160,7 @@ function tileHtml(it, sortable) {
           </a>
           <div class="foot">
             <span class="meta" data-repo="${esc(repoName(it))}"></span>
+            ${it.kpi && it.app ? `<span class="kpi" data-kpi="${esc(it.app)}" hidden></span>` : ''}
             ${it.streak ? `<button class="streak-chip" type="button" data-streak="${esc(it.streak)}" hidden></button>` : ''}
             <button class="mini fav${fav ? ' on' : ''}" type="button" data-fav="${esc(it.url)}" aria-pressed="${fav}" aria-label="${esc(it.name)} ${fav ? 'aus Favoriten entfernen' : 'zu Favoriten'}" title="${fav ? 'Aus Favoriten entfernen' : 'Als Favorit oben anheften'}">${STAR_ICON}</button>
             ${gh ? `<a class="mini" href="${esc(gh)}" target="_blank" rel="noopener" aria-label="${esc(it.name)} auf GitHub" title="Repo auf GitHub">${GH_ICON}</a>` : ''}
@@ -192,6 +193,7 @@ function render() {
   paintPushed();
   paintStatus();
   paintStreak();
+  if (window.Kpi) Kpi.paint(localStorage.getItem(ACCESS_KEY));
 }
 
 /* ---------------- Streak an der Kachel (Berechnung auf dem Server, shared/streak.js) ---------------- */
@@ -206,6 +208,7 @@ async function loadStreak() {
   if (!window.Streak || !sb) return;
   streakSt = streakSt || Streak.cached(localStorage.getItem(ACCESS_KEY));
   paintStreak();
+  if (window.Kpi) Kpi.load(sb, localStorage.getItem(ACCESS_KEY));
   try { streakSt = await Streak.status(sb, 'dailymind'); paintStreak(); }
   catch (e) { if (navigator.onLine) console.warn('Streak', e); }
 }
