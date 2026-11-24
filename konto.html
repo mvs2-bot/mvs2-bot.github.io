@@ -247,10 +247,11 @@ async function dashboardVisibility(box) {
           <button type="button" data-move="1" aria-label="${esc(r.name)} nach hinten"${rows[i + 1] && rows[i + 1].group === r.group ? '' : ' aria-disabled="true"'}>${DOWN}</button></span>` : ''}</span></label>`).join('')}</div>
       <div class="msg" hidden></div></div>`;
   const paintApps = () => { box.querySelector('[data-apps]').innerHTML = list('Apps', 'Ausgeschaltete Apps erscheinen nicht im Dashboard und nicht in der Suche. Mit den Pfeilen änderst du die Reihenfolge innerhalb von „Mit Login“ und „Ohne Login“.', apps(), true); };
-  box.innerHTML = '<div data-apps></div>'
+  box.innerHTML = viewCard(meta.dash_view) + '<div data-apps></div>'
     + list('Schnellzugriff', 'Welche Links im Schnellzugriff stehen.', items('[aria-labelledby="quickH"] .quick > a'))
     + list('Mini-Tools', 'Welche Mini-Tools angezeigt werden.', items('[aria-labelledby="toolsH"] .quick > button'));
   paintApps();
+  bindView(box.querySelector('[data-view]'), meta.dash_view);
   box.addEventListener('change', async e => {
     const cb = e.target.closest('[data-hide]'); if (!cb) return;
     const out = cb.closest('.card').querySelector('.msg'), before = hidden;
@@ -274,6 +275,63 @@ async function dashboardVisibility(box) {
     try { check(await sb.auth.updateUser({ data: { dash_order: order } })); msg(out, 'Gespeichert. Gilt auf allen Geräten.', true); }
     catch (err) { order = before; paintApps(); msg(box.querySelector('[data-apps] .msg'), errText(err)); }
   });
+}
+
+/* Ansicht der Kacheln: user_metadata.dash_view (gilt fürs Konto). Nur Abweichungen werden gespeichert:
+   size: 'compact', <Schalter>: false. Das Dashboard setzt daraus Klassen an #sections (shared/dashboard.js paintView). */
+const VIEW_OPTS = [
+  { key: 'name', name: 'App-Name', desc: 'Name auf der Kachel' },
+  { key: 'desc', name: 'Kurzbeschreibung', desc: 'Kleine Info unter dem Namen' },
+  { key: 'changed', name: 'Letzte Änderung', desc: '„Geändert vor …“, nur auf großen Bildschirmen' },
+  { key: 'kpi', name: 'Kennzahlen und Streak', desc: 'Kleine Werte unten an der Kachel' },
+  { key: 'github', name: 'GitHub-Link', desc: 'Symbol zum Repo' },
+  { key: 'counts', name: 'Anzahl je Bereich', desc: 'Zahl neben „Mit Login“ und „Ohne Login“' },
+  { key: 'status', name: 'Supabase-Status', desc: 'Punkt „Supabase erreichbar“' },
+];
+const viewOf = v => (v && typeof v === 'object' && !Array.isArray(v) ? { ...v } : {});
+function viewCard(v) {
+  v = viewOf(v);
+  return `
+    <p class="card-label">Ansicht der Kacheln</p>
+    <div class="card" data-view>
+      <div class="row">
+        <div><b>Kachelgröße</b><small>Kompakt zeigt mehr Apps auf einmal.</small></div>
+        <div class="seg" role="group" aria-label="Kachelgröße">
+          <button type="button" data-size="normal" aria-pressed="${v.size !== 'compact'}">Normal</button>
+          <button type="button" data-size="compact" aria-pressed="${v.size === 'compact'}">Kompakt</button>
+        </div>
+      </div>
+      <p class="note" style="margin-top:12px">Sind App-Name und Kurzbeschreibung aus, zeigt das Dashboard nur die Symbole.</p>
+      <div class="toggles">${VIEW_OPTS.map(o => `
+        <label class="switch"><input type="checkbox" data-view-key="${o.key}"${v[o.key] === false ? '' : ' checked'}>
+          <span><b>${esc(o.name)}</b><small>${esc(o.desc)}</small></span></label>`).join('')}</div>
+      <div class="msg" hidden></div>
+    </div>`;
+}
+function bindView(card, initial) {
+  let view = viewOf(initial);
+  const out = card.querySelector('.msg');
+  const save = async (next, undo) => {
+    const before = view; view = next; msg(out, '');
+    try { check(await sb.auth.updateUser({ data: { dash_view: view } })); msg(out, 'Gespeichert. Gilt auf allen Geräten.', true); }
+    catch (err) { view = before; undo(); msg(out, errText(err)); }
+  };
+  card.addEventListener('change', e => {
+    const cb = e.target.closest('[data-view-key]'); if (!cb) return;
+    e.stopPropagation(); // nicht als Ein-/Ausblenden einer App werten
+    const next = { ...view };
+    if (cb.checked) delete next[cb.dataset.viewKey]; else next[cb.dataset.viewKey] = false;
+    save(next, () => { cb.checked = !cb.checked; });
+  });
+  const seg = [...card.querySelectorAll('[data-size]')];
+  const paintSeg = () => seg.forEach(b => b.setAttribute('aria-pressed', String((view.size === 'compact') === (b.dataset.size === 'compact'))));
+  seg.forEach(b => b.addEventListener('click', () => {
+    if (b.getAttribute('aria-pressed') === 'true') return;
+    const next = { ...view };
+    if (b.dataset.size === 'compact') next.size = 'compact'; else delete next.size;
+    save(next, paintSeg);
+    paintSeg();
+  }));
 }
 
 async function dashboardCard(card) {

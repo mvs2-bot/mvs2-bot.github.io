@@ -26,6 +26,30 @@ function paintHidden() {
   });
 }
 paintHidden();
+/* Ansicht der Kacheln aus den Kontoeinstellungen: user_metadata.dash_view, z. B. { size: 'compact', name: false }.
+   Fehlender Schlüssel = an bzw. 'normal'. Wirkt als Klassen an #sections (CSS in index.html). Lokal gemerkt. */
+const VIEW_KEY = 'dash-view';
+const VIEW_FLAGS = ['name', 'desc', 'changed', 'kpi', 'github', 'counts', 'status'];
+let view = {};
+try { view = JSON.parse(localStorage.getItem(VIEW_KEY)) || {}; } catch (e) {}
+const shows = k => view[k] !== false;
+function setView(v) {
+  v = v && typeof v === 'object' && !Array.isArray(v) ? v : {};
+  try { localStorage.setItem(VIEW_KEY, JSON.stringify(v)); } catch (e) {}
+  const changed = JSON.stringify(v) !== JSON.stringify(view);
+  view = v;
+  paintView();
+  if (changed && started) render(); // Name als aria-label hängt am Markup
+}
+function paintView() {
+  const host = document.getElementById('sections');
+  if (!host) return;
+  VIEW_FLAGS.forEach(k => host.classList.toggle('v-no-' + k, !shows(k)));
+  host.classList.toggle('v-compact', view.size === 'compact');
+  host.classList.toggle('v-icons', !shows('name') && !shows('desc'));
+  host.classList.toggle('v-no-foot', !shows('changed') && !shows('kpi') && !shows('github'));
+}
+paintView();
 /* Reihenfolge der Apps aus den Kontoeinstellungen: user_metadata.dash_order (App-URLs), neue Apps hinten. Lokal gemerkt. */
 const ORDER_KEY = 'dash-order';
 let order = [];
@@ -150,7 +174,7 @@ function tileHtml(it, sortable) {
   const fav = isFav(it);
   return `
         <div class="tile" data-url="${esc(it.url)}">
-          <a class="main" href="${esc(it.url)}">
+          <a class="main" href="${esc(it.url)}"${shows('name') ? '' : ` aria-label="${esc(it.name)}" title="${esc(it.name)}"`}>
             <span class="ico" style="background:${esc(it.color || '#334155')}">${ico}</span>
             <span class="txt">
               <span class="name">${esc(it.name)}</span>
@@ -163,7 +187,7 @@ function tileHtml(it, sortable) {
             ${it.kpi && it.app ? `<span class="kpi" data-kpi="${esc(it.app)}" hidden></span>` : ''}
             ${it.streak ? `<button class="streak-chip" type="button" data-streak="${esc(it.streak)}" hidden></button>` : ''}
             <button class="mini fav${fav ? ' on' : ''}" type="button" data-fav="${esc(it.url)}" aria-pressed="${fav}" aria-label="${esc(it.name)} ${fav ? 'aus Favoriten entfernen' : 'zu Favoriten'}" title="${fav ? 'Aus Favoriten entfernen' : 'Als Favorit oben anheften'}">${STAR_ICON}</button>
-            ${gh ? `<a class="mini" href="${esc(gh)}" target="_blank" rel="noopener" aria-label="${esc(it.name)} auf GitHub" title="Repo auf GitHub">${GH_ICON}</a>` : ''}
+            ${gh ? `<a class="mini gh" href="${esc(gh)}" target="_blank" rel="noopener" aria-label="${esc(it.name)} auf GitHub" title="Repo auf GitHub">${GH_ICON}</a>` : ''}
             ${sortable && arranging ? `<button class="mini grip" type="button" data-grip aria-label="${esc(it.name)} verschieben (Pfeiltasten)" title="Ziehen zum Verschieben">${GRIP_ICON}</button>` : ''}
           </div>
         </div>`;
@@ -511,7 +535,7 @@ const gate = (() => {
     document.body.classList.toggle('signed-in', !!session);
     profileMenu.refresh(session);
     if (!session) { remember(null); show('loginForm'); return; }
-    const applyMeta = m => { setOrder(m.dash_order); setHidden(m.dash_hidden); setFavs(m.dash_favs); };
+    const applyMeta = m => { setOrder(m.dash_order); setHidden(m.dash_hidden); setFavs(m.dash_favs); setView(m.dash_view); };
     applyMeta(session.user.user_metadata);
     // Gespeicherte Sitzung kann veraltet sein (auf anderem Gerät geändert): frisch vom Server holen
     sb.auth.getUser().then(({ data }) => { if (data && data.user) applyMeta(data.user.user_metadata); }).catch(() => {});

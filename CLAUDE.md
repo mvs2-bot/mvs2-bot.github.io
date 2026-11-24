@@ -56,5 +56,7 @@ Kein Build, kein npm: reines HTML/CSS/JS, supabase-js per CDN. Sprache in UI, Ko
 ## Konventionen
 - Geteilte Dateien: Original ändern, dann Kopien in allen Repos aktualisieren (`ios-nav.js` hier, `overall-account.js` in supabase-core).
 - Neue Farben als Variable in `shared/tokens.css` (`:root` und Dark-Theme), nicht hart im Markup.
-- Dashboard-Einstellungen pro Konto in `user_metadata`: `dash_order`, `dash_favs`, `dash_hidden` (lokal gespiegelt).
+- Dashboard-Einstellungen pro Konto in `user_metadata`: `dash_order`, `dash_favs`, `dash_hidden`, `dash_view` (lokal gespiegelt).
+  `dash_view` = Ansicht der Kacheln, nur Abweichungen: `size: 'compact'`, `name|desc|changed|kpi|github|counts|status: false`;
+  Dashboard setzt daraus Klassen `v-…` an `#sections` (CSS in `index.html`), keine DB-Migration nötig.
 - Neue gecachte Datei → in `ASSETS` von `sw.js` aufnehmen und Version erhöhen.
