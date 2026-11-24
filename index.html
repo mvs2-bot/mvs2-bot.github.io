@@ -114,9 +114,9 @@
   .mini.fav.on svg { fill: currentColor; }
   @media (hover: hover) { .mini.fav:not(.on) { opacity: 0; transition: opacity .15s; } .tile:hover .mini.fav, .mini.fav:focus-visible { opacity: 1; } }
   /* Anordnen: Textknopf im Gruppenkopf, Griff an der Kachel; Links sind im Sortiermodus aus */
-  .group-head .arrange { margin-left: auto; border: 0; background: none; padding: 2px 6px; border-radius: 6px; font-size: 12px; font-weight: 500; color: var(--p1); }
+  .group-head .arrange { margin-left: auto; border: 0; background: none; padding: 2px 6px; border-radius: 6px; font-size: 12px; font-weight: 500; color: var(--mute); }
   .group-head .arrange:hover { background: var(--card); }
-  .group-head .arrange[aria-pressed="true"] { font-weight: 600; }
+  .group-head .arrange[aria-pressed="true"] { font-weight: 600; color: var(--ink); }
   .arrange + .live { margin-left: 12px; }
   .mini.grip { cursor: grab; touch-action: none; color: var(--ink); }
   .arranging .grid[data-sortable] .main { pointer-events: none; }
@@ -154,7 +154,9 @@
     .tile .main { padding: 12px 0 12px 16px; border-radius: 0; }
     .tile .main > .chev, .tile .meta { display: none; }
     .tile .foot { border: 0; margin: 0; padding: 0 12px 0 4px; }
-    .tile .desc { -webkit-line-clamp: 1; }
+    .tile .desc { -webkit-line-clamp: 2; }
+    /* Kennzahl schlank, damit der Untertitel Platz behält */
+    .foot .kpi { height: auto; line-height: 1.3; padding: 0 2px; background: none; color: var(--mute); }
   }
 
   /* Suche */
