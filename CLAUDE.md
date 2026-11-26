@@ -38,7 +38,7 @@ Kein Build, kein npm: reines HTML/CSS/JS, supabase-js per CDN. Sprache in UI, Ko
 - **Schema liegt ausschließlich im Repo `supabase-core`** (Migrationen). Schemaänderung = dort neue Migration, eigener PR.
 - Genutzte RPCs: `overall_is_admin`, `overall_app_role(p_app)`, `overall_has_app_role(p_app, p_min_role)`,
   `overall_my_apps` (Kachel-Sichtbarkeit, Fallback `overall_has_app_role`), `overall_usage`, `streak_admin_overview`, `travelbase_admin_overview`, `travelbase_admin_set_member`,
-  `travelbase_admin_set_trip_tentative`, `travelbase_my_trips`, `overall_tile_kpis(p_tz)`.
+  `travelbase_admin_set_trip_status` (Fest · Vielleicht · Archiviert), `travelbase_admin_rename_trip`, `travelbase_my_trips`, `overall_tile_kpis(p_tz)`.
 - Edge Functions via `sb.functions.invoke`: `overall-admin` (`{ action, … }`), `overall-usage`.
 - Kachel-Sichtbarkeit: `app` + `min` aus `PROJECTS` gegen Rang aus `overall_my_apps()`; nur Anzeige, Schutz macht RLS.
 
