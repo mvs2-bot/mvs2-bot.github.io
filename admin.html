@@ -51,17 +51,32 @@
   .facts { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 6px 14px; font-size: .8rem; margin-bottom: 12px; }
   .facts span { display: block; color: var(--muted); }
 
-  .trip { border-radius: 14px; padding: 12px 14px; margin-top: 10px; background: var(--well); }
+  .trip { border-radius: 14px; margin-top: 8px; background: var(--well); }
   .trip select, .item select, .item input[type=text], .item input[type=email], .item input[type=date] { background: var(--card); }
-  .trip h4 { margin: 0 0 6px; font-size: .95rem; }
-  .trip h4 small { color: var(--muted); font-weight: 500; margin-left: 6px; }
-  .trip-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
-  .trip-head h4 { margin: 0; }
-  .trip-head .btn { background: var(--card); color: var(--p1); }
-  .trip-head small { color: var(--mute); font-size: 12px; }
-  .trip-tentative { display: flex; align-items: center; gap: 8px; margin-top: 8px; font-size: 13px; cursor: pointer; }
-  .trip-tentative input { width: 18px; height: 18px; accent-color: var(--accent); }
-  .trip-tentative small { color: var(--mute); font-size: 12px; }
+  .trip-sum { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 12px; padding: 10px 14px; }
+  .trip-sum::-webkit-details-marker { display: none; }
+  .trip-sum::after { content: '›'; flex: 0 0 auto; font-size: 1.3rem; line-height: 1; color: var(--muted); transition: transform .15s; }
+  .trip[open] > .trip-sum::after { transform: rotate(90deg); }
+  .trip-flags { flex: 0 0 auto; font-size: 20px; letter-spacing: 1px; max-width: 72px; overflow: hidden; white-space: nowrap; text-overflow: clip; }
+  .trip.st-archive > .trip-sum .trip-flags, .trip.st-archive > .trip-sum .who b { opacity: .6; }
+  .trip-body { padding: 4px 14px 12px; border-top: 1px solid var(--sep); }
+  .trip-line { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+  .trip-lbl { font-size: 13px; font-weight: 600; color: var(--ink); }
+  .trip-name { display: flex; gap: 8px; flex: 1 1 260px; max-width: 460px; }
+  .trip-name input { flex: 1 1 auto; min-width: 0; background: var(--card); }
+  .trip-acts { display: flex; gap: 8px; flex-wrap: wrap; }
+  .trip-acts .btn { background: var(--card); color: var(--p1); text-decoration: none; }
+  .trip-hint { margin: 6px 0 0; font-size: 12px; }
+  .trip .seg { background: var(--card); }
+  .trip .seg button[aria-pressed="true"] { background: var(--p1); color: var(--on-p1); box-shadow: none; }
+  .tb-st { flex: 0 0 auto; font-size: 12px; font-weight: 600; border-radius: 999px; padding: 3px 10px; white-space: nowrap; }
+  .tb-st-fest { background: var(--p1-soft); color: var(--p1); }
+  .tb-st-maybe { background: var(--card); color: var(--text); box-shadow: inset 0 0 0 1px var(--sep); border: 1px dashed var(--mute); padding: 2px 9px; }
+  .tb-st-archive { background: var(--card); color: var(--mute); }
+  .tb-bar { display: flex; justify-content: flex-start; margin: 0 0 4px; }
+  .tb-bar .seg { width: 100%; max-width: 420px; }
+  .tb-n { color: var(--mute); font-weight: 500; margin-left: 2px; }
+  details.rights.tb-help { margin-top: 12px; }
   ul.people { list-style: none; margin: 10px 0 0; padding: 0; }
   .member { display: flex; align-items: center; gap: 10px; padding: 8px 0; }
   .member .ini { width: 32px; height: 32px; font-size: 12px; background: var(--card); border: 0; }
@@ -523,39 +538,65 @@ const APP_ADMIN = {
   caminotracker: { icon: '🐚', color: '#b88a00', title: 'Daten', render: caminoAdmin },
 };
 
-/* ---------- TravelBase: wer sieht welche Reise in welcher Rolle ---------- */
+/* ---------- TravelBase: Reisen (Status, Freigaben) ---------- */
 const TB_ROLE_HINT = { guest: 'Sieht Karte und Zeitraum', member: 'Sieht zusätzlich den Plan', admin: 'Sieht auch Kosten und darf bearbeiten' };
+const TB_STATUS = { fest: 'Fest', maybe: 'Vielleicht', archive: 'Archiviert' };
+const TB_UI = { filter: 'active', open: new Set() };   // bleibt beim Neuzeichnen erhalten
+const tbStatus = t => t.archived ? 'archive' : t.tentative ? 'maybe' : 'fest';
 async function travelbaseAdmin(box) {
   const d = check(await sb.rpc('travelbase_admin_overview'));
   const users = new Map(d.users.map(u => [u.id, u]));
   const name = u => u ? (u.display_name || u.email) : 'Unbekanntes Konto';
   const fmt = t => [t.start_date, t.end_date].filter(Boolean).map(fmtDate).join(' – ');
   const roleOrder = { admin: 0, member: 1, guest: 2 };
-  box.innerHTML = `
-    <p class="note">Globale Admins und TravelBase-Admins sehen jede Reise. Für alle anderen gilt die Freigabe pro Reise:</p>
-    <div class="role-key">${['guest', 'member', 'admin'].map(r => `<div><span class="role-pill role-${r}">${ROLE_LABEL[r]}</span><small>${TB_ROLE_HINT[r]}</small></div>`).join('')}</div>
-    ${d.trips.map(t => {
-      const members = d.members.filter(m => m.trip_id === t.id)
-        .sort((a, b) => roleOrder[a.role] - roleOrder[b.role] || name(users.get(a.user_id)).localeCompare(name(users.get(b.user_id))));
-      const free = d.users.filter(u => u.app_role !== 'admin' && !members.some(m => m.user_id === u.id));
-      return `
-      <div class="trip" data-trip="${esc(t.id)}">
-        <div class="trip-head">
-          <div><h4>${esc((t.flags || []).join(' '))} ${esc(t.title)}</h4><small>${esc(fmt(t))}${fmt(t) ? ' · ' : ''}${members.length === 1 ? '1 Person' : members.length + ' Personen'}</small></div>
-          ${free.length ? '<button class="btn small" type="button" data-tb-open>Person hinzufügen</button>' : ''}
+  const today = new Date().toISOString().slice(0, 10);
+  const past = t => !!t.start_date && (t.end_date || t.start_date) < today;
+  // Kommende/offene zuerst (nach Start), danach vergangene (neueste zuerst)
+  const trips = d.trips.slice().sort((a, b) => past(a) - past(b) || (past(a) ? (b.start_date || '').localeCompare(a.start_date || '') : (a.start_date || '9').localeCompare(b.start_date || '9')));
+  const FILTER = { active: t => !t.archived, maybe: t => !t.archived && t.tentative, archive: t => t.archived };
+  const count = k => trips.filter(FILTER[k]).length;
+  const shown = trips.filter(FILTER[TB_UI.filter]);
+  const tripRow = t => {
+    const members = d.members.filter(m => m.trip_id === t.id)
+      .sort((a, b) => roleOrder[a.role] - roleOrder[b.role] || name(users.get(a.user_id)).localeCompare(name(users.get(b.user_id))));
+    const free = d.users.filter(u => u.app_role !== 'admin' && !members.some(m => m.user_id === u.id));
+    const st = tbStatus(t);
+    return `
+      <details class="trip st-${st}" data-trip="${esc(t.id)}"${TB_UI.open.has(t.id) ? ' open' : ''}>
+        <summary class="trip-sum">
+          <span class="trip-flags">${esc((t.flags || []).join('')) || '🌍'}</span>
+          <div class="who"><b>${esc(t.title)}</b><small>${esc(fmt(t) || 'Zeitraum offen')}${past(t) ? ' · vorbei' : ''} · ${members.length === 1 ? '1 Person' : members.length + ' Personen'}</small></div>
+          <span class="tb-st tb-st-${st}">${TB_STATUS[st]}</span>
+        </summary>
+        <div class="trip-body">
+          <form class="trip-line" data-tb-rename><label class="trip-lbl" for="tbn-${esc(t.id)}">Name</label>
+            <div class="trip-name"><input type="text" id="tbn-${esc(t.id)}" name="title" maxlength="120" required value="${esc(t.title)}"><button class="btn small" type="submit">Speichern</button></div></form>
+          <div class="trip-line"><span class="trip-lbl">Status</span>
+            <div class="seg" role="group" aria-label="Status von ${esc(t.title)}">${Object.keys(TB_STATUS).map(k => `<button type="button" data-tb-status="${k}" aria-pressed="${k === st}">${TB_STATUS[k]}</button>`).join('')}</div></div>
+          <p class="note trip-hint">${st === 'archive' ? 'Im Archiv: in TravelBase unten unter „Archiv“, zählt nirgends mit. Daten bleiben erhalten.' : st === 'maybe' ? 'Variante oder Idee: zählt nicht als gereist und nicht in den öffentlichen Flaggen.' : 'Feste Reise: zählt in Statistik, Flaggen und Dashboard.'}</p>
+          <div class="trip-line"><span class="trip-lbl">Freigaben</span>
+            <div class="trip-acts">${free.length ? '<button class="btn small ghost" type="button" data-tb-open>Person hinzufügen</button>' : ''}<a class="btn small ghost" href="/TravelBase/${encodeURIComponent(t.slug)}/">Reise öffnen</a></div></div>
+          ${members.length ? `<ul class="people">${members.map(m => {
+            const u = users.get(m.user_id);
+            return `<li class="member" data-user="${esc(m.user_id)}">
+              <span class="ini">${esc(initials(name(u)))}</span>
+              <div class="who"><b>${esc(name(u))}</b><small>${esc(u && u.display_name ? u.email : '')}${u && u.app_role === 'admin' ? ' · sieht als TravelBase-Admin ohnehin alles' : ''}</small></div>
+              <select class="role-pill role-${esc(m.role)}" data-tb-role aria-label="Rolle von ${esc(name(u))}">${roleOptions(m.role, 'Freigabe entziehen')}</select></li>`;
+          }).join('')}</ul>` : '<p class="note" style="margin:6px 0 0">Noch niemand freigegeben.</p>'}
         </div>
-        <label class="trip-tentative"><input type="checkbox" data-tb-tentative${t.tentative ? ' checked' : ''}><span>Nur vielleicht <small>Variante oder Idee, zählt nicht als gereist</small></span></label>
-        ${members.length ? `<ul class="people">${members.map(m => {
-          const u = users.get(m.user_id);
-          return `<li class="member" data-user="${esc(m.user_id)}">
-            <span class="ini">${esc(initials(name(u)))}</span>
-            <div class="who"><b>${esc(name(u))}</b><small>${esc(u && u.display_name ? u.email : '')}${u && u.app_role === 'admin' ? ' · sieht als TravelBase-Admin ohnehin alles' : ''}</small></div>
-            <select class="role-pill role-${esc(m.role)}" data-tb-role aria-label="Rolle von ${esc(name(u))}">${roleOptions(m.role, 'Freigabe entziehen')}</select></li>`;
-        }).join('')}</ul>` : '<p class="note" style="margin:8px 0 0">Noch niemand freigegeben.</p>'}
-      </div>`;
-    }).join('') || '<p class="note">Noch keine Reisen angelegt.</p>'}
-    <p class="note" style="margin:12px 0 0">Wer in der Auswahl fehlt, braucht zuerst Zugang zu TravelBase (Verwaltung → Konten).</p>
+      </details>`;
+  };
+  box.innerHTML = `
+    <div class="tb-bar">
+      <div class="seg" role="group" aria-label="Reisen filtern">${[['active', 'Aktiv'], ['maybe', 'Vielleicht'], ['archive', 'Archiv']].map(([k, l]) =>
+        `<button type="button" data-tb-filter="${k}" aria-pressed="${k === TB_UI.filter}">${l} <span class="tb-n">${count(k)}</span></button>`).join('')}</div>
+    </div>
+    <div class="tb-list">${shown.map(tripRow).join('') || `<p class="note" style="margin:10px 0">${TB_UI.filter === 'archive' ? 'Das Archiv ist leer.' : TB_UI.filter === 'maybe' ? 'Keine Vielleicht-Reisen.' : 'Noch keine Reisen angelegt.'}</p>`}</div>
     <div class="msg" hidden></div>
+    <details class="rights tb-help"><summary>Rollen in einer Reise</summary>
+      <div class="role-key">${['guest', 'member', 'admin'].map(r => `<div><span class="role-pill role-${r}">${ROLE_LABEL[r]}</span><small>${TB_ROLE_HINT[r]}</small></div>`).join('')}</div>
+      <p class="note" style="margin:8px 0 0">Globale Admins und TravelBase-Admins sehen jede Reise. Wer in der Auswahl fehlt, braucht zuerst Zugang zu TravelBase (Verwaltung → Konten).</p>
+    </details>
     <dialog class="dlg" data-tb-dialog aria-labelledby="tbDlgTitle">
       <form method="dialog" class="stack">
         <div><h3 id="tbDlgTitle">Person hinzufügen</h3><p class="note" data-tb-trip style="margin:2px 0 0"></p></div>
@@ -570,13 +611,27 @@ async function travelbaseAdmin(box) {
       </form>
     </dialog>`;
   const out = () => box.querySelector(':scope > .msg');
-  const set = async (trip, user, role, okText) => {
-    try { await busy(box, () => sb.rpc('travelbase_admin_set_member', { p_trip: trip, p_user: user, p_role: role }).then(check)); await travelbaseAdmin(box); msg(out(), okText, true); }
+  const redo = async (fn, okText) => {
+    try { await busy(box, fn); await travelbaseAdmin(box); msg(out(), okText, true); }
     catch (e) { await travelbaseAdmin(box).catch(() => {}); msg(out(), errText(e)); }
   };
-  box.querySelectorAll('[data-tb-tentative]').forEach(cb => cb.addEventListener('change', async () => {
-    try { await busy(box, () => sb.rpc('travelbase_admin_set_trip_tentative', { p_trip: cb.closest('.trip').dataset.trip, p_tentative: cb.checked }).then(check)); await travelbaseAdmin(box); msg(out(), cb.checked ? 'Als „vielleicht“ markiert.' : 'Als feste Reise markiert.', true); }
-    catch (e) { await travelbaseAdmin(box).catch(() => {}); msg(out(), errText(e)); }
+  const set = (trip, user, role, okText) => redo(() => sb.rpc('travelbase_admin_set_member', { p_trip: trip, p_user: user, p_role: role }).then(check), okText);
+  box.querySelectorAll('details.trip').forEach(el => el.addEventListener('toggle', () => { TB_UI.open[el.open ? 'add' : 'delete'](el.dataset.trip); }));
+  box.querySelectorAll('[data-tb-filter]').forEach(b => b.addEventListener('click', () => { TB_UI.filter = b.dataset.tbFilter; travelbaseAdmin(box).catch(e => msg(out(), errText(e))); }));
+  box.querySelectorAll('[data-tb-status]').forEach(b => b.addEventListener('click', () => {
+    const t = d.trips.find(x => x.id === b.closest('.trip').dataset.trip), k = b.dataset.tbStatus;
+    if (k === tbStatus(t)) return;
+    // Archivieren behält „Vielleicht“, damit eine Variante beim Zurückholen wieder Variante ist
+    const args = k === 'archive' ? { p_trip: t.id, p_archived: true } : { p_trip: t.id, p_tentative: k === 'maybe', p_archived: false };
+    redo(() => sb.rpc('travelbase_admin_set_trip_status', args).then(check),
+      k === 'archive' ? `„${t.title}“ ist im Archiv.` : `„${t.title}“ ist jetzt ${k === 'maybe' ? '„Vielleicht“' : 'fest'}.`);
+  }));
+  box.querySelectorAll('[data-tb-rename]').forEach(f => f.addEventListener('submit', e => {
+    e.preventDefault();
+    const t = d.trips.find(x => x.id === f.closest('.trip').dataset.trip), inp = f.querySelector('input'), title = inp.value.trim();
+    if (!title) return inp.focus();
+    if (title === t.title) return;
+    redo(() => sb.rpc('travelbase_admin_rename_trip', { p_trip: t.id, p_title: title }).then(check), `Umbenannt in „${title}“.`);
   }));
   box.querySelectorAll('[data-tb-role]').forEach(sel => sel.addEventListener('change', () => {
     const trip = sel.closest('.trip').dataset.trip, user = sel.closest('.member').dataset.user;
